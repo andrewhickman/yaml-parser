@@ -1,0 +1,8 @@
+[package]
+name = "yaml-parser"
+version = "0.1.0"
+categories = ["encoding", "parser-implementations", "no-std"]
+keywords = ["yaml"]
+edition = "2021"
+
+[dependencies]
