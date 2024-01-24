@@ -33,6 +33,14 @@ enum Context {
     FlowKey,
 }
 
+#[allow(unused)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+enum Chomping {
+    Strip,
+    Clip,
+    Keep,
+}
+
 #[derive(Clone)]
 #[allow(unused)]
 struct Diagnostic {
@@ -1042,5 +1050,436 @@ fn e_node<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
 }
 
 fn nb_double_char<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_double_char<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_double_quoted<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn nb_double_text<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn nb_double_one_line<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn s_double_escaped<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn s_double_break<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn nb_ns_double_in_line<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn s_double_next_line<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn nb_double_multi_line<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_quoted_quote<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn nb_single_char<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_single_char<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_single_quoted<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn nb_single_text<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn nb_single_one_line<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn nb_ns_single_in_line<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn s_single_next_line<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn nb_single_multi_line<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_plain_first<R: Receiver>(_state: &mut State<R>, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_plain_safe<R: Receiver>(_state: &mut State<R>, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_plain_safe_out<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_plain_safe_in<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_plain_char<R: Receiver>(_state: &mut State<R>, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_plain<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_plain_in_line<R: Receiver>(_state: &mut State<R>, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_plain_one_line<R: Receiver>(_state: &mut State<R>, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn s_ns_plain_next_line<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_plain_multi_line<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+// https://github.com/yaml/yaml-spec/issues/299
+fn in_flow(_c: Context) -> Context {
+    todo!()
+}
+
+fn c_flow_sequence<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_s_flow_seq_entries<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_flow_seq_entry<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_flow_mapping<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_s_flow_map_entries<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_flow_map_entry<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    // add whitespace lookahead after '?'
+    todo!()
+}
+
+fn ns_flow_map_explicit_entry<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_flow_map_implicit_entry<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_flow_map_yaml_key_entry<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_ns_flow_map_empty_key_entry<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_ns_flow_map_separate_value<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_ns_flow_map_json_key_entry<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_ns_flow_map_adjacent_value<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_flow_pair<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    // add whitespace lookahead after '?'
+    todo!()
+}
+
+fn ns_flow_pair_entry<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_flow_pair_yaml_key_entry<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_ns_flow_pair_json_key_entry<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_s_implicit_yaml_key<R: Receiver>(_state: &mut State<R>, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_s_implicit_json_key<R: Receiver>(_state: &mut State<R>, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_flow_yaml_content<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_flow_json_content<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_flow_content<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_flow_yaml_node<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    // ns-flow-yaml-content to ns-flow-content?
+    todo!()
+}
+
+fn c_flow_json_node<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_flow_node<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_b_block_header<R: Receiver>(_state: &mut State<R>, _t: Chomping) -> Result<(), ()> {
+    // where does `t` come from?
+    todo!()
+}
+
+fn c_identation_indicator<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    // input `n`, output `m` to somewhere
+    todo!()
+}
+
+fn c_chomping_indicator<R: Receiver>(_state: &mut State<R>, _t: Chomping) -> Result<(), ()> {
+    // set `t` somewhere
+    todo!()
+}
+
+fn b_chomped_last<R: Receiver>(_state: &mut State<R>, _t: Chomping) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_chomped_empty<R: Receiver>(_state: &mut State<R>, _n: u32, _t: Chomping) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_strip_empty<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_keep_empty<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_trail_comments<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_l_literal<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    // pass n to c_b_block_header
+    todo!()
+}
+
+fn l_nb_literal_text<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn b_nb_literal_next<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_literal_content<R: Receiver>(_state: &mut State<R>, _n: u32, _t: Chomping) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_l_folded<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn s_nb_folded_text<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_nb_folded_lines<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn s_nb_spaced_text<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn b_l_spaced<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_nb_spaced_lines<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_nb_same_lines<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_nb_diff_lines<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_folded_content<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_block_sequence<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    // change to autodetection of ident
+    todo!()
+}
+
+fn c_l_block_seq_entry<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn s_l_block_indented<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    // change to autodetection of ident
+    todo!()
+}
+
+fn ns_l_compact_sequence<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_block_mapping<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    // change to autodetection of ident
+    todo!()
+}
+
+fn ns_l_block_map_entry<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_l_block_map_explicit_entry<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_l_block_map_explicit_key<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    // whitespace lookahead assertion after '?'
+    todo!()
+}
+
+fn l_block_map_explicit_value<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_l_block_map_implicit_entry<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_s_block_map_implicit_key<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_l_block_map_implicit_value<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn ns_l_compact_mapping<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn s_l_block_node<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn s_l_flow_in_block<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn s_l_block_in_block<R: Receiver>(_state: &mut State<R>, _n: u32) -> Result<(), ()> {
+    todo!()
+}
+
+fn s_l_block_scalar<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn s_l_block_collection<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    // issue when consuming property that might be the key of the first pair of a mapping
+    todo!()
+}
+
+fn seq_space<R: Receiver>(_state: &mut State<R>, _n: u32, _c: Context) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_document_prefix<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_directives_end<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    // add whitespace lookahead to end
+    todo!()
+}
+
+fn c_document_end<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_document_suffix<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn c_forbidden<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_bare_document<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_explicit_document<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_directive_document<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_any_document<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    todo!()
+}
+
+fn l_yaml_stream<R: Receiver>(_state: &mut State<R>) -> Result<(), ()> {
+    // only try l-document-prefix, l-document-suffix once
     todo!()
 }
