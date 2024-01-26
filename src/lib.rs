@@ -8,6 +8,8 @@ extern crate alloc;
 
 mod parser;
 
+pub use self::parser::parse;
+
 /// A handler for events and tokens in a YAML stream.
 pub trait Receiver {
     /// Called on each event in the YAML stream.
@@ -75,20 +77,20 @@ pub enum Token {
     Anchor,
     /// A `*` token.
     Alias,
-    /// A `!` token.
-    Tag,
     /// A `|` token.
     Literal,
     /// A `>` token.
     Folded,
     /// A `'` token.
     SingleQuote,
+    /// A single quoted scalar.
+    SingleQuoted,
     /// A `"` token.
     DoubleQuote,
+    /// A double quoted scalar.
+    DoubleQuoted,
     /// A `%` token.
     Directive,
-    /// A reserved token (`@` or `` ` ``).
-    Reserved,
     /// A line break (`\r`, `\n` or `\r\n`).
     Break,
     /// The name of a directive.
@@ -111,6 +113,12 @@ pub enum Token {
     AnchorName,
     /// An empty scalar node.
     Empty,
+    /// A segment of a scalar node.
+    Scalar,
+    /// A `---` token marking the end of directives.
+    DirectivesEnd,
+    /// A `...` token marking the end of a document.
+    DocumentEnd,
 }
 
 /// A range of characters within a source file.
