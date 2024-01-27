@@ -716,12 +716,14 @@ fn ns_tag_directive<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
 
 #[tracing::instrument(level = "trace", skip(state))]
 fn c_tag_handle<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::TagHandle, |state| alt!(
-        state,
-        c_named_tag_handle(state),
-        c_secondary_tag_handle(state),
-        c_primary_tag_handle(state)
-    ))
+    state.token(Token::TagHandle, |state| {
+        alt!(
+            state,
+            c_named_tag_handle(state),
+            c_secondary_tag_handle(state),
+            c_primary_tag_handle(state)
+        )
+    })
 }
 
 #[tracing::instrument(level = "trace", skip(state))]
@@ -1422,6 +1424,7 @@ fn c_b_block_header<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(i32, C
     s_b_comment(state)?;
 
     let m = m.unwrap_or_else(|| state.detect_scalar_indent(n));
+    tracing::info!("scalar indent {} @{:?}", m, state.iter.as_str());
     Ok((m, t))
 }
 
@@ -1636,6 +1639,7 @@ fn l_block_sequence<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()>
     }
 
     let m = state.detect_collection_indent(n);
+    tracing::info!("block indent {} @{:?}", m, state.iter.as_str());
     plus!(state, entry(state, n + m))
 }
 
@@ -1652,6 +1656,7 @@ fn c_l_block_seq_entry<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), 
 fn s_l_block_indented<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
     fn collection<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
         let m = state.detect_entry_indent(n);
+        tracing::info!("entry indent {} @{:?}", m, state.iter.as_str());
         s_indent(state, m)?;
         alt!(
             state,
@@ -1689,11 +1694,13 @@ fn ns_l_compact_sequence<R: Receiver>(state: &mut State<R>, n: i32) -> Result<()
 fn l_block_mapping<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
     fn entry<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
         state.location();
+        tracing::info!("entry {} @{:?}", n, state.iter.as_str());
         s_indent(state, n)?;
         ns_l_block_map_entry(state, n)
     }
 
     let m = state.detect_collection_indent(n);
+    tracing::info!("block indent {} @{:?}", m, state.iter.as_str());
     plus!(state, entry(state, n + m))
 }
 
@@ -1814,26 +1821,17 @@ fn s_l_block_scalar<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Re
 #[tracing::instrument(level = "trace", skip(state))]
 fn s_l_block_collection<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
     fn props<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-        c_ns_properties(state, n, c)?;
-        s_l_comments(state)
-    }
-
-    fn tag<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-        c_ns_tag_property(state)?;
-        s_l_comments(state)
-    }
-
-    fn anchor<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-        c_ns_anchor_property(state)?;
-        s_l_comments(state)
-    }
-
-    fn separated_props<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
         s_separate(state, n, c)?;
-        alt!(state, props(state, n, c), tag(state), anchor(state))
+        alt!(
+            state,
+            c_ns_properties(state, n, c),
+            c_ns_tag_property(state),
+            c_ns_anchor_property(state)
+        )?;
+        s_l_comments(state)
     }
 
-    question!(state, separated_props(state, n + 1, c));
+    question!(state, props(state, n + 1, c));
     s_l_comments(state)?;
     alt!(
         state,
@@ -1871,12 +1869,12 @@ fn l_document_suffix<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
     s_l_comments(state)
 }
 
-// #[tracing::instrument(level = "trace", skip(state))]
+#[tracing::instrument(level = "trace", skip(state))]
 fn l_bare_document<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
     s_l_block_node(state, -1, Context::BlockIn)
 }
 
-// #[tracing::instrument(level = "trace", skip(state))]
+#[tracing::instrument(level = "trace", skip(state))]
 fn l_explicit_document<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
     fn empty<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
         e_node(state)?;

@@ -296,7 +296,13 @@ where
     }
 
     fn is_start_of_line(&self) -> bool {
-        self.line_offset == 0
+        self.line_offset == self.offset()
+    }
+
+    fn is_end_of_document(&self) -> bool {
+        self.is_start_of_line()
+            && (self.is_str("---") || self.is_str("..."))
+            && matches!(self.peek_nth(3), None | Some('\r' | '\n' | '\t' | ' '))
     }
 
     fn is_end_of_input(&self) -> bool {
@@ -339,16 +345,20 @@ where
     }
 
     fn peek_next(&self) -> Option<char> {
+        self.peek_nth(1)
+    }
+
+    fn peek_nth(&self, n: usize) -> Option<char> {
         #[cfg(debug_assertions)]
         if self.peek_count > 1000 {
             panic!("detected infinite loop in parser");
         }
 
-        if matches!(self.length_limit, Some(0 | 1)) {
+        if matches!(self.length_limit, Some(limit) if n <= limit) {
             return None;
         }
 
-        self.iter.clone().nth(1)
+        self.iter.clone().nth(n)
     }
 
     fn peek_prev(&self) -> Option<char> {
