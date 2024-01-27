@@ -1,5 +1,5 @@
-//! A pure-rust, safe, YAMl parser.
-#![no_std]
+//! A pure-rust, safe, YAML parser.
+// #![cfg_attr(not(test), no_std)]
 #![warn(missing_debug_implementations, missing_docs)]
 #![deny(unsafe_code)]
 #![doc(html_root_url = "https://docs.rs/yaml-parser/0.1.0/")]
@@ -47,7 +47,7 @@ pub enum Event {
 }
 
 /// A token type in a YAML stream.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Token {
     /// Identation whitespace at the start of a line,
     Indent,
@@ -87,11 +87,11 @@ pub enum Token {
     SingleQuoted,
     /// A `"` token.
     DoubleQuote,
-    /// A double quoted scalar.
+    /// A single line of double quoted scalar.
     DoubleQuoted,
     /// A `%` token.
     Directive,
-    /// A line break (`\r`, `\n` or `\r\n`).
+    /// A line break (`\r`, `\n` or `\r\n`) outside of scalar content.
     Break,
     /// The name of a directive.
     DirectiveName,
@@ -113,8 +113,12 @@ pub enum Token {
     AnchorName,
     /// An empty scalar node.
     Empty,
-    /// A segment of a scalar node.
+    /// A single line of a scalar node.
     Scalar,
+    /// A line break in a scalar node.
+    ScalarBreak,
+    /// A line break in a folded scalar node, converted to a space.
+    ScalarSpace,
     /// A `---` token marking the end of directives.
     DirectivesEnd,
     /// A `...` token marking the end of a document.

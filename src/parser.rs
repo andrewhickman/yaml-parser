@@ -9,20 +9,7 @@ use crate::{Location, Receiver, Span, Token};
 
 /// Parse a YAML stream, emitting events into the given receiver.
 pub fn parse<R: Receiver>(receiver: &mut R, text: &str) -> Result<(), Vec<Diagnostic>> {
-    let mut state = State {
-        text,
-        iter: text.chars(),
-        tokens: Vec::new(),
-        diagnostics: Vec::new(),
-        receiver,
-        in_token: false,
-        length_limit: None,
-        alt_depth: 0,
-        line_number: 0,
-        line_offset: 0,
-        peek_count: 0,
-    };
-
+    let mut state = State::new(receiver, text);
     match grammar::l_yaml_stream(&mut state) {
         Ok(()) => Ok(()),
         Err(()) => Err(state.diagnostics),
@@ -75,6 +62,22 @@ impl<'t, R> State<'t, R>
 where
     R: Receiver,
 {
+    fn new(receiver: &'t mut R, text: &'t str) -> Self {
+        State {
+            text,
+            iter: text.chars(),
+            tokens: Vec::new(),
+            diagnostics: Vec::new(),
+            receiver,
+            in_token: false,
+            length_limit: None,
+            alt_depth: 0,
+            line_number: 0,
+            line_offset: 0,
+            peek_count: 0,
+        }
+    }
+
     fn detect_scalar_indent(&self, n: i32) -> i32 {
         let mut iter = self.iter.clone();
         let mut longest_empty = 0;
@@ -155,6 +158,7 @@ where
         let line_number = self.line_number;
         let line_offset = self.line_offset;
         let length_limit = self.length_limit;
+        let in_token = self.in_token;
 
         self.alt_depth += 1;
         let res = f(self);
@@ -177,6 +181,7 @@ where
                 self.line_number = line_number;
                 self.line_offset = line_offset;
                 self.length_limit = length_limit;
+                self.in_token = in_token;
                 Err(())
             }
         }
@@ -202,14 +207,24 @@ where
 
     fn token(&mut self, token: Token, f: impl Fn(&mut Self) -> Result<(), ()>) -> Result<(), ()> {
         let start = self.location();
+        eprintln!("enter {:?}, {:?}", token, self.location());
         debug_assert!(!self.in_token, "nested tokens");
-        f(self)?;
-        if self.alt_depth > 0 {
-            self.tokens.push((token, self.span(start)));
-        } else {
-            self.receiver.token(token, self.span(start));
+        self.in_token = true;
+        let res = f(self);
+        self.in_token = false;
+        eprintln!("exit {:?}, {:?}: {:?}", token, self.location(), res);
+
+        match res {
+            Ok(()) => {
+                if self.alt_depth > 0 {
+                    self.tokens.push((token, self.span(start)));
+                } else {
+                    self.receiver.token(token, self.span(start));
+                }
+                Ok(())
+            }
+            Err(()) => Err(()),
         }
-        Ok(())
     }
 
     fn eat(&mut self, pred: impl Fn(char) -> bool) -> Result<(), ()> {
@@ -249,11 +264,11 @@ where
         matches!(self.peek_prev(), Some(ch) if pred(ch))
     }
 
-    fn is(&self, pred: impl Fn(char) -> bool) -> bool {
+    fn is(&mut self, pred: impl Fn(char) -> bool) -> bool {
         matches!(self.peek(), Some(ch) if pred(ch))
     }
 
-    fn is_char(&self, ch: char) -> bool {
+    fn is_char(&mut self, ch: char) -> bool {
         self.peek() == Some(ch)
     }
 
@@ -293,10 +308,12 @@ where
         }
     }
 
-    fn peek(&self) -> Option<char> {
+    fn peek(&mut self) -> Option<char> {
         #[cfg(debug_assertions)]
         if self.peek_count > 1000 {
             panic!("detected infinite loop in parser");
+        } else {
+            self.peek_count += 1
         }
 
         if self.length_limit == Some(0) {
@@ -328,7 +345,11 @@ where
         {
             self.peek_count = 0;
         }
-        debug_assert!(self.in_token, "character not covered by token");
+        debug_assert!(
+            self.in_token,
+            "character {:?} not covered by token",
+            self.peek()
+        );
 
         if let Some(limit) = &mut self.length_limit {
             debug_assert!(*limit != 0);

@@ -5,32 +5,46 @@ use crate::{
 
 macro_rules! star {
     ($state:expr, $production:ident($state_param:ident $(, $p:expr)*)) => {
-        while question!($state, $production(state $(, $p)*)).is_some() {}
+        {
+            let mut start = $state.offset();
+            while question!($state, $production(state $(, $p)*)).is_some() && $state.offset() != start {
+                start = $state.offset();
+            }
+        }
     };
 }
 
 macro_rules! star_fast {
     ($state:expr, $production:ident($state_param:ident $(, $p:expr)*)) => {
-        while question_fast!($state, $production(state $(, $p)*)).is_some() {}
+        {
+            let mut start = $state.offset();
+            while question_fast!($state, $production(state $(, $p)*)).is_some() && $state.offset() != start {
+                start = $state.offset();
+            }
+        }
     };
 }
 
 macro_rules! plus {
     ($state:expr, $production:ident($state_param:ident $(, $p:expr)*)) => {
-        {
-            $production($state $(, $p)*)?;
-            star!($state, $production(state $(, $p)*));
-            Result::<(), ()>::Ok(())
+        match $production($state $(, $p)*) {
+            Ok(()) => {
+                star!($state, $production(state $(, $p)*));
+                Result::<(), ()>::Ok(())
+            },
+            Err(()) => Result::<(), ()>::Err(()),
         }
     };
 }
 
 macro_rules! plus_fast {
     ($state:expr, $production:ident($state_param:ident $(, $p:expr)*)) => {
-        {
-            $production($state $(, $p)*)?;
-            star_fast!($state, $production(state $(, $p)*));
-            Result::<(), ()>::Ok(())
+        match $production($state $(, $p)*) {
+            Ok(()) => {
+                star_fast!($state, $production(state $(, $p)*));
+                Result::<(), ()>::Ok(())
+            },
+            Err(()) => Result::<(), ()>::Err(()),
         }
     };
 }
@@ -110,9 +124,13 @@ fn nb_json<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
 }
 
 fn c_byte_order_mark<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::ByteOrderMark, |state| {
-        state.eat_char(char::BYTE_ORDER_MARK)
-    })
+    if state.is_char(char::BYTE_ORDER_MARK) {
+        state.token(Token::ByteOrderMark, |state| {
+            state.eat_char(char::BYTE_ORDER_MARK)
+        })
+    } else {
+        Ok(())
+    }
 }
 
 fn c_sequence_entry<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
@@ -184,17 +202,15 @@ fn nb_char<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
 }
 
 fn b_break<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::Break, |state| {
-        state.eat_char('\r').or(state.eat_char('\n'))
-    })
+    state.eat_char('\r').or(state.eat_char('\n'))
 }
 
 fn b_as_line_feed<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    b_break(state)
+    state.token(Token::ScalarBreak, b_break)
 }
 
 fn b_non_content<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    b_break(state)
+    state.token(Token::Break, b_break)
 }
 
 fn s_space<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
@@ -428,7 +444,6 @@ fn s_indent<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
 }
 
 fn s_indent_less_than<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    debug_assert_ne!(n, 1);
     state.token(Token::Indent, |state| {
         for _ in 1..n {
             if s_space(state).is_err() {
@@ -451,13 +466,15 @@ fn s_indent_less_or_equal<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(
 }
 
 fn s_separate_in_line<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::Separator, |state| {
-        if plus_fast!(state, s_space(state)).is_ok() || state.is_start_of_line() {
-            Ok(())
-        } else {
-            Err(())
-        }
-    })
+    if state.is(char::space) {
+        state.token(Token::Separator, |state| {
+            Ok(star_fast!(state, s_white(state)))
+        })
+    } else if state.is_start_of_line() {
+        Ok(())
+    } else {
+        Err(())
+    }
 }
 
 fn s_line_prefix<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
@@ -488,12 +505,12 @@ fn l_empty<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), 
 
 fn b_l_trimmed<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
     b_non_content(state)?;
-    star_fast!(state, l_empty(state, n, c));
+    star!(state, l_empty(state, n, c));
     Ok(())
 }
 
 fn b_as_space<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    b_break(state)
+    state.token(Token::ScalarSpace, b_break)
 }
 
 fn b_l_folded<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
@@ -763,7 +780,7 @@ fn ns_double_char<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
 
 fn c_double_quoted<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
     c_double_quote(state)?;
-    state.token(Token::DoubleQuoted, |state| nb_double_text(state, n, c))?;
+    nb_double_text(state, n, c)?;
     c_double_quote(state)
 }
 
@@ -776,8 +793,10 @@ fn nb_double_text<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Resu
 }
 
 fn nb_double_one_line<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    star!(state, nb_double_char(state));
-    Ok(())
+    state.token(Token::DoubleQuoted, |state| {
+        star!(state, nb_double_char(state));
+        Ok(())
+    })
 }
 
 fn s_double_escaped<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
@@ -804,9 +823,11 @@ fn nb_ns_double_in_line<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
 
 fn s_double_next_line<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
     fn line<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-        ns_double_char(state)?;
-        nb_ns_double_in_line(state)?;
-        alt!(state, s_double_next_line(state, n), s_whites(state))
+        state.token(Token::DoubleQuoted, |state| {
+            ns_double_char(state)?;
+            nb_ns_double_in_line(state)?;
+            alt!(state, s_double_next_line(state, n), s_whites(state))
+        })
     }
 
     s_double_break(state, n)?;
@@ -815,7 +836,7 @@ fn s_double_next_line<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), (
 }
 
 fn nb_double_multi_line<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    nb_ns_double_in_line(state)?;
+    state.token(Token::DoubleQuoted, nb_ns_double_in_line)?;
     alt!(state, s_double_next_line(state, n), s_whites(state))
 }
 
@@ -933,14 +954,18 @@ fn nb_ns_plain_in_line<R: Receiver>(state: &mut State<R>, c: Context) -> Result<
 }
 
 fn ns_plain_one_line<R: Receiver>(state: &mut State<R>, c: Context) -> Result<(), ()> {
-    ns_plain_first(state, c)?;
-    nb_ns_plain_in_line(state, c)
+    state.token(Token::Scalar, |state| {
+        ns_plain_first(state, c)?;
+        nb_ns_plain_in_line(state, c)
+    })
 }
 
 fn s_ns_plain_next_line<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
     s_flow_folded(state, n)?;
-    ns_plain_char(state, c)?;
-    nb_ns_plain_in_line(state, c)
+    state.token(Token::Scalar, |state| {
+        ns_plain_char(state, c)?;
+        nb_ns_plain_in_line(state, c)
+    })
 }
 
 fn ns_plain_multi_line<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
@@ -1157,13 +1182,13 @@ fn ns_flow_yaml_content<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -
 }
 
 fn c_flow_json_content<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    alt_fast!(
-        state,
-        c_flow_sequence(state, n, c),
-        c_flow_mapping(state, n, c),
-        c_single_quoted(state, n, c),
-        c_double_quoted(state, n, c)
-    )
+    match state.peek() {
+        Some('[') => c_flow_sequence(state, n, c),
+        Some('{') => c_flow_mapping(state, n, c),
+        Some('\'') => c_single_quoted(state, n, c),
+        Some('"') => c_double_quoted(state, n, c),
+        _ => Err(()),
+    }
 }
 
 fn ns_flow_content<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
@@ -1421,7 +1446,7 @@ fn l_block_sequence<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()>
     }
 
     let m = state.detect_collection_indent(n);
-    plus!(state, entry(state, n + 1 + m))
+    plus!(state, entry(state, n + m))
 }
 
 fn c_l_block_seq_entry<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
@@ -1469,12 +1494,13 @@ fn ns_l_compact_sequence<R: Receiver>(state: &mut State<R>, n: i32) -> Result<()
 
 fn l_block_mapping<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
     fn entry<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
+        state.location();
         s_indent(state, n)?;
         ns_l_block_map_entry(state, n)
     }
 
     let m = state.detect_collection_indent(n);
-    plus!(state, entry(state, n + 1 + m))
+    plus!(state, entry(state, n + m))
 }
 
 fn ns_l_block_map_entry<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
@@ -1649,9 +1675,6 @@ fn l_explicit_document<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
 }
 
 fn l_directive_document<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    if !state.is_char('%') {
-        return Err(());
-    }
     while state.is_char('%') {
         l_directive(state)?;
     }
@@ -1659,32 +1682,25 @@ fn l_directive_document<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
 }
 
 fn l_any_document<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    match state.peek() {
-        Some('%') => l_directive_document(state),
-        Some('-') => l_explicit_document(state),
-        _ => l_bare_document(state),
-    }
+    alt!(state, l_directive_document(state), l_bare_document(state))
 }
 
 pub(super) fn l_yaml_stream<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    fn document<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-        if state.is_char('.') {
-            while state.is_char('.') {
-                l_document_suffix(state)?;
-            }
-            l_document_prefix(state)?;
-            question!(state, l_any_document(state));
-            Ok(())
+    let mut terminated = true;
+    loop {
+        l_document_prefix(state)?;
+        let read_document = if !terminated {
+            question!(state, l_directive_document(state)).is_some()
         } else {
-            l_document_prefix(state)?;
-            question!(state, l_explicit_document(state));
-            Ok(())
+            question!(state, l_any_document(state)).is_some()
+        };
+        terminated = question!(state, l_document_suffix(state)).is_some();
+        if !terminated && !read_document {
+            if state.is_end_of_input() {
+                return Ok(());
+            } else {
+                return Err(());
+            }
         }
     }
-
-    // only try l-document-prefix, l-document-suffix once
-    l_document_prefix(state)?;
-    question!(state, l_any_document(state));
-    star!(state, document(state));
-    Ok(())
 }
