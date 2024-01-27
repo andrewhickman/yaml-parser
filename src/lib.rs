@@ -81,6 +81,10 @@ pub enum Token {
     Literal,
     /// A `>` token.
     Folded,
+    /// A number indicating the indentation of the following block scalar.
+    IndentationIndicator,
+    /// A '-' or '+' token indicating the chomping behaviour of the following block scalar.
+    ChompingIndicator,
     /// A `'` token.
     SingleQuote,
     /// A single quoted scalar.

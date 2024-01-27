@@ -207,12 +207,27 @@ where
 
     fn token(&mut self, token: Token, f: impl Fn(&mut Self) -> Result<(), ()>) -> Result<(), ()> {
         let start = self.location();
-        eprintln!("enter {:?}, {:?}", token, self.location());
+        tracing::trace!("enter {:?}", token);
         debug_assert!(!self.in_token, "nested tokens");
         self.in_token = true;
         let res = f(self);
         self.in_token = false;
-        eprintln!("exit {:?}, {:?}: {:?}", token, self.location(), res);
+
+        if res.is_ok() {
+            tracing::info!(
+                "exit {:?}, {:?}: {:?}",
+                token,
+                &self.text[start.index..self.offset()],
+                res
+            );
+        } else {
+            tracing::debug!(
+                "exit {:?}, {:?}: {:?}",
+                token,
+                &self.text[start.index..self.offset()],
+                res
+            );
+        }
 
         match res {
             Ok(()) => {

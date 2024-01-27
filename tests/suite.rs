@@ -1,24 +1,6 @@
 use std::{fs, path::PathBuf};
 
-use serde::Deserialize;
-use serde_yaml;
 use yaml_parser::{Event, Receiver, Span, Token};
-
-#[derive(Debug, Deserialize)]
-struct Case {
-    name: String,
-    tags: String,
-    #[serde(default)]
-    fail: bool,
-    #[serde(default)]
-    skip: bool,
-    yaml: String,
-    tree: String,
-    #[serde(default)]
-    json: Option<String>,
-    #[serde(default)]
-    dump: String,
-}
 
 #[derive(Default)]
 struct TestReceiver {
@@ -37,32 +19,32 @@ macro_rules! case {
     ($name:ident, $file:literal) => {
         #[test]
         fn $name() {
-            case($file);
+            case($file, true);
+        }
+    };
+    ($name:ident, $file:literal, fail: true) => {
+        #[test]
+        fn $name() {
+            case($file, false);
         }
     };
 }
 
-fn case(file: &str) {
+fn case(name: &str, success: bool) {
+    let _ = tracing_subscriber::fmt::try_init();
+
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("yaml-test-suite")
-        .join("src")
-        .join(file);
-    let yaml = fs::read(path).unwrap();
-    let cases: Vec<Case> = serde_yaml::from_slice(&yaml).unwrap();
+        .join(name)
+        .join("in.yaml");
+    let yaml = fs::read_to_string(path).unwrap();
 
-    for case in cases {
-        if case.skip {
-            // todo
-            continue;
-        }
-
-        let mut receiver = TestReceiver::default();
-        if case.fail {
-            assert!(yaml_parser::parse(&mut receiver, &case.yaml).is_err());
-        } else {
-            assert!(yaml_parser::parse(&mut receiver, &case.yaml).is_ok());
-        }
+    let mut receiver = TestReceiver::default();
+    if success {
+        assert!(yaml_parser::parse(&mut receiver, &yaml).is_ok());
+    } else {
+        assert!(yaml_parser::parse(&mut receiver, &yaml).is_err());
     }
 }
 
-include!("cases/mod.rs");
+include!("suite/cases.rs");
