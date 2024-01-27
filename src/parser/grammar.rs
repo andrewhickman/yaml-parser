@@ -1871,7 +1871,7 @@ fn l_document_suffix<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
 
 #[tracing::instrument(level = "trace", skip(state))]
 fn l_bare_document<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    s_l_block_node(state, -1, Context::BlockIn)
+    state.document(|state| s_l_block_node(state, -1, Context::BlockIn))
 }
 
 #[tracing::instrument(level = "trace", skip(state))]

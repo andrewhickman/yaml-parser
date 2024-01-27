@@ -5,7 +5,7 @@ use core::str::Chars;
 
 use alloc::vec::Vec;
 
-use crate::{Location, Receiver, Span, Token};
+use crate::{Event, Location, Receiver, Span, Token};
 
 /// Parse a YAML stream, emitting events into the given receiver.
 pub fn parse<R: Receiver>(receiver: &mut R, text: &str) -> Result<(), Vec<Diagnostic>> {
@@ -29,6 +29,7 @@ struct State<'t, R> {
     line_offset: usize,
 
     in_token: bool,
+    in_document: bool,
     length_limit: Option<usize>,
 
     #[cfg(debug_assertions)]
@@ -70,12 +71,27 @@ where
             diagnostics: Vec::new(),
             receiver,
             in_token: false,
+            in_document: false,
             length_limit: None,
             alt_depth: 0,
             line_number: 0,
             line_offset: 0,
             peek_count: 0,
         }
+    }
+
+    fn document(
+        &mut self,
+        f: impl Fn(&mut Self) -> Result<(), ()>,
+    ) -> Result<(), ()> {
+        self.receiver
+            .event(Event::DocumentStart {}, self.span(self.location()));
+        self.in_document = true;
+        let res = f(self);
+        self.in_document = false;
+        self.receiver
+            .event(Event::DocumentEnd {}, self.span(self.location()));
+        res
     }
 
     fn detect_scalar_indent(&self, n: i32) -> i32 {
@@ -158,7 +174,6 @@ where
         let line_number = self.line_number;
         let line_offset = self.line_offset;
         let length_limit = self.length_limit;
-        let in_token = self.in_token;
 
         self.alt_depth += 1;
         let res = f(self);
@@ -181,7 +196,6 @@ where
                 self.line_number = line_number;
                 self.line_offset = line_offset;
                 self.length_limit = length_limit;
-                self.in_token = in_token;
                 Err(())
             }
         }
@@ -302,7 +316,7 @@ where
     fn is_end_of_document(&self) -> bool {
         self.is_start_of_line()
             && (self.is_str("---") || self.is_str("..."))
-            && matches!(self.peek_nth(3), None | Some('\r' | '\n' | '\t' | ' '))
+            && matches!(self.iter.clone().nth(3), None | Some('\r' | '\n' | '\t' | ' '))
     }
 
     fn is_end_of_input(&self) -> bool {
@@ -330,18 +344,7 @@ where
     }
 
     fn peek(&mut self) -> Option<char> {
-        #[cfg(debug_assertions)]
-        if self.peek_count > 1000 {
-            panic!("detected infinite loop in parser");
-        } else {
-            self.peek_count += 1
-        }
-
-        if self.length_limit == Some(0) {
-            return None;
-        }
-
-        self.iter.clone().next()
+        self.peek_nth(0)
     }
 
     fn peek_next(&self) -> Option<char> {
@@ -355,6 +358,10 @@ where
         }
 
         if matches!(self.length_limit, Some(limit) if n <= limit) {
+            return None;
+        }
+
+        if self.in_document && self.is_end_of_document() {
             return None;
         }
 
