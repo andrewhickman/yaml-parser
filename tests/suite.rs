@@ -32,11 +32,18 @@ macro_rules! case {
             case($file, false);
         }
     };
-    ($name:ident, $file:literal, skip: true $(, fail: true)?) => {
+    ($name:ident, $file:literal, skip: true) => {
         #[test]
         #[ignore]
         fn $name() {
             case($file, true);
+        }
+    };
+    ($name:ident, $file:literal, skip: true, fail: true) => {
+        #[test]
+        #[ignore]
+        fn $name() {
+            case($file, false);
         }
     };
 }
