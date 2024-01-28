@@ -327,7 +327,7 @@ case!(case_s4gj, "S4GJ", fail: true);
 case!(case_s4jq, "S4JQ");
 case!(case_s4t7, "S4T7");
 case!(case_s7bg, "S7BG");
-case!(case_s98z, "S98Z", skip: true, fail: true);
+case!(case_s98z, "S98Z", fail: true);
 case!(case_s9e8, "S9E8");
 case!(case_sbg9, "SBG9");
 case!(case_sf5v, "SF5V", fail: true);

@@ -1157,7 +1157,11 @@ fn nb_double_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(
     }
 
     nb_ns_double_in_line(parser)?;
-    alt!(parser, s_double_next_line(parser, n), trailing_whites(parser))
+    alt!(
+        parser,
+        s_double_next_line(parser, n),
+        trailing_whites(parser)
+    )
 }
 
 #[cfg_attr(
@@ -1237,10 +1241,7 @@ fn nb_ns_single_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     Ok(())
 }
 
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "info", skip(parser))
-)]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "info", skip(parser)))]
 fn s_single_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     fn trailing_whites<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
         parser.token(Token::Separator, s_whites)
@@ -1271,7 +1272,11 @@ fn nb_single_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(
     }
 
     nb_ns_single_in_line(parser)?;
-    alt!(parser, s_single_next_line(parser, n), trailing_whites(parser))
+    alt!(
+        parser,
+        s_single_next_line(parser, n),
+        trailing_whites(parser)
+    )
 }
 
 #[cfg_attr(
@@ -1791,9 +1796,13 @@ fn c_b_block_header<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(i32,
 
     s_b_comment(parser)?;
 
-    let m = m.unwrap_or_else(|| parser.detect_scalar_indent(n));
-    tracing::warn!("scalar indent n={n} m={m}");
-    Ok((m, t))
+    match m {
+        Some(m) => Ok((m, t)),
+        None => {
+            let m = parser.detect_scalar_indent(n)?;
+            Ok((m, t))
+        }
+    }
 }
 
 #[cfg_attr(
@@ -1854,8 +1863,7 @@ fn b_chomped_last<R: Receiver>(parser: &mut Parser<R>, t: Chomping) -> Result<()
 )]
 fn l_chomped_empty<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) -> Result<(), ()> {
     match t {
-        Chomping::Strip => l_strip_empty(parser, n),
-        Chomping::Clip => l_strip_empty(parser, n),
+        Chomping::Strip | Chomping::Clip => l_strip_empty(parser, n),
         Chomping::Keep => l_keep_empty(parser, n),
     }
 }

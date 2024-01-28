@@ -94,21 +94,25 @@ where
         res
     }
 
-    fn detect_scalar_indent(&self, n: i32) -> i32 {
+    fn detect_scalar_indent(&self, n: i32) -> Result<i32, ()> {
         let mut iter = self.iter.clone();
         let mut max_len = 0i32;
         let mut len = 0i32;
 
-        loop {
+        let m = loop {
             match iter.next() {
                 Some(' ') => len += 1,
                 Some('\r' | '\n') => {
                     max_len = max_len.max(len);
                     len = 0;
                 }
-                _ => return (max_len.max(len) - n).max(1),
+                Some(_) if len < max_len => return Err(()),
+                Some(_) => break len,
+                None => break max_len, // is this case correct / tested ??
             }
-        }
+        };
+
+        Ok((m - n).max(1))
     }
 
     fn detect_collection_indent(&self, n: i32) -> i32 {
@@ -206,6 +210,7 @@ where
 
         match res {
             Ok(()) => {
+                #[cfg(feature = "tracing")]
                 tracing::info!(
                     "token {:?}, {:?}",
                     token,
