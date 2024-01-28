@@ -1,7 +1,6 @@
 $TestSuite = "$PSScriptRoot/../yaml-test-suite";
 
 $Failing = @(
-    "case_g4rs",
     "case_hre5",
     "case_j3bt",
     "case_nat4",

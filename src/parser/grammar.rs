@@ -455,7 +455,7 @@ fn ns_esc_8_bit<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
 )]
 fn ns_esc_16_bit<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     let start = parser.location();
-    parser.eat_char('x')?;
+    parser.eat_char('u')?;
     if (0..4).try_for_each(|_| ns_hex_digit(parser)).is_ok() {
         Ok(())
     } else {
@@ -473,12 +473,12 @@ fn ns_esc_16_bit<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
 )]
 fn ns_esc_32_bit<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     let start = parser.location();
-    parser.eat_char('x')?;
+    parser.eat_char('U')?;
     if (0..8).try_for_each(|_| ns_hex_digit(parser)).is_ok() {
         Ok(())
     } else {
         parser.diagnostics.push(Diagnostic {
-            message: "invalid 16 bit escape",
+            message: "invalid 32 bit escape",
             span: parser.span(start),
         });
         Err(())

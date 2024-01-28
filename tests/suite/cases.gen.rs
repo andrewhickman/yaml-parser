@@ -211,7 +211,7 @@ case!(case_fq7f, "FQ7F");
 case!(case_frk4, "FRK4");
 case!(case_fta2, "FTA2");
 case!(case_fup4, "FUP4");
-case!(case_g4rs, "G4RS", skip: true);
+case!(case_g4rs, "G4RS");
 case!(case_g5u8, "G5U8", fail: true);
 case!(case_g7je, "G7JE", fail: true);
 case!(case_g992, "G992");
