@@ -22,6 +22,7 @@ struct Parser<'t, R> {
 
     tokens: Vec<(Token, Span)>,
     diagnostics: Vec<Diagnostic>,
+    yaml_version: Option<&'t str>,
 
     receiver: &'t mut R,
     alt_depth: u32,
@@ -69,6 +70,7 @@ where
             iter: text.chars(),
             tokens: Vec::new(),
             diagnostics: Vec::new(),
+            yaml_version: None,
             receiver,
             in_token: false,
             in_document: false,
@@ -86,6 +88,7 @@ where
         self.in_document = true;
         let res = f(self);
         self.in_document = false;
+        self.yaml_version = None;
         self.receiver
             .event(Event::DocumentEnd {}, self.span(self.location()));
         res

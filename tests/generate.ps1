@@ -1,12 +1,9 @@
 $TestSuite = "$PSScriptRoot/../yaml-test-suite";
 
 $Failing = @(
-    "case_hre5",
-    "case_j3bt",
     "case_nat4",
     "case_qlj7",
-    "case_s98z",
-    "case_sf5v"
+    "case_s98z"
 )
 
 Push-Location $TestSuite

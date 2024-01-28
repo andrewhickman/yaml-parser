@@ -782,6 +782,10 @@ fn ns_directive_parameter<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()>
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn ns_yaml_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    if parser.yaml_version.is_some() {
+        return Err(());
+    }
+
     parser.token(Token::DirectiveName, |parser| parser.eat_str("YAML"))?;
     s_separate_in_line(parser)?;
     ns_yaml_version(parser)
@@ -792,11 +796,15 @@ fn ns_yaml_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn ns_yaml_version<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    let start = parser.offset();
     parser.token(Token::YamlVersion, |parser| {
         plus_fast!(parser, ns_dec_digit(parser))?;
         parser.eat_char('.')?;
         plus_fast!(parser, ns_dec_digit(parser))
-    })
+    })?;
+    let end = parser.offset();
+    parser.yaml_version = Some(&parser.text[start..end]);
+    Ok(())
 }
 
 #[cfg_attr(
@@ -1144,8 +1152,12 @@ fn s_double_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(),
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn nb_double_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    fn trailing_whites<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+        parser.token(Token::Separator, s_whites)
+    }
+
     nb_ns_double_in_line(parser)?;
-    alt!(parser, s_double_next_line(parser, n), s_whites(parser))
+    alt!(parser, s_double_next_line(parser, n), trailing_whites(parser))
 }
 
 #[cfg_attr(
