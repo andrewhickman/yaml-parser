@@ -93,27 +93,17 @@ where
 
     fn detect_scalar_indent(&self, n: i32) -> i32 {
         let mut iter = self.iter.clone();
-        let mut longest_empty = 0;
-        let mut len = 0;
+        let mut max_len = 0i32;
+        let mut len = 0i32;
 
         loop {
             match iter.next() {
                 Some(' ') => len += 1,
                 Some('\r' | '\n') => {
-                    if len > longest_empty {
-                        longest_empty = len;
-                    }
+                    max_len = max_len.max(len);
                     len = 0;
                 }
-                _ => {
-                    break if len > n {
-                        len - n
-                    } else if longest_empty > n {
-                        longest_empty - n
-                    } else {
-                        1
-                    }
-                }
+                _ => return (max_len.max(len) - n).max(1),
             }
         }
     }
