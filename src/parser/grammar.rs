@@ -1714,7 +1714,7 @@ fn l_block_mapping<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()
 
 #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
 fn ns_l_block_map_entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    if parser.is_char('?') {
+    if parser.is_char('?') && !parser.next_is(char::non_space) {
         c_l_block_map_explicit_entry(parser, n)
     } else {
         ns_l_block_map_implicit_entry(parser, n)
@@ -1730,7 +1730,7 @@ fn c_l_block_map_explicit_entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> 
 #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
 fn c_l_block_map_explicit_key<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     c_mapping_key(parser)?;
-    if !parser.is(char::non_space) {
+    if parser.is(char::non_space) {
         return Err(());
     }
     s_l_block_indented(parser, n, Context::BlockOut)
@@ -1740,6 +1740,9 @@ fn c_l_block_map_explicit_key<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Re
 fn l_block_map_explicit_value<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     s_indent(parser, n)?;
     c_mapping_value(parser)?;
+    if parser.is(char::non_space) {
+        return Err(());
+    }
     s_l_block_indented(parser, n, Context::BlockOut)
 }
 
@@ -1766,6 +1769,10 @@ fn c_l_block_map_implicit_value<R: Receiver>(parser: &mut Parser<R>, n: i32) -> 
     }
 
     c_mapping_value(parser)?;
+    if parser.is(char::non_space) {
+        return Err(());
+    }
+
     alt!(
         parser,
         s_l_block_node(parser, n, Context::BlockOut),
@@ -1849,13 +1856,6 @@ fn s_l_block_collection<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context)
             anchor(state),
             tag(state)
         )
-        // alt!(
-        //     parser,
-        //     c_ns_properties(parser, n, c),
-        //     c_ns_tag_property(parser),
-        //     c_ns_anchor_property(parser)
-        // )?;
-        // s_l_comments(parser)
     }
 
     question!(parser, collection_props(parser, n + 1, c));
@@ -1882,8 +1882,8 @@ fn c_directives_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
 #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
 fn c_document_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     parser.token(Token::DocumentEnd, |parser| {
-        parser.eat_str("---")?;
-        if !parser.is(char::non_space) {
+        parser.eat_str("...")?;
+        if parser.is(char::non_space) {
             return Err(());
         }
         Ok(())

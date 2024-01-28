@@ -4,6 +4,7 @@ use yaml_parser::{Event, Receiver, Span, Token};
 
 #[derive(Default)]
 struct TestReceiver {
+    source: String,
     tokens: Vec<(Token, Span)>,
 }
 
@@ -15,6 +16,8 @@ impl Receiver for TestReceiver {
     }
 
     fn token(&mut self, token: Token, span: Span) {
+        #[cfg(feature = "tracing")]
+        tracing::info!("token: {:?} {:?}", token, &self.source[span.start.index..span.end.index]);
         self.tokens.push((token, span))
     }
 }
@@ -57,7 +60,10 @@ fn case(name: &str, success: bool) {
         .join("in.yaml");
     let yaml = fs::read_to_string(path).unwrap();
 
-    let mut receiver = TestReceiver::default();
+    let mut receiver = TestReceiver {
+        source: yaml.clone(),
+        tokens: Vec::new(),
+    };
     if success {
         assert!(yaml_parser::parse(&mut receiver, &yaml).is_ok());
     } else {

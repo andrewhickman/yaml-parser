@@ -119,9 +119,6 @@ where
     }
 
     fn detect_collection_indent(&self, n: i32) -> i32 {
-        // l+block-sequence
-        // l+block-mapping
-
         let mut iter = self.iter.clone();
         let mut len = 0;
         let mut is_comment = false;
@@ -142,7 +139,6 @@ where
 
     fn detect_entry_indent(&self, n: i32) -> i32 {
         debug_assert!(matches!(self.peek_prev(), Some('-' | '?' | ':')));
-        // ("?" | ":" | "-") s-l+block-indented
 
         let mut iter = self.iter.clone();
         let mut len = if n == -1 { 1 } else { 0 };
@@ -219,30 +215,30 @@ where
     fn token(&mut self, token: Token, f: impl Fn(&mut Self) -> Result<(), ()>) -> Result<(), ()> {
         let start = self.location();
 
-        #[cfg(feature = "tracing")]
-        tracing::debug!("enter {:?}", token);
+        // #[cfg(feature = "tracing")]
+        // tracing::debug!("enter {:?}", token);
 
         debug_assert!(!self.in_token, "nested tokens");
         self.in_token = true;
         let res = f(self);
         self.in_token = false;
 
-        #[cfg(feature = "tracing")]
-        if res.is_ok() {
-            tracing::info!(
-                "exit {:?}, {:?}: {:?}",
-                token,
-                &self.text[start.index..self.offset()],
-                res
-            );
-        } else {
-            tracing::debug!(
-                "exit {:?}, {:?}: {:?}",
-                token,
-                &self.text[start.index..self.offset()],
-                res
-            );
-        }
+        // #[cfg(feature = "tracing")]
+        // if res.is_ok() {
+        //     tracing::info!(
+        //         "exit {:?}, {:?}: {:?}",
+        //         token,
+        //         &self.text[start.index..self.offset()],
+        //         res
+        //     );
+        // } else {
+        //     tracing::debug!(
+        //         "exit {:?}, {:?}: {:?}",
+        //         token,
+        //         &self.text[start.index..self.offset()],
+        //         res
+        //     );
+        // }
 
         match res {
             Ok(()) => {
