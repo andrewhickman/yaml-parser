@@ -1153,7 +1153,7 @@ fn nb_double_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn c_quoted_quote<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_str("''")
+    parser.token(Token::QuotedQuote, |parser| parser.eat_str("''"))
 }
 
 #[cfg_attr(
@@ -1164,7 +1164,7 @@ fn nb_single_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     if parser.is_char('\'') {
         c_quoted_quote(parser)
     } else {
-        nb_json(parser)
+        parser.token(Token::SingleQuoted, nb_json)
     }
 }
 
@@ -1186,7 +1186,7 @@ fn ns_single_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
 )]
 fn c_single_quoted<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
     c_single_quote(parser)?;
-    parser.token(Token::SingleQuoted, |parser| nb_single_text(parser, n, c))?;
+    nb_single_text(parser, n, c)?;
     c_single_quote(parser)
 }
 
@@ -1217,7 +1217,7 @@ fn nb_single_one_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
 )]
 fn nb_ns_single_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     fn char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-        s_whites(parser)?;
+        parser.token(Token::SingleQuoted, s_whites)?;
         ns_single_char(parser)
     }
 
@@ -1230,10 +1230,18 @@ fn nb_ns_single_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn s_single_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    fn trailing_whites<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+        parser.token(Token::Separator, s_whites)
+    }
+
     fn line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
         ns_double_char(parser)?;
         nb_ns_single_in_line(parser)?;
-        alt!(parser, s_single_next_line(parser, n), s_whites(parser))
+        alt!(
+            parser,
+            s_single_next_line(parser, n),
+            trailing_whites(parser)
+        )
     }
 
     s_flow_folded(parser, n)?;

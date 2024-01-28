@@ -91,6 +91,8 @@ pub enum Token {
     SingleQuote,
     /// A single quoted scalar.
     SingleQuoted,
+    /// A `''` token in a single quoted string.
+    QuotedQuote,
     /// A `"` token.
     DoubleQuote,
     /// A single line of double quoted scalar.
