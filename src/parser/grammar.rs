@@ -1386,17 +1386,17 @@ fn ns_s_flow_seq_entries<R: Receiver>(
     n: i32,
     c: Context,
 ) -> Result<(), ()> {
-    fn entry<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
-        c_collect_entry(parser)?;
-        question!(parser, s_separate(parser, n, c));
-        // todo unroll recursion
-        question!(parser, ns_s_flow_seq_entries(parser, n, c));
-        Ok(())
-    }
-
     ns_flow_seq_entry(parser, n, c)?;
     question!(parser, s_separate(parser, n, c));
-    question!(parser, entry(parser, n, c));
+    while parser.is_char(',') {
+        c_collect_entry(parser)?;
+        question!(parser, s_separate(parser, n, c));
+        if question!(parser, ns_flow_seq_entry(parser, n, c)).is_some() {
+            question!(parser, s_separate(parser, n, c));
+        } else {
+            break;
+        }
+    }
     Ok(())
 }
 
@@ -1432,16 +1432,17 @@ fn ns_s_flow_map_entries<R: Receiver>(
     n: i32,
     c: Context,
 ) -> Result<(), ()> {
-    fn entry<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
-        c_collect_entry(parser)?;
-        question!(parser, s_separate(parser, n, c));
-        question!(parser, ns_s_flow_map_entries(parser, n, c));
-        Ok(())
-    }
-
     ns_flow_map_entry(parser, n, c)?;
     question!(parser, s_separate(parser, n, c));
-    question_fast!(parser, entry(parser, n, c));
+    while parser.is_char(',') {
+        c_collect_entry(parser)?;
+        question!(parser, s_separate(parser, n, c));
+        if question!(parser, ns_flow_map_entry(parser, n, c)).is_some() {
+            question!(parser, s_separate(parser, n, c));
+        } else {
+            break;
+        }
+    }
     Ok(())
 }
 
