@@ -9,14 +9,14 @@ use crate::{Event, Location, Receiver, Span, Token};
 
 /// Parse a YAML stream, emitting events into the given receiver.
 pub fn parse<R: Receiver>(receiver: &mut R, text: &str) -> Result<(), Vec<Diagnostic>> {
-    let mut state = State::new(receiver, text);
-    match grammar::l_yaml_stream(&mut state) {
+    let mut parser = Parser::new(receiver, text);
+    match grammar::l_yaml_stream(&mut parser) {
         Ok(()) => Ok(()),
-        Err(()) => Err(state.diagnostics),
+        Err(()) => Err(parser.diagnostics),
     }
 }
 
-struct State<'t, R> {
+struct Parser<'t, R> {
     text: &'t str,
     iter: Chars<'t>,
 
@@ -59,12 +59,12 @@ pub struct Diagnostic {
     pub span: Span,
 }
 
-impl<'t, R> State<'t, R>
+impl<'t, R> Parser<'t, R>
 where
     R: Receiver,
 {
     fn new(receiver: &'t mut R, text: &'t str) -> Self {
-        State {
+        Parser {
             text,
             iter: text.chars(),
             tokens: Vec::new(),
@@ -80,10 +80,7 @@ where
         }
     }
 
-    fn document(
-        &mut self,
-        f: impl Fn(&mut Self) -> Result<(), ()>,
-    ) -> Result<(), ()> {
+    fn document(&mut self, f: impl Fn(&mut Self) -> Result<(), ()>) -> Result<(), ()> {
         self.receiver
             .event(Event::DocumentStart {}, self.span(self.location()));
         self.in_document = true;
@@ -221,12 +218,16 @@ where
 
     fn token(&mut self, token: Token, f: impl Fn(&mut Self) -> Result<(), ()>) -> Result<(), ()> {
         let start = self.location();
-        tracing::trace!("enter {:?}", token);
+
+        #[cfg(feature = "tracing")]
+        tracing::debug!("enter {:?}", token);
+
         debug_assert!(!self.in_token, "nested tokens");
         self.in_token = true;
         let res = f(self);
         self.in_token = false;
 
+        #[cfg(feature = "tracing")]
         if res.is_ok() {
             tracing::info!(
                 "exit {:?}, {:?}: {:?}",
@@ -316,7 +317,10 @@ where
     fn is_end_of_document(&self) -> bool {
         self.is_start_of_line()
             && (self.is_str("---") || self.is_str("..."))
-            && matches!(self.iter.clone().nth(3), None | Some('\r' | '\n' | '\t' | ' '))
+            && matches!(
+                self.iter.clone().nth(3),
+                None | Some('\r' | '\n' | '\t' | ' ')
+            )
     }
 
     fn is_end_of_input(&self) -> bool {
@@ -357,7 +361,7 @@ where
             panic!("detected infinite loop in parser");
         }
 
-        if matches!(self.length_limit, Some(limit) if n <= limit) {
+        if matches!(self.length_limit, Some(limit) if n > limit) {
             return None;
         }
 

@@ -1,35 +1,35 @@
 use crate::{
-    parser::{char, Chomping, Context, Diagnostic, State},
+    parser::{char, Chomping, Context, Diagnostic, Parser},
     Receiver, Token,
 };
 
 macro_rules! star {
-    ($state:expr, $production:ident($state_param:ident $(, $p:expr)*)) => {
+    ($parser:expr, $production:ident($parser_param:ident $(, $p:expr)*)) => {
         {
-            let mut start = $state.offset();
-            while question!($state, $production(state $(, $p)*)).is_some() && $state.offset() != start {
-                start = $state.offset();
+            let mut start = $parser.offset();
+            while question!($parser, $production(parser $(, $p)*)).is_some() && $parser.offset() != start {
+                start = $parser.offset();
             }
         }
     };
 }
 
 macro_rules! star_fast {
-    ($state:expr, $production:ident($state_param:ident $(, $p:expr)*)) => {
+    ($parser:expr, $production:ident($parser_param:ident $(, $p:expr)*)) => {
         {
-            let mut start = $state.offset();
-            while question_fast!($state, $production(state $(, $p)*)).is_some() && $state.offset() != start {
-                start = $state.offset();
+            let mut start = $parser.offset();
+            while question_fast!($parser, $production(parser $(, $p)*)).is_some() && $parser.offset() != start {
+                start = $parser.offset();
             }
         }
     };
 }
 
 macro_rules! plus {
-    ($state:expr, $production:ident($state_param:ident $(, $p:expr)*)) => {
-        match $production($state $(, $p)*) {
+    ($parser:expr, $production:ident($parser_param:ident $(, $p:expr)*)) => {
+        match $production($parser $(, $p)*) {
             Ok(()) => {
-                star!($state, $production(state $(, $p)*));
+                star!($parser, $production(parser $(, $p)*));
                 Result::<(), ()>::Ok(())
             },
             Err(()) => Result::<(), ()>::Err(()),
@@ -38,10 +38,10 @@ macro_rules! plus {
 }
 
 macro_rules! plus_fast {
-    ($state:expr, $production:ident($state_param:ident $(, $p:expr)*)) => {
-        match $production($state $(, $p)*) {
+    ($parser:expr, $production:ident($parser_param:ident $(, $p:expr)*)) => {
+        match $production($parser $(, $p)*) {
             Ok(()) => {
-                star_fast!($state, $production(state $(, $p)*));
+                star_fast!($parser, $production(parser $(, $p)*));
                 Result::<(), ()>::Ok(())
             },
             Err(()) => Result::<(), ()>::Err(()),
@@ -50,14 +50,14 @@ macro_rules! plus_fast {
 }
 
 macro_rules! question {
-    ($state:expr, $production:ident($state_param:ident $(, $p:expr)*)) => {
+    ($parser:expr, $production:ident($parser_param:ident $(, $p:expr)*)) => {
         {
-            let start = $state.location();
-            let res = $state.with_rollback(|state| $production(state $(, $p)*));
+            let start = $parser.location();
+            let res = $parser.with_rollback(|parser| $production(parser $(, $p)*));
             match res {
                 Ok(r) => Some(r),
                 Err(()) => {
-                    debug_assert_eq!(start, $state.location());
+                    debug_assert_eq!(start, $parser.location());
                     None
                 }
             }
@@ -66,14 +66,14 @@ macro_rules! question {
 }
 
 macro_rules! question_fast {
-    ($state:expr, $production:ident($state_param:ident $(, $p:expr)*)) => {
+    ($parser:expr, $production:ident($parser_param:ident $(, $p:expr)*)) => {
         {
-            let start = $state.location();
-            let res = $production($state $(, $p)*);
+            let start = $parser.location();
+            let res = $production($parser $(, $p)*);
             match res {
                 Ok(r) => Some(r),
                 Err(()) => {
-                    debug_assert_eq!(start, $state.location());
+                    debug_assert_eq!(start, $parser.location());
                     None
                 }
             }
@@ -82,17 +82,17 @@ macro_rules! question_fast {
 }
 
 macro_rules! alt {
-    ($state:expr, $($production:ident($state_param:ident $(, $p:expr)*)),*) => {
+    ($parser:expr, $($production:ident($parser_param:ident $(, $p:expr)*)),*) => {
         'alt: {
-            let start = $state.location();
+            let start = $parser.location();
 
             $(
-                match $state.with_rollback(|state| $production(state $(, $p)*)) {
+                match $parser.with_rollback(|parser| $production(parser $(, $p)*)) {
                     Ok(r) => break 'alt Ok(r),
                     Err(()) => (),
                 }
 
-                debug_assert_eq!(start, $state.location());
+                debug_assert_eq!(start, $parser.location());
             )*
 
             break 'alt Err(())
@@ -101,17 +101,17 @@ macro_rules! alt {
 }
 
 macro_rules! alt_fast {
-    ($state:expr, $($production:ident($state_param:ident $(, $p:expr)*)),*) => {
+    ($parser:expr, $($production:ident($parser_param:ident $(, $p:expr)*)),*) => {
         'alt: {
-            let start = $state.location();
+            let start = $parser.location();
 
             $(
-                match $production($state $(, $p)*) {
+                match $production($parser $(, $p)*) {
                     Ok(r) => break 'alt Ok(r),
                     Err(()) => (),
                 }
 
-                debug_assert_eq!(start, $state.location());
+                debug_assert_eq!(start, $parser.location());
             )*
 
             break 'alt Err(())
@@ -119,173 +119,173 @@ macro_rules! alt_fast {
     };
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn nb_json<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat(|ch| matches!(ch, '\x09' | '\x20'..='\u{10ffff}'))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn nb_json<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat(|ch| matches!(ch, '\x09' | '\x20'..='\u{10ffff}'))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_byte_order_mark<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    if state.is_char(char::BYTE_ORDER_MARK) {
-        state.token(Token::ByteOrderMark, |state| {
-            state.eat_char(char::BYTE_ORDER_MARK)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_byte_order_mark<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    if parser.is_char(char::BYTE_ORDER_MARK) {
+        parser.token(Token::ByteOrderMark, |parser| {
+            parser.eat_char(char::BYTE_ORDER_MARK)
         })
     } else {
         Ok(())
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_sequence_entry<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::SequenceEntry, |state| state.eat_char('-'))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_sequence_entry<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::SequenceEntry, |parser| parser.eat_char('-'))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_mapping_key<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::MappingKey, |state| state.eat_char('?'))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_mapping_key<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::MappingKey, |parser| parser.eat_char('?'))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_mapping_value<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::MappingValue, |state| state.eat_char(':'))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_mapping_value<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::MappingValue, |parser| parser.eat_char(':'))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_collect_entry<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::CollectionEntry, |state| state.eat_char(','))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_collect_entry<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::CollectionEntry, |parser| parser.eat_char(','))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_sequence_start<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::SequenceStart, |state| state.eat_char('['))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_sequence_start<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::SequenceStart, |parser| parser.eat_char('['))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_sequence_end<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::SequenceEnd, |state| state.eat_char(']'))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_sequence_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::SequenceEnd, |parser| parser.eat_char(']'))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_mapping_start<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::MappingStart, |state| state.eat_char('{'))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_mapping_start<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::MappingStart, |parser| parser.eat_char('{'))
 }
 
-fn c_mapping_end<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::MappingEnd, |state| state.eat_char('}'))
+fn c_mapping_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::MappingEnd, |parser| parser.eat_char('}'))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_comment<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::Comment, |state| state.eat_char('#'))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_comment<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::Comment, |parser| parser.eat_char('#'))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_anchor<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::Anchor, |state| state.eat_char('&'))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_anchor<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::Anchor, |parser| parser.eat_char('&'))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_alias<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::Alias, |state| state.eat_char('*'))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_alias<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::Alias, |parser| parser.eat_char('*'))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_literal<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::Literal, |state| state.eat_char('|'))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_literal<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::Literal, |parser| parser.eat_char('|'))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_folded<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::Folded, |state| state.eat_char('>'))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_folded<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::Folded, |parser| parser.eat_char('>'))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_single_quote<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::SingleQuote, |state| state.eat_char('\''))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_single_quote<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::SingleQuote, |parser| parser.eat_char('\''))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_double_quote<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::DoubleQuote, |state| state.eat_char('"'))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_double_quote<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::DoubleQuote, |parser| parser.eat_char('"'))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_directive<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::Directive, |state| state.eat_char('%'))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::Directive, |parser| parser.eat_char('%'))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn nb_char<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat(char::non_break)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn nb_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat(char::non_break)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn b_break<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('\r').or(state.eat_char('\n'))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn b_break<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('\r').or(parser.eat_char('\n'))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn b_as_line_feed<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::ScalarBreak, b_break)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn b_as_line_feed<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::ScalarBreak, b_break)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn b_non_content<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::Break, b_break)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn b_non_content<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::Break, b_break)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_space<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char(' ')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_space<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char(' ')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_white<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat(char::space)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_white<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat(char::space)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_whites<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    star_fast!(state, s_white(state));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_whites<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    star_fast!(parser, s_white(parser));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_char<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat(char::non_space)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat(char::non_space)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_dec_digit<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat(|ch| ch.is_ascii_digit())
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_dec_digit<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat(|ch| ch.is_ascii_digit())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_hex_digit<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat(|ch| ch.is_ascii_hexdigit())
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_hex_digit<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat(|ch| ch.is_ascii_hexdigit())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_word_char<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat(|ch| ch.is_ascii_alphanumeric() || ch == '-')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_word_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat(|ch| ch.is_ascii_alphanumeric() || ch == '-')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_uri_char<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    if state.is_char('%') {
-        let start = state.location();
-        state.eat_char('%').unwrap();
-        if ns_hex_digit(state).is_ok() && ns_hex_digit(state).is_ok() {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_uri_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    if parser.is_char('%') {
+        let start = parser.location();
+        parser.eat_char('%').unwrap();
+        if ns_hex_digit(parser).is_ok() && ns_hex_digit(parser).is_ok() {
             Ok(())
         } else {
-            state.diagnostics.push(Diagnostic {
+            parser.diagnostics.push(Diagnostic {
                 message: "invalid percent escape",
-                span: state.span(start),
+                span: parser.span(start),
             });
             Err(())
         }
     } else {
-        state.eat(|ch| {
+        parser.eat(|ch| {
             ch.is_ascii_alphanumeric()
                 || matches!(
                     ch,
@@ -314,193 +314,193 @@ fn ns_uri_char<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_tag_char<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    if state.is_char('!') || state.is(char::flow_indicator) {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_tag_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    if parser.is_char('!') || parser.is(char::flow_indicator) {
         Err(())
     } else {
-        ns_uri_char(state)
+        ns_uri_char(parser)
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_escape<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('\\')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_escape<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('\\')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_null<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('0')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_null<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('0')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_bell<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('a')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_bell<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('a')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_backspace<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('a')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_backspace<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('a')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_horizontal_tab<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat(|ch| matches!(ch, 't' | '\t'))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_horizontal_tab<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat(|ch| matches!(ch, 't' | '\t'))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_line_feed<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('n')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_line_feed<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('n')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_vertical_tab<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('v')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_vertical_tab<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('v')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_form_feed<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('f')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_form_feed<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('f')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_carriage_return<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('r')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_carriage_return<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('r')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_escape<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('e')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_escape<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('e')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_space<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char(' ')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_space<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char(' ')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_double_quote<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('"')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_double_quote<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('"')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_slash<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('/')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_slash<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('/')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_backslash<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('\\')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_backslash<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('\\')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_next_line<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('N')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_next_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('N')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_non_breaking_space<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('_')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_non_breaking_space<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('_')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_line_separator<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('L')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_line_separator<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('L')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_paragraph_separator<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('P')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_paragraph_separator<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('P')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_8_bit<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    let start = state.location();
-    state.eat_char('x')?;
-    if (0..2).try_for_each(|_| ns_hex_digit(state)).is_ok() {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_8_bit<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    let start = parser.location();
+    parser.eat_char('x')?;
+    if (0..2).try_for_each(|_| ns_hex_digit(parser)).is_ok() {
         Ok(())
     } else {
-        state.diagnostics.push(Diagnostic {
+        parser.diagnostics.push(Diagnostic {
             message: "invalid 8 bit escape",
-            span: state.span(start),
+            span: parser.span(start),
         });
         Err(())
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_16_bit<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    let start = state.location();
-    state.eat_char('x')?;
-    if (0..4).try_for_each(|_| ns_hex_digit(state)).is_ok() {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_16_bit<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    let start = parser.location();
+    parser.eat_char('x')?;
+    if (0..4).try_for_each(|_| ns_hex_digit(parser)).is_ok() {
         Ok(())
     } else {
-        state.diagnostics.push(Diagnostic {
+        parser.diagnostics.push(Diagnostic {
             message: "invalid 16 bit escape",
-            span: state.span(start),
+            span: parser.span(start),
         });
         Err(())
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_esc_32_bit<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    let start = state.location();
-    state.eat_char('x')?;
-    if (0..8).try_for_each(|_| ns_hex_digit(state)).is_ok() {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_esc_32_bit<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    let start = parser.location();
+    parser.eat_char('x')?;
+    if (0..8).try_for_each(|_| ns_hex_digit(parser)).is_ok() {
         Ok(())
     } else {
-        state.diagnostics.push(Diagnostic {
+        parser.diagnostics.push(Diagnostic {
             message: "invalid 16 bit escape",
-            span: state.span(start),
+            span: parser.span(start),
         });
         Err(())
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_ns_esc_char<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    c_escape(state)?;
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_ns_esc_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    c_escape(parser)?;
     alt_fast!(
-        state,
-        ns_esc_null(state),
-        ns_esc_bell(state),
-        ns_esc_backspace(state),
-        ns_esc_horizontal_tab(state),
-        ns_esc_line_feed(state),
-        ns_esc_vertical_tab(state),
-        ns_esc_form_feed(state),
-        ns_esc_carriage_return(state),
-        ns_esc_escape(state),
-        ns_esc_space(state),
-        ns_esc_double_quote(state),
-        ns_esc_slash(state),
-        ns_esc_backslash(state),
-        ns_esc_next_line(state),
-        ns_esc_non_breaking_space(state),
-        ns_esc_line_separator(state),
-        ns_esc_paragraph_separator(state),
-        ns_esc_8_bit(state),
-        ns_esc_16_bit(state),
-        ns_esc_32_bit(state)
+        parser,
+        ns_esc_null(parser),
+        ns_esc_bell(parser),
+        ns_esc_backspace(parser),
+        ns_esc_horizontal_tab(parser),
+        ns_esc_line_feed(parser),
+        ns_esc_vertical_tab(parser),
+        ns_esc_form_feed(parser),
+        ns_esc_carriage_return(parser),
+        ns_esc_escape(parser),
+        ns_esc_space(parser),
+        ns_esc_double_quote(parser),
+        ns_esc_slash(parser),
+        ns_esc_backslash(parser),
+        ns_esc_next_line(parser),
+        ns_esc_non_breaking_space(parser),
+        ns_esc_line_separator(parser),
+        ns_esc_paragraph_separator(parser),
+        ns_esc_8_bit(parser),
+        ns_esc_16_bit(parser),
+        ns_esc_32_bit(parser)
     )
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_indent<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    state.token(Token::Indent, |state| {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_indent<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    parser.token(Token::Indent, |parser| {
         for _ in 0..n {
-            s_space(state)?;
+            s_space(parser)?;
         }
         Ok(())
     })
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_indent_less_than<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    state.token(Token::Indent, |state| {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_indent_less_than<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    parser.token(Token::Indent, |parser| {
         for _ in 1..n {
-            if s_space(state).is_err() {
+            if s_space(parser).is_err() {
                 return Ok(());
             }
         }
@@ -508,11 +508,11 @@ fn s_indent_less_than<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), (
     })
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_indent_less_or_equal<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    state.token(Token::Indent, |state| {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_indent_less_or_equal<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    parser.token(Token::Indent, |parser| {
         for _ in 0..n {
-            if s_space(state).is_err() {
+            if s_space(parser).is_err() {
                 return Ok(());
             }
         }
@@ -520,920 +520,921 @@ fn s_indent_less_or_equal<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(
     })
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_separate_in_line<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    if state.is(char::space) {
-        state.token(Token::Separator, |state| {
-            Ok(star_fast!(state, s_white(state)))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_separate_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    if parser.is(char::space) {
+        parser.token(Token::Separator, |parser| {
+            Ok(star_fast!(parser, s_white(parser)))
         })
-    } else if state.is_start_of_line() {
+    } else if parser.is_start_of_line() {
         Ok(())
     } else {
         Err(())
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_line_prefix<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_line_prefix<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
     match c {
-        Context::BlockIn | Context::BlockOut => s_block_line_prefix(state, n),
-        Context::FlowIn | Context::FlowOut => s_flow_line_prefix(state, n),
+        Context::BlockIn | Context::BlockOut => s_block_line_prefix(parser, n),
+        Context::FlowIn | Context::FlowOut => s_flow_line_prefix(parser, n),
         Context::BlockKey | Context::FlowKey => unimplemented!(),
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_block_line_prefix<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    s_indent(state, n)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_block_line_prefix<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    s_indent(parser, n)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_flow_line_prefix<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    s_indent(state, n)?;
-    s_separate_in_line(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_flow_line_prefix<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    s_indent(parser, n)?;
+    s_separate_in_line(parser)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_empty<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_empty<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
     alt!(
-        state,
-        s_line_prefix(state, n, c),
-        s_indent_less_than(state, n)
+        parser,
+        s_line_prefix(parser, n, c),
+        s_indent_less_than(parser, n)
     )?;
-    b_as_line_feed(state)
+    b_as_line_feed(parser)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn b_l_trimmed<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    b_non_content(state)?;
-    star!(state, l_empty(state, n, c));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn b_l_trimmed<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    b_non_content(parser)?;
+    star!(parser, l_empty(parser, n, c));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn b_as_space<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::ScalarSpace, b_break)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn b_as_space<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::ScalarSpace, b_break)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn b_l_folded<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    alt!(state, b_l_trimmed(state, n, c), b_as_space(state))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn b_l_folded<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    alt!(parser, b_l_trimmed(parser, n, c), b_as_space(parser))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_flow_folded<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    question_fast!(state, s_separate_in_line(state));
-    b_l_folded(state, n, Context::FlowIn)?;
-    s_flow_line_prefix(state, n)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_flow_folded<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    question_fast!(parser, s_separate_in_line(parser));
+    b_l_folded(parser, n, Context::FlowIn)?;
+    s_flow_line_prefix(parser, n)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_nb_comment_text<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    c_comment(state)?;
-    star_fast!(state, nb_char(state));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_nb_comment_text<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    c_comment(parser)?;
+    star_fast!(parser, nb_char(parser));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn b_comment<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    if b_non_content(state).is_ok() || state.is_end_of_input() {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn b_comment<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    if b_non_content(parser).is_ok() || parser.is_end_of_input() {
         Ok(())
     } else {
         Err(())
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_b_comment<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    if s_separate_in_line(state).is_ok() && state.peek() == Some('#') {
-        c_nb_comment_text(state)?;
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_b_comment<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    if s_separate_in_line(parser).is_ok() && parser.peek() == Some('#') {
+        c_nb_comment_text(parser)?;
     }
-    b_comment(state)
+    b_comment(parser)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_comment<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    s_separate_in_line(state)?;
-    if state.peek() == Some('#') {
-        c_nb_comment_text(state)?;
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_comment<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    s_separate_in_line(parser)?;
+    if parser.peek() == Some('#') {
+        c_nb_comment_text(parser)?;
     }
-    b_comment(state)
+    b_comment(parser)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_l_comments<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    if question!(state, s_b_comment(state)).is_some() || state.is_start_of_line() {
-        star!(state, l_comment(state));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_l_comments<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    if question!(parser, s_b_comment(parser)).is_some() || parser.is_start_of_line() {
+        star!(parser, l_comment(parser));
         Ok(())
     } else {
         Err(())
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_separate<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_separate<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
     match c {
         Context::BlockIn | Context::BlockOut | Context::FlowIn | Context::FlowOut => {
-            s_separate_lines(state, n)
+            s_separate_lines(parser, n)
         }
-        Context::BlockKey | Context::FlowKey => s_separate_in_line(state),
+        Context::BlockKey | Context::FlowKey => s_separate_in_line(parser),
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_separate_lines<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    fn comments<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-        s_l_comments(state)?;
-        s_flow_line_prefix(state, n)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_separate_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    fn comments<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+        s_l_comments(parser)?;
+        s_flow_line_prefix(parser, n)
     }
 
-    alt!(state, comments(state, n), s_separate_in_line(state))
+    alt!(parser, comments(parser, n), s_separate_in_line(parser))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_directive<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    c_directive(state)?;
-    if state.is_str("YAML ") {
-        ns_yaml_directive(state)?;
-    } else if state.is_str("TAG ") {
-        ns_tag_directive(state)?;
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    c_directive(parser)?;
+    if parser.is_str("YAML ") {
+        ns_yaml_directive(parser)?;
+    } else if parser.is_str("TAG ") {
+        ns_tag_directive(parser)?;
     } else {
-        ns_reserved_directive(state)?;
+        ns_reserved_directive(parser)?;
     }
-    s_l_comments(state)
+    s_l_comments(parser)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_reserved_directive<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    fn param<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-        s_separate_in_line(state)?;
-        ns_directive_parameter(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_reserved_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    fn param<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+        s_separate_in_line(parser)?;
+        ns_directive_parameter(parser)
     }
 
-    ns_directive_name(state)?;
-    star!(state, param(state));
+    ns_directive_name(parser)?;
+    star!(parser, param(parser));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_directive_name<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::DirectiveName, |state| {
-        plus_fast!(state, ns_char(state))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_directive_name<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::DirectiveName, |parser| {
+        plus_fast!(parser, ns_char(parser))
     })
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_directive_parameter<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::DirectiveParameter, |state| {
-        plus_fast!(state, ns_char(state))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_directive_parameter<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::DirectiveParameter, |parser| {
+        plus_fast!(parser, ns_char(parser))
     })
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_yaml_directive<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::DirectiveName, |state| state.eat_str("YAML"))?;
-    s_separate_in_line(state)?;
-    ns_yaml_version(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_yaml_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::DirectiveName, |parser| parser.eat_str("YAML"))?;
+    s_separate_in_line(parser)?;
+    ns_yaml_version(parser)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_yaml_version<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::YamlVersion, |state| {
-        plus_fast!(state, ns_dec_digit(state))?;
-        state.eat_char('.')?;
-        plus_fast!(state, ns_dec_digit(state))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_yaml_version<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::YamlVersion, |parser| {
+        plus_fast!(parser, ns_dec_digit(parser))?;
+        parser.eat_char('.')?;
+        plus_fast!(parser, ns_dec_digit(parser))
     })
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_tag_directive<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::DirectiveName, |state| state.eat_str("TAG"))?;
-    s_separate_in_line(state)?;
-    c_tag_handle(state)?;
-    s_separate_in_line(state)?;
-    ns_tag_prefix(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_tag_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::DirectiveName, |parser| parser.eat_str("TAG"))?;
+    s_separate_in_line(parser)?;
+    c_tag_handle(parser)?;
+    s_separate_in_line(parser)?;
+    ns_tag_prefix(parser)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_tag_handle<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::TagHandle, |state| {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_tag_handle<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::TagHandle, |parser| {
         alt!(
-            state,
-            c_named_tag_handle(state),
-            c_secondary_tag_handle(state),
-            c_primary_tag_handle(state)
+            parser,
+            c_named_tag_handle(parser),
+            c_secondary_tag_handle(parser),
+            c_primary_tag_handle(parser)
         )
     })
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_primary_tag_handle<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('!')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_primary_tag_handle<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('!')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_secondary_tag_handle<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_str("!!")
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_secondary_tag_handle<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_str("!!")
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_named_tag_handle<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('!')?;
-    plus_fast!(state, ns_word_char(state))?;
-    state.eat_char('!')
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_named_tag_handle<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('!')?;
+    plus_fast!(parser, ns_word_char(parser))?;
+    parser.eat_char('!')
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_tag_prefix<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::TagPrefix, |state| {
-        if state.is_char('!') {
-            c_ns_local_tag_prefix(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_tag_prefix<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::TagPrefix, |parser| {
+        if parser.is_char('!') {
+            c_ns_local_tag_prefix(parser)
         } else {
-            ns_global_tag_prefix(state)
+            ns_global_tag_prefix(parser)
         }
     })
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_ns_local_tag_prefix<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_char('!')?;
-    star!(state, ns_uri_char(state));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_ns_local_tag_prefix<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_char('!')?;
+    star!(parser, ns_uri_char(parser));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_global_tag_prefix<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    ns_tag_char(state)?;
-    star!(state, ns_uri_char(state));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_global_tag_prefix<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    ns_tag_char(parser)?;
+    star!(parser, ns_uri_char(parser));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_ns_properties<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    fn separated_anchor<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-        s_separate(state, n, c)?;
-        c_ns_anchor_property(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_ns_properties<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    fn separated_anchor<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+        s_separate(parser, n, c)?;
+        c_ns_anchor_property(parser)
     }
 
-    fn separated_tag<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-        s_separate(state, n, c)?;
-        c_ns_tag_property(state)
+    fn separated_tag<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+        s_separate(parser, n, c)?;
+        c_ns_tag_property(parser)
     }
 
-    match state.peek() {
+    match parser.peek() {
         Some('!') => {
-            c_ns_tag_property(state)?;
-            question!(state, separated_anchor(state, n, c));
+            c_ns_tag_property(parser)?;
+            question!(parser, separated_anchor(parser, n, c));
             Ok(())
         }
         Some('&') => {
-            c_ns_anchor_property(state)?;
-            question!(state, separated_tag(state, n, c));
+            c_ns_anchor_property(parser)?;
+            question!(parser, separated_tag(parser, n, c));
             Ok(())
         }
         _ => Err(()),
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_ns_tag_property<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    if state.peek_next() == Some('<') {
-        c_verbatim_tag(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_ns_tag_property<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    if parser.peek_next() == Some('<') {
+        c_verbatim_tag(parser)
     } else {
-        alt!(state, c_ns_shorthand_tag(state), c_non_specific_tag(state))
+        alt!(parser, c_ns_shorthand_tag(parser), c_non_specific_tag(parser))
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_verbatim_tag<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::VerbatimTag, |state| {
-        state.eat_str("!<")?;
-        plus!(state, ns_uri_char(state))?;
-        state.eat_str(">")?;
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_verbatim_tag<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::VerbatimTag, |parser| {
+        parser.eat_str("!<")?;
+        plus!(parser, ns_uri_char(parser))?;
+        parser.eat_str(">")?;
         Ok(())
     })
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_ns_shorthand_tag<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    c_tag_handle(state)?;
-    state.token(Token::TagSuffix, |state| plus!(state, ns_tag_char(state)))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_ns_shorthand_tag<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    c_tag_handle(parser)?;
+    parser.token(Token::TagSuffix, |parser| plus!(parser, ns_tag_char(parser)))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_non_specific_tag<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::NonSpecificTag, |state| state.eat_char('!'))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_non_specific_tag<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::NonSpecificTag, |parser| parser.eat_char('!'))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_ns_anchor_property<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    c_anchor(state)?;
-    ns_anchor_name(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_ns_anchor_property<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    c_anchor(parser)?;
+    ns_anchor_name(parser)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_anchor_char<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    if state.is(char::flow_indicator) {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_anchor_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    if parser.is(char::flow_indicator) {
         Err(())
     } else {
-        ns_char(state)
+        ns_char(parser)
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_anchor_name<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::AnchorName, |state| {
-        plus_fast!(state, ns_anchor_char(state))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_anchor_name<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::AnchorName, |parser| {
+        plus_fast!(parser, ns_anchor_char(parser))
     })
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_ns_alias_node<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    c_alias(state)?;
-    ns_anchor_name(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_ns_alias_node<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    c_alias(parser)?;
+    ns_anchor_name(parser)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn e_scalar<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::Empty, |_| Ok(()))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn e_scalar<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::Empty, |_| Ok(()))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn e_node<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    e_scalar(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn e_node<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    e_scalar(parser)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn nb_double_char<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    match state.peek() {
-        Some('\\') => c_ns_esc_char(state),
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn nb_double_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    match parser.peek() {
+        Some('\\') => c_ns_esc_char(parser),
         Some('"') => Err(()),
-        _ => nb_json(state),
+        _ => nb_json(parser),
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_double_char<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    if state.is(char::space) {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_double_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    if parser.is(char::space) {
         Err(())
     } else {
-        nb_double_char(state)
+        nb_double_char(parser)
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_double_quoted<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    c_double_quote(state)?;
-    nb_double_text(state, n, c)?;
-    c_double_quote(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_double_quoted<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    c_double_quote(parser)?;
+    nb_double_text(parser, n, c)?;
+    c_double_quote(parser)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn nb_double_text<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn nb_double_text<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
     match c {
-        Context::BlockKey | Context::FlowKey => nb_double_one_line(state),
-        Context::FlowIn | Context::FlowOut => nb_double_multi_line(state, n),
+        Context::BlockKey | Context::FlowKey => nb_double_one_line(parser),
+        Context::FlowIn | Context::FlowOut => nb_double_multi_line(parser, n),
         Context::BlockIn | Context::BlockOut => unimplemented!(),
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn nb_double_one_line<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::DoubleQuoted, |state| {
-        star!(state, nb_double_char(state));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn nb_double_one_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::DoubleQuoted, |parser| {
+        star!(parser, nb_double_char(parser));
         Ok(())
     })
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_double_escaped<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    s_whites(state)?;
-    c_escape(state)?;
-    b_non_content(state)?;
-    star!(state, l_empty(state, n, Context::FlowIn));
-    s_flow_line_prefix(state, n)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_double_escaped<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    s_whites(parser)?;
+    c_escape(parser)?;
+    b_non_content(parser)?;
+    star!(parser, l_empty(parser, n, Context::FlowIn));
+    s_flow_line_prefix(parser, n)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_double_break<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    alt!(state, s_double_escaped(state, n), s_flow_folded(state, n))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_double_break<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    alt!(parser, s_double_escaped(parser, n), s_flow_folded(parser, n))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn nb_ns_double_in_line<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    fn char<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-        s_whites(state)?;
-        ns_double_char(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn nb_ns_double_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    fn char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+        s_whites(parser)?;
+        ns_double_char(parser)
     }
 
-    star!(state, char(state));
+    star!(parser, char(parser));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_double_next_line<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    fn line<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-        state.token(Token::DoubleQuoted, |state| {
-            ns_double_char(state)?;
-            nb_ns_double_in_line(state)?;
-            alt!(state, s_double_next_line(state, n), s_whites(state))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_double_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+        parser.token(Token::DoubleQuoted, |parser| {
+            ns_double_char(parser)?;
+            nb_ns_double_in_line(parser)?;
+            alt!(parser, s_double_next_line(parser, n), s_whites(parser))
         })
     }
 
-    s_double_break(state, n)?;
-    question!(state, line(state, n));
+    s_double_break(parser, n)?;
+    question!(parser, line(parser, n));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn nb_double_multi_line<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    state.token(Token::DoubleQuoted, nb_ns_double_in_line)?;
-    alt!(state, s_double_next_line(state, n), s_whites(state))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn nb_double_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    parser.token(Token::DoubleQuoted, nb_ns_double_in_line)?;
+    alt!(parser, s_double_next_line(parser, n), s_whites(parser))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_quoted_quote<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.eat_str("''")
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_quoted_quote<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat_str("''")
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn nb_single_char<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    if state.is_char('\'') {
-        c_quoted_quote(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn nb_single_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    if parser.is_char('\'') {
+        c_quoted_quote(parser)
     } else {
-        nb_json(state)
+        nb_json(parser)
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_single_char<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    if state.is(char::space) {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_single_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    if parser.is(char::space) {
         Err(())
     } else {
-        nb_single_char(state)
+        nb_single_char(parser)
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_single_quoted<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    c_single_quote(state)?;
-    state.token(Token::SingleQuoted, |state| nb_single_text(state, n, c))?;
-    c_single_quote(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_single_quoted<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    c_single_quote(parser)?;
+    parser.token(Token::SingleQuoted, |parser| nb_single_text(parser, n, c))?;
+    c_single_quote(parser)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn nb_single_text<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn nb_single_text<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
     match c {
-        Context::BlockKey | Context::FlowKey => nb_single_one_line(state),
-        Context::FlowIn | Context::FlowOut => nb_single_multi_line(state, n),
+        Context::BlockKey | Context::FlowKey => nb_single_one_line(parser),
+        Context::FlowIn | Context::FlowOut => nb_single_multi_line(parser, n),
         Context::BlockIn | Context::BlockOut => unimplemented!(),
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn nb_single_one_line<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    star!(state, nb_single_char(state));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn nb_single_one_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    star!(parser, nb_single_char(parser));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn nb_ns_single_in_line<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    fn char<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-        s_whites(state)?;
-        ns_single_char(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn nb_ns_single_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    fn char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+        s_whites(parser)?;
+        ns_single_char(parser)
     }
 
-    star!(state, char(state));
+    star!(parser, char(parser));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_single_next_line<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    fn line<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-        ns_double_char(state)?;
-        nb_ns_single_in_line(state)?;
-        alt!(state, s_single_next_line(state, n), s_whites(state))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_single_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+        ns_double_char(parser)?;
+        nb_ns_single_in_line(parser)?;
+        alt!(parser, s_single_next_line(parser, n), s_whites(parser))
     }
 
-    s_flow_folded(state, n)?;
-    question!(state, line(state, n));
+    s_flow_folded(parser, n)?;
+    question!(parser, line(parser, n));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn nb_single_multi_line<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    nb_ns_single_in_line(state)?;
-    alt!(state, s_single_next_line(state, n), s_whites(state))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn nb_single_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    nb_ns_single_in_line(parser)?;
+    alt!(parser, s_single_next_line(parser, n), s_whites(parser))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_plain_first<R: Receiver>(state: &mut State<R>, c: Context) -> Result<(), ()> {
-    match state.peek() {
-        Some('?' | ':' | '-') if state.next_is(|ch| char::plain_safe(ch, c)) => {
-            state.bump();
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_plain_first<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
+    match parser.peek() {
+        Some('?' | ':' | '-') if parser.next_is(|ch| char::plain_safe(ch, c)) => {
+            parser.bump();
             Ok(())
         }
         Some(ch) if char::indicator(ch) => Err(()),
-        _ => ns_char(state),
+        _ => ns_char(parser),
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_plain_safe<R: Receiver>(state: &mut State<R>, c: Context) -> Result<(), ()> {
-    state.eat(|ch| char::plain_safe(ch, c))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_plain_safe<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
+    parser.eat(|ch| char::plain_safe(ch, c))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_plain_char<R: Receiver>(state: &mut State<R>, c: Context) -> Result<(), ()> {
-    match state.peek() {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_plain_char<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
+    match parser.peek() {
         Some('#') => {
-            if state.prev_is(char::non_space) {
-                state.bump();
+            if parser.prev_is(char::non_space) {
+                parser.bump();
                 Ok(())
             } else {
                 Err(())
             }
         }
         Some(':') => {
-            if state.next_is(|ch| char::plain_safe(ch, c)) {
-                state.bump();
+            if parser.next_is(|ch| char::plain_safe(ch, c)) {
+                parser.bump();
                 Ok(())
             } else {
                 Err(())
             }
         }
-        _ => ns_plain_safe(state, c),
+        _ => ns_plain_safe(parser, c),
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_plain<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_plain<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
     match c {
-        Context::BlockKey | Context::FlowKey => ns_plain_one_line(state, c),
-        Context::FlowIn | Context::FlowOut => ns_plain_multi_line(state, n, c),
+        Context::BlockKey | Context::FlowKey => ns_plain_one_line(parser, c),
+        Context::FlowIn | Context::FlowOut => ns_plain_multi_line(parser, n, c),
         Context::BlockIn | Context::BlockOut => unimplemented!(),
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn nb_ns_plain_in_line<R: Receiver>(state: &mut State<R>, c: Context) -> Result<(), ()> {
-    fn char<R: Receiver>(state: &mut State<R>, c: Context) -> Result<(), ()> {
-        s_whites(state)?;
-        ns_plain_char(state, c)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn nb_ns_plain_in_line<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
+    fn char<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
+        s_whites(parser)?;
+        ns_plain_char(parser, c)
     }
 
-    star!(state, char(state, c));
+    star!(parser, char(parser, c));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_plain_one_line<R: Receiver>(state: &mut State<R>, c: Context) -> Result<(), ()> {
-    state.token(Token::Scalar, |state| {
-        ns_plain_first(state, c)?;
-        nb_ns_plain_in_line(state, c)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_plain_one_line<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
+    parser.token(Token::Scalar, |parser| {
+        ns_plain_first(parser, c)?;
+        nb_ns_plain_in_line(parser, c)
     })
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_ns_plain_next_line<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    s_flow_folded(state, n)?;
-    state.token(Token::Scalar, |state| {
-        ns_plain_char(state, c)?;
-        nb_ns_plain_in_line(state, c)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_ns_plain_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    s_flow_folded(parser, n)?;
+    parser.token(Token::Scalar, |parser| {
+        ns_plain_char(parser, c)?;
+        nb_ns_plain_in_line(parser, c)
     })
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_plain_multi_line<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    ns_plain_one_line(state, c)?;
-    star!(state, s_ns_plain_next_line(state, n, c));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_plain_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    ns_plain_one_line(parser, c)?;
+    star!(parser, s_ns_plain_next_line(parser, n, c));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_flow_sequence<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    c_sequence_start(state)?;
-    question!(state, s_separate(state, n, c));
-    question!(state, ns_s_flow_seq_entries(state, n, c.in_flow()));
-    c_sequence_end(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_flow_sequence<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    c_sequence_start(parser)?;
+    question!(parser, s_separate(parser, n, c));
+    question!(parser, ns_s_flow_seq_entries(parser, n, c.in_flow()));
+    c_sequence_end(parser)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_s_flow_seq_entries<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    fn entry<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-        c_collect_entry(state)?;
-        question!(state, s_separate(state, n, c));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_s_flow_seq_entries<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    fn entry<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+        c_collect_entry(parser)?;
+        question!(parser, s_separate(parser, n, c));
         // todo unroll recursion
-        ns_s_flow_seq_entries(state, n, c)
+        ns_s_flow_seq_entries(parser, n, c)
     }
 
-    ns_flow_seq_entry(state, n, c)?;
-    question!(state, s_separate(state, n, c));
-    question_fast!(state, entry(state, n, c));
+    ns_flow_seq_entry(parser, n, c)?;
+    question!(parser, s_separate(parser, n, c));
+    question_fast!(parser, entry(parser, n, c));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_flow_seq_entry<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    alt!(state, ns_flow_pair(state, n, c), ns_flow_node(state, n, c))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_flow_seq_entry<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    alt!(parser, ns_flow_pair(parser, n, c), ns_flow_node(parser, n, c))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_flow_mapping<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    c_mapping_start(state)?;
-    question!(state, s_separate(state, n, c));
-    question!(state, ns_s_flow_map_entries(state, n, c.in_flow()));
-    c_mapping_end(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_flow_mapping<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    c_mapping_start(parser)?;
+    question!(parser, s_separate(parser, n, c));
+    question!(parser, ns_s_flow_map_entries(parser, n, c.in_flow()));
+    c_mapping_end(parser)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_s_flow_map_entries<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    fn entry<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-        c_collect_entry(state)?;
-        question!(state, s_separate(state, n, c));
-        question!(state, ns_s_flow_map_entries(state, n, c));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_s_flow_map_entries<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    fn entry<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+        c_collect_entry(parser)?;
+        question!(parser, s_separate(parser, n, c));
+        question!(parser, ns_s_flow_map_entries(parser, n, c));
         Ok(())
     }
 
-    ns_flow_map_entry(state, n, c)?;
-    question!(state, s_separate(state, n, c));
-    question_fast!(state, entry(state, n, c));
+    ns_flow_map_entry(parser, n, c)?;
+    question!(parser, s_separate(parser, n, c));
+    question_fast!(parser, entry(parser, n, c));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_flow_map_entry<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    if state.is_char('?') && !state.next_is(char::non_space) {
-        c_mapping_key(state)?;
-        s_separate(state, n, c)?;
-        ns_flow_map_explicit_entry(state, n, c)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_flow_map_entry<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    if parser.is_char('?') && !parser.next_is(char::non_space) {
+        c_mapping_key(parser)?;
+        s_separate(parser, n, c)?;
+        ns_flow_map_explicit_entry(parser, n, c)
     } else {
-        ns_flow_map_implicit_entry(state, n, c)
+        ns_flow_map_implicit_entry(parser, n, c)
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
 fn ns_flow_map_explicit_entry<R: Receiver>(
-    state: &mut State<R>,
+    parser: &mut Parser<R>,
     n: i32,
     c: Context,
 ) -> Result<(), ()> {
-    fn empty<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-        e_node(state)?;
-        e_node(state)
+    fn empty<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+        e_node(parser)?;
+        e_node(parser)
     }
 
-    alt!(state, ns_flow_map_implicit_entry(state, n, c), empty(state))
+    alt!(parser, ns_flow_map_implicit_entry(parser, n, c), empty(parser))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
 fn ns_flow_map_implicit_entry<R: Receiver>(
-    state: &mut State<R>,
+    parser: &mut Parser<R>,
     n: i32,
     c: Context,
 ) -> Result<(), ()> {
     alt!(
-        state,
-        ns_flow_map_yaml_key_entry(state, n, c),
-        c_ns_flow_map_empty_key_entry(state, n, c),
-        c_ns_flow_map_json_key_entry(state, n, c)
+        parser,
+        ns_flow_map_yaml_key_entry(parser, n, c),
+        c_ns_flow_map_empty_key_entry(parser, n, c),
+        c_ns_flow_map_json_key_entry(parser, n, c)
     )
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
 fn ns_flow_map_yaml_key_entry<R: Receiver>(
-    state: &mut State<R>,
+    parser: &mut Parser<R>,
     n: i32,
     c: Context,
 ) -> Result<(), ()> {
-    fn value<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-        question!(state, s_separate(state, n, c));
-        c_ns_flow_map_separate_value(state, n, c)
+    fn value<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+        question!(parser, s_separate(parser, n, c));
+        c_ns_flow_map_separate_value(parser, n, c)
     }
 
-    ns_flow_yaml_node(state, n, c)?;
-    alt!(state, value(state, n, c), e_node(state))
+    ns_flow_yaml_node(parser, n, c)?;
+    alt!(parser, value(parser, n, c), e_node(parser))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
 fn c_ns_flow_map_empty_key_entry<R: Receiver>(
-    state: &mut State<R>,
+    parser: &mut Parser<R>,
     n: i32,
     c: Context,
 ) -> Result<(), ()> {
-    e_node(state)?;
-    c_ns_flow_map_separate_value(state, n, c)
+    e_node(parser)?;
+    c_ns_flow_map_separate_value(parser, n, c)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
 fn c_ns_flow_map_separate_value<R: Receiver>(
-    state: &mut State<R>,
+    parser: &mut Parser<R>,
     n: i32,
     c: Context,
 ) -> Result<(), ()> {
-    fn node<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-        s_separate(state, n, c)?;
-        ns_flow_node(state, n, c)
+    fn node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+        s_separate(parser, n, c)?;
+        ns_flow_node(parser, n, c)
     }
 
-    c_mapping_value(state)?;
-    if state.is(|ch| char::plain_safe(ch, c)) {
+    c_mapping_value(parser)?;
+    if parser.is(|ch| char::plain_safe(ch, c)) {
         return Err(());
     }
-    alt!(state, node(state, n, c), e_node(state))
+    alt!(parser, node(parser, n, c), e_node(parser))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
 fn c_ns_flow_map_json_key_entry<R: Receiver>(
-    state: &mut State<R>,
+    parser: &mut Parser<R>,
     n: i32,
     c: Context,
 ) -> Result<(), ()> {
-    fn value<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-        question!(state, s_separate(state, n, c));
-        c_ns_flow_map_adjacent_value(state, n, c)
+    fn value<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+        question!(parser, s_separate(parser, n, c));
+        c_ns_flow_map_adjacent_value(parser, n, c)
     }
 
-    c_flow_json_node(state, n, c)?;
-    alt!(state, value(state, n, c), e_node(state))
+    c_flow_json_node(parser, n, c)?;
+    alt!(parser, value(parser, n, c), e_node(parser))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
 fn c_ns_flow_map_adjacent_value<R: Receiver>(
-    state: &mut State<R>,
+    parser: &mut Parser<R>,
     n: i32,
     c: Context,
 ) -> Result<(), ()> {
-    fn node<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-        question!(state, s_separate(state, n, c));
-        ns_flow_node(state, n, c)
+    fn node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+        question!(parser, s_separate(parser, n, c));
+        ns_flow_node(parser, n, c)
     }
 
-    c_mapping_value(state)?;
-    alt!(state, node(state, n, c), e_node(state))
+    c_mapping_value(parser)?;
+    alt!(parser, node(parser, n, c), e_node(parser))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_flow_pair<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    if state.is_char('?') && !state.next_is(char::non_space) {
-        c_mapping_key(state)?;
-        s_separate(state, n, c)?;
-        ns_flow_map_explicit_entry(state, n, c)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_flow_pair<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    if parser.is_char('?') && !parser.next_is(char::non_space) {
+        c_mapping_key(parser)?;
+        s_separate(parser, n, c)?;
+        ns_flow_map_explicit_entry(parser, n, c)
     } else {
-        ns_flow_pair_entry(state, n, c)
+        ns_flow_pair_entry(parser, n, c)
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_flow_pair_entry<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_flow_pair_entry<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
     alt!(
-        state,
-        ns_flow_pair_yaml_key_entry(state, n, c),
-        c_ns_flow_map_empty_key_entry(state, n, c),
-        c_ns_flow_pair_json_key_entry(state, n, c)
+        parser,
+        ns_flow_pair_yaml_key_entry(parser, n, c),
+        c_ns_flow_map_empty_key_entry(parser, n, c),
+        c_ns_flow_pair_json_key_entry(parser, n, c)
     )
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
 fn ns_flow_pair_yaml_key_entry<R: Receiver>(
-    state: &mut State<R>,
+    parser: &mut Parser<R>,
     n: i32,
     c: Context,
 ) -> Result<(), ()> {
-    ns_s_implicit_yaml_key(state, Context::FlowKey)?;
-    c_ns_flow_map_separate_value(state, n, c)
+    ns_s_implicit_yaml_key(parser, Context::FlowKey)?;
+    c_ns_flow_map_separate_value(parser, n, c)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
 fn c_ns_flow_pair_json_key_entry<R: Receiver>(
-    state: &mut State<R>,
+    parser: &mut Parser<R>,
     n: i32,
     c: Context,
 ) -> Result<(), ()> {
-    c_s_implicit_json_key(state, Context::FlowKey)?;
-    c_ns_flow_map_adjacent_value(state, n, c)
+    c_s_implicit_json_key(parser, Context::FlowKey)?;
+    c_ns_flow_map_adjacent_value(parser, n, c)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_s_implicit_yaml_key<R: Receiver>(state: &mut State<R>, c: Context) -> Result<(), ()> {
-    state.with_length_limit(1024, |state| {
-        ns_flow_yaml_node(state, 0, c)?;
-        question!(state, s_separate_in_line(state));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_s_implicit_yaml_key<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
+    parser.with_length_limit(1024, |parser| {
+        ns_flow_yaml_node(parser, 0, c)?;
+        question!(parser, s_separate_in_line(parser));
         Ok(())
     })
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_s_implicit_json_key<R: Receiver>(state: &mut State<R>, c: Context) -> Result<(), ()> {
-    state.with_length_limit(1024, |state| {
-        c_flow_json_node(state, 0, c)?;
-        question!(state, s_separate_in_line(state));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_s_implicit_json_key<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
+    parser.with_length_limit(1024, |parser| {
+        c_flow_json_node(parser, 0, c)?;
+        question!(parser, s_separate_in_line(parser));
         Ok(())
     })
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_flow_yaml_content<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    ns_plain(state, n, c)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_flow_yaml_content<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    ns_plain(parser, n, c)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_flow_json_content<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    match state.peek() {
-        Some('[') => c_flow_sequence(state, n, c),
-        Some('{') => c_flow_mapping(state, n, c),
-        Some('\'') => c_single_quoted(state, n, c),
-        Some('"') => c_double_quoted(state, n, c),
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_flow_json_content<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    match parser.peek() {
+        Some('[') => c_flow_sequence(parser, n, c),
+        Some('{') => c_flow_mapping(parser, n, c),
+        Some('\'') => c_single_quoted(parser, n, c),
+        Some('"') => c_double_quoted(parser, n, c),
         _ => Err(()),
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_flow_content<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_flow_content<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
     alt!(
-        state,
-        ns_flow_yaml_content(state, n, c),
-        c_flow_json_content(state, n, c)
+        parser,
+        ns_flow_yaml_content(parser, n, c),
+        c_flow_json_content(parser, n, c)
     )
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_flow_yaml_node<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    fn content<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-        s_separate(state, n, c)?;
-        ns_flow_content(state, n, c)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_flow_yaml_node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    fn content<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+        s_separate(parser, n, c)?;
+        ns_flow_content(parser, n, c)
     }
 
-    fn props<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-        c_ns_properties(state, n, c)?;
-        alt!(state, content(state, n, c), e_scalar(state))
-    }
-
-    alt!(
-        state,
-        c_ns_alias_node(state),
-        ns_flow_yaml_content(state, n, c),
-        props(state, n, c)
-    )
-}
-
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_flow_json_node<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    if state.is(|ch| matches!(ch, '!' | '&')) {
-        c_ns_properties(state, n, c)?;
-        s_separate(state, n, c)?;
-    }
-    c_flow_json_content(state, n, c)
-}
-
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_flow_node<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    fn content<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-        s_separate(state, n, c)?;
-        ns_flow_content(state, n, c)
-    }
-
-    fn props<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-        c_ns_properties(state, n, c)?;
-        alt!(state, content(state, n, c), e_scalar(state))
+    fn props<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+        c_ns_properties(parser, n, c)?;
+        alt!(parser, content(parser, n, c), e_scalar(parser))
     }
 
     alt!(
-        state,
-        c_ns_alias_node(state),
-        ns_flow_content(state, n, c),
-        props(state, n, c)
+        parser,
+        c_ns_alias_node(parser),
+        ns_flow_yaml_content(parser, n, c),
+        props(parser, n, c)
     )
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_b_block_header<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(i32, Chomping), ()> {
-    let (m, t) = match state.peek() {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_flow_json_node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    if parser.is(|ch| matches!(ch, '!' | '&')) {
+        c_ns_properties(parser, n, c)?;
+        s_separate(parser, n, c)?;
+    }
+    c_flow_json_content(parser, n, c)
+}
+
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_flow_node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    fn content<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+        s_separate(parser, n, c)?;
+        ns_flow_content(parser, n, c)
+    }
+
+    fn props<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+        c_ns_properties(parser, n, c)?;
+        alt!(parser, content(parser, n, c), e_scalar(parser))
+    }
+
+    alt!(
+        parser,
+        c_ns_alias_node(parser),
+        ns_flow_content(parser, n, c),
+        props(parser, n, c)
+    )
+}
+
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_b_block_header<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(i32, Chomping), ()> {
+    let (m, t) = match parser.peek() {
         Some('1'..='9') => (
-            c_indentation_indicator(state)?,
-            c_chomping_indicator(state)?,
+            c_indentation_indicator(parser)?,
+            c_chomping_indicator(parser)?,
         ),
         Some('-' | '+') => {
-            let t = c_chomping_indicator(state)?;
-            let m = c_indentation_indicator(state)?;
+            let t = c_chomping_indicator(parser)?;
+            let m = c_indentation_indicator(parser)?;
             (m, t)
         }
         _ => (None, Chomping::Clip),
     };
 
-    s_b_comment(state)?;
+    s_b_comment(parser)?;
 
-    let m = m.unwrap_or_else(|| state.detect_scalar_indent(n));
-    tracing::info!("scalar indent {} @{:?}", m, state.iter.as_str());
+    let m = m.unwrap_or_else(|| parser.detect_scalar_indent(n));
+    #[cfg(feature = "tracing")]
+    tracing::info!("scalar indent {} @{:?}", m, parser.iter.as_str());
     Ok((m, t))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_indentation_indicator<R: Receiver>(state: &mut State<R>) -> Result<Option<i32>, ()> {
-    match state.peek() {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_indentation_indicator<R: Receiver>(parser: &mut Parser<R>) -> Result<Option<i32>, ()> {
+    match parser.peek() {
         Some(ch @ '1'..='9') => {
-            state.token(Token::IndentationIndicator, |state| {
-                state.bump();
+            parser.token(Token::IndentationIndicator, |parser| {
+                parser.bump();
                 Ok(())
             })?;
             Ok(Some(ch.to_digit(10).unwrap() as i32))
@@ -1442,15 +1443,15 @@ fn c_indentation_indicator<R: Receiver>(state: &mut State<R>) -> Result<Option<i
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_chomping_indicator<R: Receiver>(state: &mut State<R>) -> Result<Chomping, ()> {
-    if state
-        .token(Token::ChompingIndicator, |state| state.eat_char('-'))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_chomping_indicator<R: Receiver>(parser: &mut Parser<R>) -> Result<Chomping, ()> {
+    if parser
+        .token(Token::ChompingIndicator, |parser| parser.eat_char('-'))
         .is_ok()
     {
         Ok(Chomping::Strip)
-    } else if state
-        .token(Token::ChompingIndicator, |state| state.eat_char('+'))
+    } else if parser
+        .token(Token::ChompingIndicator, |parser| parser.eat_char('+'))
         .is_ok()
     {
         Ok(Chomping::Keep)
@@ -1459,458 +1460,479 @@ fn c_chomping_indicator<R: Receiver>(state: &mut State<R>) -> Result<Chomping, (
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn b_chomped_last<R: Receiver>(state: &mut State<R>, t: Chomping) -> Result<(), ()> {
-    if state.is_end_of_input() {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn b_chomped_last<R: Receiver>(parser: &mut Parser<R>, t: Chomping) -> Result<(), ()> {
+    if parser.is_end_of_input() {
         Ok(())
     } else {
         match t {
-            Chomping::Strip => b_non_content(state),
-            Chomping::Clip | Chomping::Keep => b_as_line_feed(state),
+            Chomping::Strip => b_non_content(parser),
+            Chomping::Clip | Chomping::Keep => b_as_line_feed(parser),
         }
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_chomped_empty<R: Receiver>(state: &mut State<R>, n: i32, t: Chomping) -> Result<(), ()> {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_chomped_empty<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) -> Result<(), ()> {
     match t {
-        Chomping::Strip => l_strip_empty(state, n),
-        Chomping::Clip => l_strip_empty(state, n),
-        Chomping::Keep => l_keep_empty(state, n),
+        Chomping::Strip => l_strip_empty(parser, n),
+        Chomping::Clip => l_strip_empty(parser, n),
+        Chomping::Keep => l_keep_empty(parser, n),
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_strip_empty<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    fn line<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-        s_indent_less_or_equal(state, n)?;
-        b_non_content(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_strip_empty<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+        s_indent_less_or_equal(parser, n)?;
+        b_non_content(parser)
     }
 
-    star!(state, line(state, n));
-    question!(state, l_trail_comments(state, n));
+    star!(parser, line(parser, n));
+    question!(parser, l_trail_comments(parser, n));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_keep_empty<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    star!(state, l_empty(state, n, Context::BlockIn));
-    question!(state, l_trail_comments(state, n));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_keep_empty<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    star!(parser, l_empty(parser, n, Context::BlockIn));
+    question!(parser, l_trail_comments(parser, n));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_trail_comments<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    s_indent_less_than(state, n)?;
-    c_nb_comment_text(state)?;
-    b_comment(state)?;
-    star!(state, l_comment(state));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_trail_comments<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    s_indent_less_than(parser, n)?;
+    c_nb_comment_text(parser)?;
+    b_comment(parser)?;
+    star!(parser, l_comment(parser));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_l_literal<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    c_literal(state)?;
-    let (m, t) = c_b_block_header(state, n)?;
-    l_literal_content(state, n + m, t)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_l_literal<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    c_literal(parser)?;
+    let (m, t) = c_b_block_header(parser, n)?;
+    l_literal_content(parser, n + m, t)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_nb_literal_text<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    star!(state, l_empty(state, n, Context::BlockIn));
-    s_indent(state, n)?;
-    state.token(Token::Scalar, |state| plus_fast!(state, nb_char(state)))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_nb_literal_text<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    star!(parser, l_empty(parser, n, Context::BlockIn));
+    s_indent(parser, n)?;
+    parser.token(Token::Scalar, |parser| plus_fast!(parser, nb_char(parser)))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn b_nb_literal_next<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    b_as_line_feed(state)?;
-    l_nb_literal_text(state, n)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn b_nb_literal_next<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    b_as_line_feed(parser)?;
+    l_nb_literal_text(parser, n)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_literal_content<R: Receiver>(state: &mut State<R>, n: i32, t: Chomping) -> Result<(), ()> {
-    fn line<R: Receiver>(state: &mut State<R>, n: i32, t: Chomping) -> Result<(), ()> {
-        l_nb_literal_text(state, n)?;
-        star!(state, b_nb_literal_next(state, n));
-        b_chomped_last(state, t)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_literal_content<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) -> Result<(), ()> {
+    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) -> Result<(), ()> {
+        l_nb_literal_text(parser, n)?;
+        star!(parser, b_nb_literal_next(parser, n));
+        b_chomped_last(parser, t)
     }
 
-    question!(state, line(state, n, t));
-    l_chomped_empty(state, n, t)
+    question!(parser, line(parser, n, t));
+    l_chomped_empty(parser, n, t)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_l_folded<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    c_folded(state)?;
-    let (m, t) = c_b_block_header(state, n)?;
-    l_folded_content(state, n + m, t)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_l_folded<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    c_folded(parser)?;
+    let (m, t) = c_b_block_header(parser, n)?;
+    l_folded_content(parser, n + m, t)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_nb_folded_text<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    s_indent(state, n)?;
-    state.token(Token::Scalar, |state| {
-        ns_char(state)?;
-        star!(state, nb_char(state));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_nb_folded_text<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    s_indent(parser, n)?;
+    parser.token(Token::Scalar, |parser| {
+        ns_char(parser)?;
+        star!(parser, nb_char(parser));
         Ok(())
     })
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_nb_folded_lines<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    fn line<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-        b_l_folded(state, n, Context::BlockIn)?;
-        s_nb_folded_text(state, n)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_nb_folded_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+        b_l_folded(parser, n, Context::BlockIn)?;
+        s_nb_folded_text(parser, n)
     }
 
-    s_nb_folded_text(state, n)?;
-    star!(state, line(state, n));
+    s_nb_folded_text(parser, n)?;
+    star!(parser, line(parser, n));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_nb_spaced_text<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    s_indent(state, n)?;
-    state.token(Token::Scalar, |state| {
-        s_white(state)?;
-        star!(state, nb_char(state));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_nb_spaced_text<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    s_indent(parser, n)?;
+    parser.token(Token::Scalar, |parser| {
+        s_white(parser)?;
+        star!(parser, nb_char(parser));
         Ok(())
     })
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn b_l_spaced<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    b_as_line_feed(state)?;
-    star!(state, l_empty(state, n, Context::BlockIn));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn b_l_spaced<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    b_as_line_feed(parser)?;
+    star!(parser, l_empty(parser, n, Context::BlockIn));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_nb_spaced_lines<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    fn line<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-        b_l_spaced(state, n)?;
-        s_nb_spaced_text(state, n)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_nb_spaced_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+        b_l_spaced(parser, n)?;
+        s_nb_spaced_text(parser, n)
     }
 
-    s_nb_spaced_text(state, n)?;
-    star!(state, line(state, n));
+    s_nb_spaced_text(parser, n)?;
+    star!(parser, line(parser, n));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_nb_same_lines<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    star!(state, l_empty(state, n, Context::BlockIn));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_nb_same_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    star!(parser, l_empty(parser, n, Context::BlockIn));
     alt!(
-        state,
-        l_nb_folded_lines(state, n),
-        l_nb_spaced_lines(state, n)
+        parser,
+        l_nb_folded_lines(parser, n),
+        l_nb_spaced_lines(parser, n)
     )
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_nb_diff_lines<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    fn line<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-        b_as_line_feed(state)?;
-        l_nb_same_lines(state, n)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_nb_diff_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+        b_as_line_feed(parser)?;
+        l_nb_same_lines(parser, n)
     }
 
-    l_nb_same_lines(state, n)?;
-    star!(state, line(state, n));
+    l_nb_same_lines(parser, n)?;
+    star!(parser, line(parser, n));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_folded_content<R: Receiver>(state: &mut State<R>, n: i32, t: Chomping) -> Result<(), ()> {
-    fn line<R: Receiver>(state: &mut State<R>, n: i32, t: Chomping) -> Result<(), ()> {
-        l_nb_diff_lines(state, n)?;
-        b_chomped_last(state, t)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_folded_content<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) -> Result<(), ()> {
+    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) -> Result<(), ()> {
+        l_nb_diff_lines(parser, n)?;
+        b_chomped_last(parser, t)
     }
 
-    question!(state, line(state, n, t));
-    l_chomped_empty(state, n, t)
+    question!(parser, line(parser, n, t));
+    l_chomped_empty(parser, n, t)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_block_sequence<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    fn entry<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-        s_indent(state, n)?;
-        c_l_block_seq_entry(state, n)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_block_sequence<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    fn entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+        s_indent(parser, n)?;
+        c_l_block_seq_entry(parser, n)
     }
 
-    let m = state.detect_collection_indent(n);
-    tracing::info!("block indent {} @{:?}", m, state.iter.as_str());
-    plus!(state, entry(state, n + m))
+    let m = parser.detect_collection_indent(n);
+    plus!(parser, entry(parser, n + m))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_l_block_seq_entry<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    c_sequence_entry(state)?;
-    if state.is(char::non_space) {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_l_block_seq_entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    c_sequence_entry(parser)?;
+    if parser.is(char::non_space) {
         return Err(());
     }
-    s_l_block_indented(state, n, Context::BlockIn)
+    s_l_block_indented(parser, n, Context::BlockIn)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_l_block_indented<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    fn collection<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-        let m = state.detect_entry_indent(n);
-        tracing::info!("entry indent {} @{:?}", m, state.iter.as_str());
-        s_indent(state, m)?;
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_l_block_indented<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    fn collection<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+        let m: i32 = parser.detect_entry_indent(n);
+        #[cfg(feature = "tracing")]
+        tracing::info!("entry indent {} @{:?}", m, parser.iter.as_str());
+        s_indent(parser, m)?;
         alt!(
-            state,
-            ns_l_compact_sequence(state, n + 1 + m),
-            ns_l_compact_mapping(state, n + 1 + m)
+            parser,
+            ns_l_compact_sequence(parser, n + 1 + m),
+            ns_l_compact_mapping(parser, n + 1 + m)
         )
     }
 
-    fn empty<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-        e_node(state)?;
-        s_l_comments(state)
+    fn empty<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+        e_node(parser)?;
+        s_l_comments(parser)
     }
 
     alt!(
-        state,
-        collection(state, n),
-        s_l_block_node(state, n, c),
-        empty(state)
+        parser,
+        collection(parser, n),
+        s_l_block_node(parser, n, c),
+        empty(parser)
     )
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_l_compact_sequence<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    fn entry<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-        s_indent(state, n)?;
-        c_l_block_seq_entry(state, n)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_l_compact_sequence<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    fn entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+        s_indent(parser, n)?;
+        c_l_block_seq_entry(parser, n)
     }
 
-    c_l_block_seq_entry(state, n)?;
-    star!(state, entry(state, n));
+    c_l_block_seq_entry(parser, n)?;
+    star!(parser, entry(parser, n));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_block_mapping<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    fn entry<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-        state.location();
-        tracing::info!("entry {} @{:?}", n, state.iter.as_str());
-        s_indent(state, n)?;
-        ns_l_block_map_entry(state, n)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_block_mapping<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    fn entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+        parser.location();
+        #[cfg(feature = "tracing")]
+        tracing::info!("entry {} @{:?}", n, parser.iter.as_str());
+        s_indent(parser, n)?;
+        ns_l_block_map_entry(parser, n)
     }
 
-    let m = state.detect_collection_indent(n);
-    tracing::info!("block indent {} @{:?}", m, state.iter.as_str());
-    plus!(state, entry(state, n + m))
+    let m = parser.detect_collection_indent(n);
+    #[cfg(feature = "tracing")]
+    tracing::info!("block indent {} @{:?}", m, parser.iter.as_str());
+    plus!(parser, entry(parser, n + m))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_l_block_map_entry<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    if state.is_char('?') {
-        c_l_block_map_explicit_entry(state, n)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_l_block_map_entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    if parser.is_char('?') {
+        c_l_block_map_explicit_entry(parser, n)
     } else {
-        ns_l_block_map_implicit_entry(state, n)
+        ns_l_block_map_implicit_entry(parser, n)
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_l_block_map_explicit_entry<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    c_l_block_map_explicit_key(state, n)?;
-    alt!(state, l_block_map_explicit_value(state, n), e_node(state))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_l_block_map_explicit_entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    c_l_block_map_explicit_key(parser, n)?;
+    alt!(parser, l_block_map_explicit_value(parser, n), e_node(parser))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_l_block_map_explicit_key<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    c_mapping_key(state)?;
-    if !state.is(char::non_space) {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_l_block_map_explicit_key<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    c_mapping_key(parser)?;
+    if !parser.is(char::non_space) {
         return Err(());
     }
-    s_l_block_indented(state, n, Context::BlockOut)
+    s_l_block_indented(parser, n, Context::BlockOut)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_block_map_explicit_value<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    s_indent(state, n)?;
-    c_mapping_value(state)?;
-    s_l_block_indented(state, n, Context::BlockOut)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_block_map_explicit_value<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    s_indent(parser, n)?;
+    c_mapping_value(parser)?;
+    s_l_block_indented(parser, n, Context::BlockOut)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_l_block_map_implicit_entry<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    alt!(state, ns_s_block_map_implicit_key(state), e_node(state))?;
-    c_l_block_map_implicit_value(state, n)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_l_block_map_implicit_entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    alt!(parser, ns_s_block_map_implicit_key(parser), e_node(parser))?;
+    c_l_block_map_implicit_value(parser, n)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_s_block_map_implicit_key<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_s_block_map_implicit_key<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     alt!(
-        state,
-        c_s_implicit_json_key(state, Context::BlockKey),
-        ns_s_implicit_yaml_key(state, Context::BlockKey)
+        parser,
+        c_s_implicit_json_key(parser, Context::BlockKey),
+        ns_s_implicit_yaml_key(parser, Context::BlockKey)
     )
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_l_block_map_implicit_value<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    fn empty<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-        e_node(state)?;
-        s_l_comments(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_l_block_map_implicit_value<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    fn empty<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+        e_node(parser)?;
+        s_l_comments(parser)
     }
 
-    c_mapping_value(state)?;
+    c_mapping_value(parser)?;
     alt!(
-        state,
-        s_l_block_node(state, n, Context::BlockOut),
-        empty(state)
+        parser,
+        s_l_block_node(parser, n, Context::BlockOut),
+        empty(parser)
     )
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn ns_l_compact_mapping<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    fn entry<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-        s_indent(state, n)?;
-        ns_l_block_map_entry(state, n)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn ns_l_compact_mapping<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    fn entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+        s_indent(parser, n)?;
+        ns_l_block_map_entry(parser, n)
     }
 
-    ns_l_block_map_entry(state, n)?;
-    star!(state, entry(state, n));
+    ns_l_block_map_entry(parser, n)?;
+    star!(parser, entry(parser, n));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_l_block_node<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_l_block_node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
     alt!(
-        state,
-        s_l_block_in_block(state, n, c),
-        s_l_flow_in_block(state, n)
+        parser,
+        s_l_block_in_block(parser, n, c),
+        s_l_flow_in_block(parser, n)
     )
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_l_flow_in_block<R: Receiver>(state: &mut State<R>, n: i32) -> Result<(), ()> {
-    s_separate(state, n + 1, Context::FlowOut)?;
-    ns_flow_node(state, n + 1, Context::FlowOut)?;
-    s_l_comments(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_l_flow_in_block<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    s_separate(parser, n + 1, Context::FlowOut)?;
+    ns_flow_node(parser, n + 1, Context::FlowOut)?;
+    s_l_comments(parser)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_l_block_in_block<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_l_block_in_block<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
     alt!(
-        state,
-        s_l_block_scalar(state, n, c),
-        s_l_block_collection(state, n, c)
+        parser,
+        s_l_block_scalar(parser, n, c),
+        s_l_block_collection(parser, n, c)
     )
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_l_block_scalar<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    s_separate(state, n + 1, c)?;
-    if state.is(|ch| matches!(ch, '!' | '&')) {
-        c_ns_properties(state, n + 1, c)?;
-        s_separate(state, n + 1, c)?;
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_l_block_scalar<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    s_separate(parser, n + 1, c)?;
+    if parser.is(|ch| matches!(ch, '!' | '&')) {
+        c_ns_properties(parser, n + 1, c)?;
+        s_separate(parser, n + 1, c)?;
     }
-    if state.is_char('|') {
-        c_l_literal(state, n)
-    } else if state.is_char('>') {
-        c_l_folded(state, n)
+    if parser.is_char('|') {
+        c_l_literal(parser, n)
+    } else if parser.is_char('>') {
+        c_l_folded(parser, n)
     } else {
         Err(())
     }
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn s_l_block_collection<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-    fn props<R: Receiver>(state: &mut State<R>, n: i32, c: Context) -> Result<(), ()> {
-        s_separate(state, n, c)?;
-        alt!(
-            state,
-            c_ns_properties(state, n, c),
-            c_ns_tag_property(state),
-            c_ns_anchor_property(state)
-        )?;
-        s_l_comments(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn s_l_block_collection<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    fn props<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+        c_ns_properties(parser, n, c)?;
+        s_l_comments(parser)
+    }
+    fn anchor<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+        c_ns_anchor_property(parser)?;
+        s_l_comments(parser)
+    }
+    fn tag<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+        c_ns_tag_property(parser)?;
+        s_l_comments(parser)
     }
 
-    question!(state, props(state, n + 1, c));
-    s_l_comments(state)?;
+    fn collection_props<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+        s_separate(parser, n, c)?;
+        alt!(
+            parser,
+            props(state, n, c),
+            anchor(state),
+            tag(state)
+        )
+        // alt!(
+        //     parser,
+        //     c_ns_properties(parser, n, c),
+        //     c_ns_tag_property(parser),
+        //     c_ns_anchor_property(parser)
+        // )?;
+        // s_l_comments(parser)
+    }
+
+    question!(parser, collection_props(parser, n + 1, c));
+    s_l_comments(parser)?;
     alt!(
-        state,
-        l_block_sequence(state, c.seq_spaces(n)),
-        l_block_mapping(state, n)
+        parser,
+        l_block_sequence(parser, c.seq_spaces(n)),
+        l_block_mapping(parser, n)
     )
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_document_prefix<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    c_byte_order_mark(state)?;
-    star!(state, l_comment(state));
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_document_prefix<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    c_byte_order_mark(parser)?;
+    star!(parser, l_comment(parser));
     Ok(())
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_directives_end<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::DirectivesEnd, |state| state.eat_str("---"))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_directives_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::DirectivesEnd, |parser| parser.eat_str("---"))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn c_document_end<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.token(Token::DocumentEnd, |state| {
-        state.eat_str("---")?;
-        if !state.is(char::non_space) {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn c_document_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.token(Token::DocumentEnd, |parser| {
+        parser.eat_str("---")?;
+        if !parser.is(char::non_space) {
             return Err(());
         }
         Ok(())
     })
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_document_suffix<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    c_document_end(state)?;
-    s_l_comments(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_document_suffix<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    c_document_end(parser)?;
+    s_l_comments(parser)
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_bare_document<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    state.document(|state| s_l_block_node(state, -1, Context::BlockIn))
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_bare_document<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.document(|parser| s_l_block_node(parser, -1, Context::BlockIn))
 }
 
-#[tracing::instrument(level = "trace", skip(state))]
-fn l_explicit_document<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    fn empty<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-        e_node(state)?;
-        s_l_comments(state)
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_explicit_document<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    fn empty<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+        e_node(parser)?;
+        s_l_comments(parser)
     }
 
-    c_directives_end(state)?;
-    alt!(state, l_bare_document(state), empty(state))
+    c_directives_end(parser)?;
+    alt!(parser, l_bare_document(parser), empty(parser))
 }
 
-// #[tracing::instrument(level = "trace", skip(state))]
-fn l_directive_document<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    while state.is_char('%') {
-        l_directive(state)?;
+// #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_directive_document<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    while parser.is_char('%') {
+        l_directive(parser)?;
     }
-    l_explicit_document(state)
+    l_explicit_document(parser)
 }
 
-// #[tracing::instrument(level = "trace", skip(state))]
-fn l_any_document<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
-    alt!(state, l_directive_document(state), l_bare_document(state))
+// #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+fn l_any_document<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    alt!(parser, l_directive_document(parser), l_bare_document(parser))
 }
 
-// #[tracing::instrument(level = "trace", skip(state))]
-pub(super) fn l_yaml_stream<R: Receiver>(state: &mut State<R>) -> Result<(), ()> {
+// #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+pub(super) fn l_yaml_stream<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     let mut terminated = true;
     loop {
-        l_document_prefix(state)?;
+        l_document_prefix(parser)?;
         let read_document = if !terminated {
-            question!(state, l_directive_document(state)).is_some()
+            question!(parser, l_explicit_document(parser)).is_some()
         } else {
-            question!(state, l_any_document(state)).is_some()
+            question!(parser, l_any_document(parser)).is_some()
         };
-        terminated = question!(state, l_document_suffix(state)).is_some();
+        terminated = question!(parser, l_document_suffix(parser)).is_some();
         if !terminated && !read_document {
-            if state.is_end_of_input() {
+            if parser.is_end_of_input() {
                 return Ok(());
             } else {
                 return Err(());

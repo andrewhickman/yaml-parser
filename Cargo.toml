@@ -6,7 +6,7 @@ keywords = ["yaml"]
 edition = "2021"
 
 [dependencies]
-tracing = { version = "0.1.40" }
+tracing = { version = "0.1.40", optional = true }
 
 [dev-dependencies]
 tracing-subscriber = "0.3.18"

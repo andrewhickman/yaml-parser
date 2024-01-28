@@ -8,7 +8,11 @@ struct TestReceiver {
 }
 
 impl Receiver for TestReceiver {
-    fn event(&mut self, _: Event, _: Span) {}
+    #[cfg_attr(not(feature = "tracing"), allow(unused_variables))]
+    fn event(&mut self, event: Event, _: Span) {
+        #[cfg(feature = "tracing")]
+        tracing::info!("event: {:?}", event);
+    }
 
     fn token(&mut self, token: Token, span: Span) {
         self.tokens.push((token, span))
@@ -26,6 +30,13 @@ macro_rules! case {
         #[test]
         fn $name() {
             case($file, false);
+        }
+    };
+    ($name:ident, $file:literal, skip: true $(, fail: true)?) => {
+        #[test]
+        #[ignore]
+        fn $name() {
+            case($file, true);
         }
     };
 }
