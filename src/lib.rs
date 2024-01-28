@@ -156,3 +156,15 @@ pub struct Location {
     /// The 0-based byte offset of the character within the line.
     pub column: usize,
 }
+
+impl Span {
+    /// Returns `true` if this span contains zero characters.
+    pub fn is_empty(&self) -> bool {
+        self.start.index == self.end.index
+    }
+
+    /// The number of bytes covered by the characters in this span.
+    pub fn len(&self) -> usize {
+        self.end.index - self.start.index
+    }
+}

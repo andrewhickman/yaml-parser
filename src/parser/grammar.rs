@@ -1390,12 +1390,13 @@ fn ns_s_flow_seq_entries<R: Receiver>(
         c_collect_entry(parser)?;
         question!(parser, s_separate(parser, n, c));
         // todo unroll recursion
-        ns_s_flow_seq_entries(parser, n, c)
+        question!(parser, ns_s_flow_seq_entries(parser, n, c));
+        Ok(())
     }
 
     ns_flow_seq_entry(parser, n, c)?;
     question!(parser, s_separate(parser, n, c));
-    question_fast!(parser, entry(parser, n, c));
+    question!(parser, entry(parser, n, c));
     Ok(())
 }
 
