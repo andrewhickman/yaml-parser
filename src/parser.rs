@@ -137,25 +137,16 @@ where
         }
     }
 
-    fn detect_entry_indent(&self, n: i32) -> i32 {
+    fn detect_compact_indent(&self, n: i32) -> i32 {
         debug_assert!(matches!(self.peek_prev(), Some('-' | '?' | ':')));
 
         let mut iter = self.iter.clone();
         let mut len = if n == -1 { 1 } else { 0 };
-        let mut is_comment = false;
 
         loop {
             match iter.next() {
                 Some(' ') => len += 1,
-                Some('#') => {
-                    is_comment = true;
-                }
-                Some('\r' | '\n') => {
-                    len = 0;
-                    is_comment = false;
-                }
-                Some(_) if is_comment => continue,
-                _ => break if len >= n { len - n } else { 0 },
+                _ => break len,
             }
         }
     }
@@ -232,8 +223,8 @@ where
                 res
             );
         } else {
-            tracing::debug!(
-                "exit {:?}, {:?}: {:?}",
+            tracing::info!(
+                "error {:?}, {:?}: {:?}",
                 token,
                 &self.text[start.index..self.offset()],
                 res

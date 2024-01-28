@@ -770,7 +770,10 @@ fn b_l_folded<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result
     alt!(parser, b_l_trimmed(parser, n, c), b_as_space(parser))
 }
 
-#[cfg_attr(feature = "tracing", tracing::instrument(level = "info", skip(parser)))]
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(parser))
+)]
 fn s_flow_folded<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     question_fast!(parser, s_separate_in_line(parser));
     b_l_folded(parser, n, Context::FlowIn)?;
@@ -1900,8 +1903,6 @@ fn c_b_block_header<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(i32,
     s_b_comment(parser)?;
 
     let m = m.unwrap_or_else(|| parser.detect_scalar_indent(n));
-    #[cfg(feature = "tracing")]
-    tracing::info!("scalar indent {} @{:?}", m, parser.iter.as_str());
     Ok((m, t))
 }
 
@@ -2168,10 +2169,7 @@ fn l_folded_content<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) ->
     l_chomped_empty(parser, n, t)
 }
 
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "info", skip(parser)))]
 fn l_block_sequence<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     fn entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
         s_indent(parser, n)?;
@@ -2200,9 +2198,7 @@ fn c_l_block_seq_entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<()
 )]
 fn s_l_block_indented<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
     fn collection<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-        let m: i32 = parser.detect_entry_indent(n);
-        #[cfg(feature = "tracing")]
-        tracing::info!("entry indent {} @{:?}", m, parser.iter.as_str());
+        let m: i32 = parser.detect_compact_indent(n);
         s_indent(parser, m)?;
         alt!(
             parser,
@@ -2224,10 +2220,7 @@ fn s_l_block_indented<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -
     )
 }
 
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "info", skip(parser)))]
 fn ns_l_compact_sequence<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     fn entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
         s_indent(parser, n)?;
@@ -2246,22 +2239,15 @@ fn ns_l_compact_sequence<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<
 fn l_block_mapping<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     fn entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
         parser.location();
-        #[cfg(feature = "tracing")]
-        tracing::info!("entry {} @{:?}", n, parser.iter.as_str());
         s_indent(parser, n)?;
         ns_l_block_map_entry(parser, n)
     }
 
     let m = parser.detect_collection_indent(n);
-    #[cfg(feature = "tracing")]
-    tracing::info!("block indent {} @{:?}", m, parser.iter.as_str());
     plus!(parser, entry(parser, n + m))
 }
 
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "info", skip(parser)))]
 fn ns_l_block_map_entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     if parser.is_char('?') && !parser.next_is(char::non_space) {
         c_l_block_map_explicit_entry(parser, n)
@@ -2283,10 +2269,7 @@ fn c_l_block_map_explicit_entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> 
     )
 }
 
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "info", skip(parser)))]
 fn c_l_block_map_explicit_key<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     c_mapping_key(parser)?;
     if parser.is(char::non_space) {
@@ -2295,10 +2278,7 @@ fn c_l_block_map_explicit_key<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Re
     s_l_block_indented(parser, n, Context::BlockOut)
 }
 
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "info", skip(parser)))]
 fn l_block_map_explicit_value<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     s_indent(parser, n)?;
     c_mapping_value(parser)?;
@@ -2317,10 +2297,7 @@ fn ns_l_block_map_implicit_entry<R: Receiver>(parser: &mut Parser<R>, n: i32) ->
     c_l_block_map_implicit_value(parser, n)
 }
 
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "info", skip(parser)))]
 fn ns_s_block_map_implicit_key<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     alt!(
         parser,
@@ -2329,10 +2306,7 @@ fn ns_s_block_map_implicit_key<R: Receiver>(parser: &mut Parser<R>) -> Result<()
     )
 }
 
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "info", skip(parser)))]
 fn c_l_block_map_implicit_value<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     fn empty<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
         e_node(parser)?;
@@ -2378,7 +2352,10 @@ fn s_l_block_node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Re
     )
 }
 
-#[cfg_attr(feature = "tracing", tracing::instrument(level = "info", skip(parser)))]
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(parser))
+)]
 fn s_l_flow_in_block<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     s_separate(parser, n + 1, Context::FlowOut)?;
     ns_flow_node(parser, n + 1, Context::FlowOut)?;
@@ -2543,6 +2520,8 @@ pub(super) fn l_yaml_stream<R: Receiver>(parser: &mut Parser<R>) -> Result<(), (
             if parser.is_end_of_input() {
                 return Ok(());
             } else {
+                #[cfg(feature = "tracing")]
+                tracing::error!("remaining tokens {:?}", parser.iter.as_str());
                 return Err(());
             }
         }
