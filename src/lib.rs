@@ -95,6 +95,10 @@ pub enum Token {
     DoubleQuote,
     /// A single line of double quoted scalar.
     DoubleQuoted,
+    /// A '\' token.
+    Escape,
+    /// An escape code following a '\' token.
+    EscapeCode,
     /// A `%` token.
     Directive,
     /// A line break (`\r`, `\n` or `\r\n`) outside of scalar content.

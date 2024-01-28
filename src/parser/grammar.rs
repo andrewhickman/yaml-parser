@@ -100,25 +100,6 @@ macro_rules! alt {
     };
 }
 
-macro_rules! alt_fast {
-    ($parser:expr, $($production:ident($parser_param:ident $(, $p:expr)*)),*) => {
-        'alt: {
-            let start = $parser.location();
-
-            $(
-                match $production($parser $(, $p)*) {
-                    Ok(r) => break 'alt Ok(r),
-                    Err(()) => (),
-                }
-
-                debug_assert_eq!(start, $parser.location());
-            )*
-
-            break 'alt Err(())
-        }
-    };
-}
-
 #[cfg_attr(
     feature = "tracing",
     tracing::instrument(level = "trace", skip(parser))
@@ -418,143 +399,36 @@ fn ns_tag_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn c_escape<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char('\\')
+    parser.token(Token::Escape, |parser| parser.eat_char('\\'))
 }
 
 #[cfg_attr(
     feature = "tracing",
     tracing::instrument(level = "trace", skip(parser))
 )]
-fn ns_esc_null<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char('0')
-}
-
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
-fn ns_esc_bell<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char('a')
-}
-
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
-fn ns_esc_backspace<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char('a')
-}
-
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
-fn ns_esc_horizontal_tab<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat(|ch| matches!(ch, 't' | '\t'))
-}
-
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
-fn ns_esc_line_feed<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char('n')
-}
-
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
-fn ns_esc_vertical_tab<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char('v')
-}
-
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
-fn ns_esc_form_feed<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char('f')
-}
-
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
-fn ns_esc_carriage_return<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char('r')
-}
-
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
-fn ns_esc_escape<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char('e')
-}
-
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
-fn ns_esc_space<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char(' ')
-}
-
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
-fn ns_esc_double_quote<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char('"')
-}
-
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
-fn ns_esc_slash<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char('/')
-}
-
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
-fn ns_esc_backslash<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char('\\')
-}
-
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
-fn ns_esc_next_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char('N')
-}
-
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
-fn ns_esc_non_breaking_space<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char('_')
-}
-
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
-fn ns_esc_line_separator<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char('L')
-}
-
-#[cfg_attr(
-    feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
-)]
-fn ns_esc_paragraph_separator<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char('P')
+fn ns_esc_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.eat(|ch| {
+        matches!(
+            ch,
+            '0' | 'a'
+                | 'b'
+                | 't'
+                | '\x09'
+                | 'n'
+                | 'v'
+                | 'f'
+                | 'r'
+                | 'e'
+                | '\x20'
+                | '"'
+                | '/'
+                | '\\'
+                | 'N'
+                | '_'
+                | 'L'
+                | 'P'
+        )
+    })
 }
 
 #[cfg_attr(
@@ -617,29 +491,12 @@ fn ns_esc_32_bit<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
 )]
 fn c_ns_esc_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     c_escape(parser)?;
-    alt_fast!(
-        parser,
-        ns_esc_null(parser),
-        ns_esc_bell(parser),
-        ns_esc_backspace(parser),
-        ns_esc_horizontal_tab(parser),
-        ns_esc_line_feed(parser),
-        ns_esc_vertical_tab(parser),
-        ns_esc_form_feed(parser),
-        ns_esc_carriage_return(parser),
-        ns_esc_escape(parser),
-        ns_esc_space(parser),
-        ns_esc_double_quote(parser),
-        ns_esc_slash(parser),
-        ns_esc_backslash(parser),
-        ns_esc_next_line(parser),
-        ns_esc_non_breaking_space(parser),
-        ns_esc_line_separator(parser),
-        ns_esc_paragraph_separator(parser),
-        ns_esc_8_bit(parser),
-        ns_esc_16_bit(parser),
-        ns_esc_32_bit(parser)
-    )
+    parser.token(Token::EscapeCode, |parser| match parser.peek() {
+        Some('x') => ns_esc_8_bit(parser),
+        Some('u') => ns_esc_16_bit(parser),
+        Some('U') => ns_esc_32_bit(parser),
+        _ => ns_esc_char(parser),
+    })
 }
 
 #[cfg_attr(
@@ -1171,7 +1028,7 @@ fn nb_double_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     match parser.peek() {
         Some('\\') => c_ns_esc_char(parser),
         Some('"') => Err(()),
-        _ => nb_json(parser),
+        _ => parser.token(Token::DoubleQuoted, nb_json),
     }
 }
 
@@ -1214,10 +1071,8 @@ fn nb_double_text<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Re
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn nb_double_one_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::DoubleQuoted, |parser| {
-        star!(parser, nb_double_char(parser));
-        Ok(())
-    })
+    star!(parser, nb_double_char(parser));
+    Ok(())
 }
 
 #[cfg_attr(
@@ -1225,7 +1080,8 @@ fn nb_double_one_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn s_double_escaped<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    s_whites(parser)?;
+    // should be joined to start of double quoted string
+    parser.token(Token::DoubleQuoted, s_whites)?;
     c_escape(parser)?;
     b_non_content(parser)?;
     star!(parser, l_empty(parser, n, Context::FlowIn));
@@ -1250,7 +1106,7 @@ fn s_double_break<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()>
 )]
 fn nb_ns_double_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     fn char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-        s_whites(parser)?;
+        parser.token(Token::DoubleQuoted, s_whites)?;
         ns_double_char(parser)
     }
 
@@ -1263,12 +1119,19 @@ fn nb_ns_double_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn s_double_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    fn trailing_whites<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+        parser.token(Token::Separator, s_whites)
+    }
+
     fn line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-        parser.token(Token::DoubleQuoted, |parser| {
-            ns_double_char(parser)?;
-            nb_ns_double_in_line(parser)?;
-            alt!(parser, s_double_next_line(parser, n), s_whites(parser))
-        })
+        ns_double_char(parser)?;
+        nb_ns_double_in_line(parser)?;
+        // todo unroll recursion
+        alt!(
+            parser,
+            s_double_next_line(parser, n),
+            trailing_whites(parser)
+        )
     }
 
     s_double_break(parser, n)?;
@@ -1281,7 +1144,7 @@ fn s_double_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(),
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn nb_double_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    parser.token(Token::DoubleQuoted, nb_ns_double_in_line)?;
+    nb_ns_double_in_line(parser)?;
     alt!(parser, s_double_next_line(parser, n), s_whites(parser))
 }
 
@@ -2169,7 +2032,10 @@ fn l_folded_content<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) ->
     l_chomped_empty(parser, n, t)
 }
 
-#[cfg_attr(feature = "tracing", tracing::instrument(level = "info", skip(parser)))]
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(parser))
+)]
 fn l_block_sequence<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     fn entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
         s_indent(parser, n)?;
@@ -2220,7 +2086,10 @@ fn s_l_block_indented<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -
     )
 }
 
-#[cfg_attr(feature = "tracing", tracing::instrument(level = "info", skip(parser)))]
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(parser))
+)]
 fn ns_l_compact_sequence<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     fn entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
         s_indent(parser, n)?;
@@ -2247,7 +2116,10 @@ fn l_block_mapping<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()
     plus!(parser, entry(parser, n + m))
 }
 
-#[cfg_attr(feature = "tracing", tracing::instrument(level = "info", skip(parser)))]
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(parser))
+)]
 fn ns_l_block_map_entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     if parser.is_char('?') && !parser.next_is(char::non_space) {
         c_l_block_map_explicit_entry(parser, n)
@@ -2269,7 +2141,10 @@ fn c_l_block_map_explicit_entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> 
     )
 }
 
-#[cfg_attr(feature = "tracing", tracing::instrument(level = "info", skip(parser)))]
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(parser))
+)]
 fn c_l_block_map_explicit_key<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     c_mapping_key(parser)?;
     if parser.is(char::non_space) {
@@ -2278,7 +2153,10 @@ fn c_l_block_map_explicit_key<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Re
     s_l_block_indented(parser, n, Context::BlockOut)
 }
 
-#[cfg_attr(feature = "tracing", tracing::instrument(level = "info", skip(parser)))]
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(parser))
+)]
 fn l_block_map_explicit_value<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     s_indent(parser, n)?;
     c_mapping_value(parser)?;
@@ -2297,7 +2175,10 @@ fn ns_l_block_map_implicit_entry<R: Receiver>(parser: &mut Parser<R>, n: i32) ->
     c_l_block_map_implicit_value(parser, n)
 }
 
-#[cfg_attr(feature = "tracing", tracing::instrument(level = "info", skip(parser)))]
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(parser))
+)]
 fn ns_s_block_map_implicit_key<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     alt!(
         parser,
@@ -2306,7 +2187,10 @@ fn ns_s_block_map_implicit_key<R: Receiver>(parser: &mut Parser<R>) -> Result<()
     )
 }
 
-#[cfg_attr(feature = "tracing", tracing::instrument(level = "info", skip(parser)))]
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(parser))
+)]
 fn c_l_block_map_implicit_value<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     fn empty<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
         e_node(parser)?;
@@ -2488,7 +2372,10 @@ fn l_explicit_document<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     alt!(parser, l_bare_document(parser), empty(parser))
 }
 
-// #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(parser))
+)]
 fn l_directive_document<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     while parser.is_char('%') {
         l_directive(parser)?;
@@ -2496,7 +2383,10 @@ fn l_directive_document<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     l_explicit_document(parser)
 }
 
-// #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(parser))
+)]
 fn l_any_document<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     alt!(
         parser,
@@ -2505,7 +2395,10 @@ fn l_any_document<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     )
 }
 
-// #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
+#[cfg_attr(
+    feature = "tracing",
+    tracing::instrument(level = "trace", skip(parser))
+)]
 pub(super) fn l_yaml_stream<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     let mut terminated = true;
     loop {
