@@ -332,7 +332,7 @@ fn ns_hex_digit<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn ns_word_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat(|ch| ch.is_ascii_alphanumeric() || ch == '-')
+    parser.eat(char::word)
 }
 
 #[cfg_attr(
@@ -354,7 +354,7 @@ fn ns_uri_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
         }
     } else {
         parser.eat(|ch| {
-            ch.is_ascii_alphanumeric()
+            char::word(ch)
                 || matches!(
                     ch,
                     '#' | ';'

@@ -1,7 +1,6 @@
 $TestSuite = "$PSScriptRoot/../yaml-test-suite";
 
 $Failing = @(
-    "case_5tym",
     "case_g4rs",
     "case_hre5",
     "case_j3bt",
@@ -15,7 +14,7 @@ Push-Location $TestSuite
 try
 {
     Get-ChildItem "$TestSuite/**/in.yaml" -Recurse -Exclude tags | ForEach-Object {
-        $Name = Split-Path -Parent (Resolve-Path -Path $_ -Relative)
+        $Name = ((Split-Path -Parent (Resolve-Path -Path $_ -Relative)) -replace '[/\\]','/').Trim('.').Trim('/')
         $TestName = "case_" + ($Name -replace '[/\\.]','_').Trim('_').ToLower()
 
         if ($TestName -in $Failing) {
@@ -29,7 +28,7 @@ try
             $FailArg = ""
         }
 
-        "case!($TestName, r#`"$Name`"#$SkipArg$FailArg);"
+        "case!($TestName, `"$Name`"$SkipArg$FailArg);"
     } | Set-Content "$PSScriptRoot/suite/cases.gen.rs"
 }
 finally {
