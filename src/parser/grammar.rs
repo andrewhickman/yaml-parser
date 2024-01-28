@@ -2107,7 +2107,6 @@ fn ns_l_compact_sequence<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<
 )]
 fn l_block_mapping<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     fn entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-        parser.location();
         s_indent(parser, n)?;
         ns_l_block_map_entry(parser, n)
     }

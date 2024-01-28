@@ -75,4 +75,4 @@ fn case(name: &str, success: bool) {
     }
 }
 
-include!("suite/cases.rs");
+include!("suite/cases.gen.rs");

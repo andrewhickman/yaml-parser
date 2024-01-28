@@ -381,8 +381,8 @@ where
 
         let ch = self.iter.next().expect("called bump at end of input");
         let is_break = match ch {
-            '\n' if !self.is_char('\r') => true,
-            '\r' => true,
+            '\r' if !self.is_char('\n') => true,
+            '\n' => true,
             _ => false,
         };
 
