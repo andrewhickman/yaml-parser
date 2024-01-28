@@ -590,8 +590,10 @@ fn s_flow_folded<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> 
 #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
 fn c_nb_comment_text<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     c_comment(parser)?;
-    star_fast!(parser, nb_char(parser));
-    Ok(())
+    parser.token(Token::CommentText, |parser| {
+        star_fast!(parser, nb_char(parser));
+        Ok(())
+    })
 }
 
 #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", skip(parser)))]
@@ -667,6 +669,9 @@ fn l_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
 fn ns_reserved_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     fn param<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
         s_separate_in_line(parser)?;
+        if parser.is_char('#') {
+            return Err(());
+        }
         ns_directive_parameter(parser)
     }
 

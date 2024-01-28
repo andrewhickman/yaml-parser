@@ -73,6 +73,8 @@ pub enum Token {
     MappingEnd,
     /// A `#` token.
     Comment,
+    /// The body of a comment.
+    CommentText,
     /// A `&` token.
     Anchor,
     /// A `*` token.
