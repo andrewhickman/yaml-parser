@@ -1239,7 +1239,7 @@ fn nb_ns_single_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
 
 #[cfg_attr(
     feature = "tracing",
-    tracing::instrument(level = "trace", skip(parser))
+    tracing::instrument(level = "info", skip(parser))
 )]
 fn s_single_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
     fn trailing_whites<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
@@ -1247,7 +1247,7 @@ fn s_single_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(),
     }
 
     fn line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-        ns_double_char(parser)?;
+        ns_single_char(parser)?;
         nb_ns_single_in_line(parser)?;
         alt!(
             parser,
@@ -1266,8 +1266,12 @@ fn s_single_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(),
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn nb_single_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    fn trailing_whites<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+        parser.token(Token::Separator, s_whites)
+    }
+
     nb_ns_single_in_line(parser)?;
-    alt!(parser, s_single_next_line(parser, n), s_whites(parser))
+    alt!(parser, s_single_next_line(parser, n), trailing_whites(parser))
 }
 
 #[cfg_attr(
@@ -1788,6 +1792,7 @@ fn c_b_block_header<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(i32,
     s_b_comment(parser)?;
 
     let m = m.unwrap_or_else(|| parser.detect_scalar_indent(n));
+    tracing::warn!("scalar indent n={n} m={m}");
     Ok((m, t))
 }
 

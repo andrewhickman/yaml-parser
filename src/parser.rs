@@ -199,33 +199,18 @@ where
     fn token(&mut self, token: Token, f: impl Fn(&mut Self) -> Result<(), ()>) -> Result<(), ()> {
         let start = self.location();
 
-        #[cfg(feature = "tracing")]
-        tracing::debug!("enter {:?}", token);
-
         debug_assert!(!self.in_token, "nested tokens");
         self.in_token = true;
         let res = f(self);
         self.in_token = false;
 
-        #[cfg(feature = "tracing")]
-        if res.is_ok() {
-            tracing::info!(
-                "exit {:?}, {:?}: {:?}",
-                token,
-                &self.text[start.index..self.offset()],
-                res
-            );
-        } else {
-            tracing::info!(
-                "error {:?}, {:?}: {:?}",
-                token,
-                &self.text[start.index..self.offset()],
-                res
-            );
-        }
-
         match res {
             Ok(()) => {
+                tracing::info!(
+                    "token {:?}, {:?}",
+                    token,
+                    &self.text[start.index..self.offset()]
+                );
                 if self.alt_depth > 0 {
                     self.tokens.push((token, self.span(start)));
                 } else {

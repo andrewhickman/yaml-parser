@@ -1,7 +1,6 @@
 $TestSuite = "$PSScriptRoot/../yaml-test-suite";
 
 $Failing = @(
-    "case_nat4",
     "case_qlj7",
     "case_s98z"
 )
@@ -11,7 +10,7 @@ try
 {
     Get-ChildItem "$TestSuite/**/in.yaml" -Recurse -Exclude tags | ForEach-Object {
         $Name = ((Split-Path -Parent (Resolve-Path -Path $_ -Relative)) -replace '[/\\]','/').Trim('.').Trim('/')
-        $TestName = "case_" + ($Name -replace '[/\\.]','_').Trim('_').ToLower()
+        $TestName = "case_" + ($Name -replace '/','_').ToLower()
 
         if ($TestName -in $Failing) {
             $SkipArg = ", skip: true"

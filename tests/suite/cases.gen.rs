@@ -290,7 +290,7 @@ case!(case_myw6, "MYW6");
 case!(case_mzx3, "MZX3");
 case!(case_n4jp, "N4JP", fail: true);
 case!(case_n782, "N782", fail: true);
-case!(case_nat4, "NAT4", skip: true);
+case!(case_nat4, "NAT4");
 case!(case_nb6z, "NB6Z");
 case!(case_nhx8, "NHX8");
 case!(case_nj66, "NJ66");
