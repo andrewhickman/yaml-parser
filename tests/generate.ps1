@@ -1,7 +1,6 @@
 $TestSuite = "$PSScriptRoot/../yaml-test-suite";
 
 $Failing = @(
-    "case_36f6",
     "case_3rln_00",
     "case_3rln_01",
     "case_3rln_02",
@@ -17,7 +16,6 @@ $Failing = @(
     "case_5kje",
     "case_5llu",
     "case_5tym",
-    "case_6hb6",
     "case_6wpf",
     "case_7a4e",
     "case_7zz5",
@@ -33,9 +31,6 @@ $Failing = @(
     "case_9shh",
     "case_9tfx",
     "case_a2m4",
-    "case_a984",
-    "case_ab8u",
-    "case_bu8l",
     "case_ctn5",
     "case_cvw2",
     "case_dbg4",
@@ -71,25 +66,21 @@ $Failing = @(
     "case_prh3",
     "case_q88a",
     "case_q8ad",
-    "case_q9wf",
     "case_qlj7",
     "case_rxy3",
     "case_rzp5",
     "case_rzt7",
     "case_s98z",
     "case_sf5v",
-    "case_ske5",
     "case_ssw6",
     "case_t4yy",
     "case_tl85",
     "case_udr7",
     "case_ugm3",
     "case_v9d5",
-    "case_vjp3_01",
     "case_w9l4",
     "case_xv9v",
     "case_xw4d",
-    "case_y79y_002",
     "case_zl4z"
 )
 

@@ -17,7 +17,11 @@ impl Receiver for TestReceiver {
 
     fn token(&mut self, token: Token, span: Span) {
         #[cfg(feature = "tracing")]
-        tracing::info!("token: {:?} {:?}", token, &self.source[span.start.index..span.end.index]);
+        tracing::info!(
+            "token: {:?} {:?}",
+            token,
+            &self.source[span.start.index..span.end.index]
+        );
         self.tokens.push((token, span))
     }
 }
