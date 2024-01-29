@@ -8,6 +8,8 @@ extern crate alloc;
 
 mod parser;
 
+use core::ops::Range;
+
 pub use self::parser::parse;
 
 /// A handler for events and tokens in a YAML stream.
@@ -25,25 +27,25 @@ pub trait Receiver {
 #[derive(Copy, Clone, Debug)]
 pub enum Event {
     /// Emitted at the start of parsing a YAML stream.
-    StreamStart {},
+    StreamStart,
     /// Emitted at the end of parsing a YAML stream.
-    StreamEnd {},
+    StreamEnd,
     /// Emitted at the start of each document within a YAML stream.
-    DocumentStart {},
+    DocumentStart,
     /// Emitted at the end of each document within a YAML stream.
-    DocumentEnd {},
+    DocumentEnd,
     /// Emitted at the start of a mapping node.
-    MappingStart {},
+    MappingStart,
     /// Emitted at the end of a mapping node.
-    MappingEnd {},
+    MappingEnd,
     /// Emitted at the start of a sequence node.
-    SequenceStart {},
+    SequenceStart,
     /// Emitted at the end of a sequence node.
-    SequenceEnd {},
+    SequenceEnd,
     /// Emitted when encountering an alias node.
-    Alias {},
+    Alias,
     /// Emitted when encountering a scalar node.
-    Scalar {},
+    Scalar,
 }
 
 /// A token type in a YAML stream.
@@ -77,6 +79,8 @@ pub enum Token {
     CommentText,
     /// A `&` token.
     Anchor,
+    /// The name of an anchor on an anchor property of a node, or an alias node.
+    AnchorName,
     /// A `*` token.
     Alias,
     /// A `|` token.
@@ -121,8 +125,6 @@ pub enum Token {
     VerbatimTag,
     /// A non-specific tag property on a node.
     NonSpecificTag,
-    /// The name of an anchor on the anchor property of a node, or an alias node.
-    AnchorName,
     /// An empty scalar node.
     Empty,
     /// A single line of a scalar node.
@@ -158,13 +160,31 @@ pub struct Location {
 }
 
 impl Span {
+    /// Creates a new span between two locations.
+    pub fn new(start: Location, end: Location) -> Self {
+        Span { start, end }
+    }
+
+    /// Creates an empty span at a location.
+    pub fn empty(location: Location) -> Self {
+        Span {
+            start: location,
+            end: location,
+        }
+    }
+
     /// Returns `true` if this span contains zero characters.
     pub fn is_empty(&self) -> bool {
-        self.start.index == self.end.index
+        self.range().is_empty()
     }
 
     /// The number of bytes covered by the characters in this span.
     pub fn len(&self) -> usize {
-        self.end.index - self.start.index
+        self.range().len()
+    }
+
+    /// Gets the range of bytes covered by this span.
+    pub fn range(&self) -> Range<usize> {
+        self.start.index..self.end.index
     }
 }

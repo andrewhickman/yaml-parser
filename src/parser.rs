@@ -20,7 +20,7 @@ struct Parser<'t, R> {
     text: &'t str,
     iter: Chars<'t>,
 
-    tokens: Vec<(Token, Span)>,
+    events: Vec<(EventOrToken, Span)>,
     diagnostics: Vec<Diagnostic>,
     yaml_version: Option<&'t str>,
 
@@ -60,6 +60,12 @@ pub struct Diagnostic {
     pub span: Span,
 }
 
+#[derive(Copy, Clone, Debug)]
+enum EventOrToken {
+    Event(Event),
+    Token(Token),
+}
+
 impl<'t, R> Parser<'t, R>
 where
     R: Receiver,
@@ -68,7 +74,7 @@ where
         Parser {
             text,
             iter: text.chars(),
-            tokens: Vec::new(),
+            events: Vec::new(),
             diagnostics: Vec::new(),
             yaml_version: None,
             receiver,
@@ -83,14 +89,10 @@ where
     }
 
     fn document(&mut self, f: impl Fn(&mut Self) -> Result<(), ()>) -> Result<(), ()> {
-        self.receiver
-            .event(Event::DocumentStart {}, self.span(self.location()));
         self.in_document = true;
         let res = f(self);
         self.in_document = false;
         self.yaml_version = None;
-        self.receiver
-            .event(Event::DocumentEnd {}, self.span(self.location()));
         res
     }
 
@@ -148,9 +150,9 @@ where
         }
     }
 
-    fn with_rollback(&mut self, f: impl Fn(&mut Self) -> Result<(), ()>) -> Result<(), ()> {
-        let tokens_len = self.tokens.len();
-        let diagnostics_len = self.tokens.len();
+    fn with_rollback<T>(&mut self, f: impl Fn(&mut Self) -> Result<T, ()>) -> Result<T, ()> {
+        let events_len = self.events.len();
+        let diagnostics_len = self.diagnostics.len();
         let offset = self.offset();
         let line_number = self.line_number;
         let line_offset = self.line_offset;
@@ -161,18 +163,21 @@ where
         self.alt_depth -= 1;
 
         match res {
-            Ok(()) => {
+            Ok(r) => {
                 if self.alt_depth == 0 {
-                    for (token, span) in self.tokens.drain(tokens_len..) {
-                        self.receiver.token(token, span);
+                    for (event, span) in self.events.drain(events_len..) {
+                        match event {
+                            EventOrToken::Event(event) => self.receiver.event(event, span),
+                            EventOrToken::Token(token) => self.receiver.token(token, span),
+                        }
                     }
                 }
 
-                Ok(())
+                Ok(r)
             }
             Err(()) => {
                 self.iter = self.text[offset..].chars();
-                self.tokens.truncate(tokens_len);
+                self.events.truncate(events_len);
                 self.diagnostics.truncate(diagnostics_len);
                 self.line_number = line_number;
                 self.line_offset = line_offset;
@@ -210,20 +215,27 @@ where
 
         match res {
             Ok(()) => {
-                #[cfg(feature = "tracing")]
-                tracing::info!(
-                    "token {:?}, {:?}",
-                    token,
-                    &self.text[start.index..self.offset()]
-                );
-                if self.alt_depth > 0 {
-                    self.tokens.push((token, self.span(start)));
-                } else {
-                    self.receiver.token(token, self.span(start));
-                }
+                // #[cfg(feature = "tracing")]
+                // tracing::info!(
+                //     "token {:?}, {:?}",
+                //     token,
+                //     &self.text[start.index..self.offset()]
+                // );
+                self.queue(EventOrToken::Token(token), self.span(start));
                 Ok(())
             }
             Err(()) => Err(()),
+        }
+    }
+
+    fn queue(&mut self, event: EventOrToken, span: Span) {
+        if self.alt_depth > 0 {
+            self.events.push((event, span));
+        } else {
+            match event {
+                EventOrToken::Event(event) => self.receiver.event(event, span),
+                EventOrToken::Token(token) => self.receiver.token(token, span),
+            }
         }
     }
 

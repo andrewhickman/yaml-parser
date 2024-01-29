@@ -1,7 +1,9 @@
 use crate::{
     parser::{char, Chomping, Context, Diagnostic, Parser},
-    Receiver, Token,
+    Event, Location, Receiver, Span, Token,
 };
+
+use super::EventOrToken;
 
 macro_rules! star {
     ($parser:expr, $production:ident($parser_param:ident $(, $p:expr)*)) => {
@@ -1008,8 +1010,11 @@ fn ns_anchor_name<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn c_ns_alias_node<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    let start = parser.location();
     c_alias(parser)?;
-    ns_anchor_name(parser)
+    ns_anchor_name(parser)?;
+    parser.queue(EventOrToken::Event(Event::Alias), parser.span(start));
+    Ok(())
 }
 
 #[cfg_attr(
@@ -1057,9 +1062,12 @@ fn ns_double_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn c_double_quoted<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    let start = parser.location();
     c_double_quote(parser)?;
     nb_double_text(parser, n, c)?;
-    c_double_quote(parser)
+    c_double_quote(parser)?;
+    parser.queue(EventOrToken::Event(Event::Scalar), parser.span(start));
+    Ok(())
 }
 
 #[cfg_attr(
@@ -1201,9 +1209,12 @@ fn ns_single_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn c_single_quoted<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    let start = parser.location();
     c_single_quote(parser)?;
     nb_single_text(parser, n, c)?;
-    c_single_quote(parser)
+    c_single_quote(parser)?;
+    parser.queue(EventOrToken::Event(Event::Scalar), parser.span(start));
+    Ok(())
 }
 
 #[cfg_attr(
@@ -1689,7 +1700,10 @@ fn c_s_implicit_json_key<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Res
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn ns_flow_yaml_content<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
-    ns_plain(parser, n, c)
+    let start = parser.location();
+    ns_plain(parser, n, c)?;
+    parser.queue(EventOrToken::Event(Event::Scalar), parser.span(start));
+    Ok(())
 }
 
 #[cfg_attr(
@@ -2071,14 +2085,27 @@ fn l_folded_content<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) ->
     feature = "tracing",
     tracing::instrument(level = "trace", skip(parser))
 )]
-fn l_block_sequence<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn l_block_sequence<R: Receiver>(
+    parser: &mut Parser<R>,
+    start: Location,
+    n: i32,
+) -> Result<(), ()> {
     fn entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
         s_indent(parser, n)?;
         c_l_block_seq_entry(parser, n)
     }
 
     let m = parser.detect_collection_indent(n);
-    plus!(parser, entry(parser, n + m))
+    parser.queue(
+        EventOrToken::Event(Event::SequenceStart),
+        parser.span(start),
+    );
+    plus!(parser, entry(parser, n + m))?;
+    parser.queue(
+        EventOrToken::Event(Event::SequenceEnd),
+        Span::empty(parser.location()),
+    );
+    Ok(())
 }
 
 #[cfg_attr(
@@ -2131,8 +2158,10 @@ fn ns_l_compact_sequence<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<
         c_l_block_seq_entry(parser, n)
     }
 
+    parser.queue(EventOrToken::Event(Event::SequenceStart), Span::empty(parser.location()));
     c_l_block_seq_entry(parser, n)?;
     star!(parser, entry(parser, n));
+    parser.queue(EventOrToken::Event(Event::SequenceEnd), Span::empty(parser.location()));
     Ok(())
 }
 
@@ -2140,14 +2169,20 @@ fn ns_l_compact_sequence<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<
     feature = "tracing",
     tracing::instrument(level = "trace", skip(parser))
 )]
-fn l_block_mapping<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn l_block_mapping<R: Receiver>(parser: &mut Parser<R>, start: Location, n: i32) -> Result<(), ()> {
     fn entry<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
         s_indent(parser, n)?;
         ns_l_block_map_entry(parser, n)
     }
 
     let m = parser.detect_collection_indent(n);
-    plus!(parser, entry(parser, n + m))
+    parser.queue(EventOrToken::Event(Event::MappingStart), parser.span(start));
+    plus!(parser, entry(parser, n + m))?;
+    parser.queue(
+        EventOrToken::Event(Event::MappingEnd),
+        Span::empty(parser.location()),
+    );
+    Ok(())
 }
 
 #[cfg_attr(
@@ -2253,8 +2288,10 @@ fn ns_l_compact_mapping<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(
         ns_l_block_map_entry(parser, n)
     }
 
+    parser.queue(EventOrToken::Event(Event::MappingStart), Span::empty(parser.location()));
     ns_l_block_map_entry(parser, n)?;
     star!(parser, entry(parser, n));
+    parser.queue(EventOrToken::Event(Event::MappingEnd), Span::empty(parser.location()));
     Ok(())
 }
 
@@ -2298,17 +2335,20 @@ fn s_l_block_in_block<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -
 )]
 fn s_l_block_scalar<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
     s_separate(parser, n + 1, c)?;
+    let start = parser.location();
     if parser.is(|ch| matches!(ch, '!' | '&')) {
         c_ns_properties(parser, n + 1, c)?;
         s_separate(parser, n + 1, c)?;
     }
     if parser.is_char('|') {
-        c_l_literal(parser, n)
+        c_l_literal(parser, n)?;
     } else if parser.is_char('>') {
-        c_l_folded(parser, n)
+        c_l_folded(parser, n)?;
     } else {
-        Err(())
+        return Err(());
     }
+    parser.queue(EventOrToken::Event(Event::Scalar), parser.span(start));
+    Ok(())
 }
 
 #[cfg_attr(
@@ -2329,17 +2369,24 @@ fn s_l_block_collection<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context)
         s_l_comments(parser)
     }
 
-    fn collection_props<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    fn collection_props<R: Receiver>(
+        parser: &mut Parser<R>,
+        n: i32,
+        c: Context,
+    ) -> Result<Location, ()> {
         s_separate(parser, n, c)?;
-        alt!(parser, props(state, n, c), anchor(state), tag(state))
+        let start = parser.location();
+        alt!(parser, props(state, n, c), anchor(state), tag(state))?;
+        Ok(start)
     }
 
-    question!(parser, collection_props(parser, n + 1, c));
+    let start = question!(parser, collection_props(parser, n + 1, c));
     s_l_comments(parser)?;
+    let start = start.unwrap_or_else(|| parser.location());
     alt!(
         parser,
-        l_block_sequence(parser, c.seq_spaces(n)),
-        l_block_mapping(parser, n)
+        l_block_sequence(parser, start, c.seq_spaces(n)),
+        l_block_mapping(parser, start, n)
     )
 }
 
@@ -2358,7 +2405,13 @@ fn l_document_prefix<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn c_directives_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::DirectivesEnd, |parser| parser.eat_str("---"))
+    let start = parser.location();
+    parser.token(Token::DirectivesEnd, |parser| parser.eat_str("---"))?;
+    parser.queue(
+        EventOrToken::Event(Event::DocumentStart),
+        parser.span(start),
+    );
+    Ok(())
 }
 
 #[cfg_attr(
@@ -2366,13 +2419,16 @@ fn c_directives_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn c_document_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    let start = parser.location();
     parser.token(Token::DocumentEnd, |parser| {
         parser.eat_str("...")?;
         if parser.is(char::non_space) {
             return Err(());
         }
         Ok(())
-    })
+    })?;
+    parser.queue(EventOrToken::Event(Event::DocumentEnd), parser.span(start));
+    Ok(())
 }
 
 #[cfg_attr(
@@ -2422,11 +2478,17 @@ fn l_directive_document<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     tracing::instrument(level = "trace", skip(parser))
 )]
 fn l_any_document<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    alt!(
-        parser,
-        l_directive_document(parser),
+    if parser.is_char('%') {
+        l_directive_document(parser)
+    } else if parser.is_str("---") {
+        l_explicit_document(parser)
+    } else {
+        parser.queue(
+            EventOrToken::Event(Event::DocumentStart),
+            Span::empty(parser.location()),
+        );
         l_bare_document(parser)
-    )
+    }
 }
 
 #[cfg_attr(
@@ -2434,6 +2496,11 @@ fn l_any_document<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     tracing::instrument(level = "trace", skip(parser))
 )]
 pub(super) fn l_yaml_stream<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    parser.queue(
+        EventOrToken::Event(Event::StreamStart),
+        Span::empty(parser.location()),
+    );
+
     let mut terminated = true;
     loop {
         l_document_prefix(parser)?;
@@ -2443,8 +2510,17 @@ pub(super) fn l_yaml_stream<R: Receiver>(parser: &mut Parser<R>) -> Result<(), (
             question!(parser, l_any_document(parser)).is_some()
         };
         terminated = question!(parser, l_document_suffix(parser)).is_some();
-        if !terminated && !read_document {
-            if parser.is_end_of_input() {
+        if !terminated {
+            if read_document {
+                parser.queue(
+                    EventOrToken::Event(Event::DocumentEnd),
+                    Span::empty(parser.location()),
+                );
+            } else if parser.is_end_of_input() {
+                parser.queue(
+                    EventOrToken::Event(Event::StreamEnd),
+                    Span::empty(parser.location()),
+                );
                 return Ok(());
             } else {
                 #[cfg(feature = "tracing")]
