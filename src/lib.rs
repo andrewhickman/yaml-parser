@@ -1,5 +1,5 @@
 //! A pure-rust, safe, YAML parser.
-// #![cfg_attr(not(test), no_std)]
+// #![no_std]
 #![warn(missing_debug_implementations, missing_docs)]
 #![deny(unsafe_code)]
 #![doc(html_root_url = "https://docs.rs/yaml-parser/0.1.0/")]
@@ -8,6 +8,7 @@ extern crate alloc;
 
 mod parser;
 
+use alloc::{borrow::Cow, string::String};
 use core::ops::Range;
 
 pub use self::parser::parse;
@@ -23,29 +24,109 @@ pub trait Receiver {
     }
 }
 
+/// TODO
+#[derive(Debug, Clone)]
+pub struct Diagnostic {
+    /// TODO
+    pub message: String,
+    /// TODO
+    pub span: Span,
+}
+
 /// A high level event in a YAML stream.
-#[derive(Copy, Clone, Debug)]
-pub enum Event {
+#[derive(Clone, Debug)]
+pub enum Event<'t> {
     /// Emitted at the start of parsing a YAML stream.
     StreamStart,
     /// Emitted at the end of parsing a YAML stream.
     StreamEnd,
     /// Emitted at the start of each document within a YAML stream.
-    DocumentStart,
+    DocumentStart {
+        /// The YAML version of this document, if specified with a `%YAML` directive.
+        version: Option<Cow<'t, str>>,
+    },
     /// Emitted at the end of each document within a YAML stream.
     DocumentEnd,
     /// Emitted at the start of a mapping node.
-    MappingStart,
+    MappingStart {
+        /// The style of this mapping node.
+        style: CollectionStyle,
+        /// The anchor property at this mapping node, if specified.
+        anchor: Option<Cow<'t, str>>,
+        /// The tag property of this mapping node, if specified.
+        tag: Option<Cow<'t, str>>,
+    },
     /// Emitted at the end of a mapping node.
     MappingEnd,
     /// Emitted at the start of a sequence node.
-    SequenceStart,
+    SequenceStart {
+        /// The style of this sequence node.
+        style: CollectionStyle,
+        /// The anchor property at this sequence node, if specified.
+        anchor: Option<Cow<'t, str>>,
+        /// The tag property of this sequence node, if specified.
+        tag: Option<Cow<'t, str>>,
+    },
     /// Emitted at the end of a sequence node.
     SequenceEnd,
     /// Emitted when encountering an alias node.
-    Alias,
+    Alias {
+        /// The name of the anchor this alias refers to.
+        value: Cow<'t, str>,
+    },
     /// Emitted when encountering a scalar node.
-    Scalar,
+    Scalar {
+        /// The presentation style of this scalar node.
+        style: ScalarStyle,
+        /// The contents of the scalar node.
+        value: Cow<'t, str>,
+        /// The anchor property at this scalar node, if specified.
+        anchor: Option<Cow<'t, str>>,
+        /// The tag property of this scalar node, if specified.
+        tag: Option<Cow<'t, str>>,
+    },
+}
+
+/// The presentation style of a sequence or mapping node.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum CollectionStyle {
+    /// A block-style collection:
+    ///
+    /// ```yaml
+    /// key: value
+    /// ```
+    Block,
+    /// A flow-style collection:
+    ///
+    /// ```yaml
+    /// { key: value }
+    /// ```
+    Flow,
+}
+
+/// The presentation style of a scalar node.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum ScalarStyle {
+    /// A plain scalar: `value`.
+    Plain,
+    /// A single quoted scalar: `'value'`.
+    SingleQuoted,
+    /// A double quoted scalar: `"value"`.
+    DoubleQuoted,
+    /// A literal scalar:
+    ///
+    /// ```yaml
+    /// |
+    /// value
+    /// ```
+    Literal,
+    /// A folded scalar:
+    ///
+    /// ```yaml
+    /// >
+    /// value
+    /// ```
+    Folded,
 }
 
 /// A token type in a YAML stream.

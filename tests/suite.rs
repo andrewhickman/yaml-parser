@@ -1,121 +1,88 @@
 use std::{fs, path::PathBuf};
 
-use yaml_parser::{Event, Receiver, Span, Token};
+use yaml_parser::{CollectionStyle, Diagnostic, Event, Receiver, ScalarStyle, Span};
 
 #[derive(Default)]
-struct TestReceiver {
-    source: String,
+struct TestReceiver<'t> {
+    text: &'t str,
     events: Vec<String>,
-    scalar: String,
-    anchor: String,
 }
 
-impl Receiver for TestReceiver {
+impl<'t> Receiver for TestReceiver<'t> {
     #[cfg_attr(not(feature = "tracing"), allow(unused_variables))]
     fn event(&mut self, event: Event, span: Span) {
         match event {
             Event::StreamStart => self.events.push("+STR".to_owned()),
             Event::StreamEnd => self.events.push("-STR".to_owned()),
-            Event::DocumentStart => {
+            Event::DocumentStart { .. } => {
                 if span.is_empty() {
                     self.events.push("+DOC".to_string())
                 } else {
                     self.events
-                        .push(format!("+DOC {}", &self.source[span.range()]))
+                        .push(format!("+DOC {}", &self.text[span.range()]))
                 }
             }
             Event::DocumentEnd => self.events.push("-DOC".to_owned()),
-            Event::MappingStart => {
-                if self.anchor.is_empty() {
-                    self.events.push("+MAP".to_string())
-                } else {
-                    self.events.push(format!("+MAP &{}", self.anchor));
-                    self.anchor.clear();
+            Event::MappingStart { style, anchor, tag } => {
+                let mut event = "+MAP".to_owned();
+                if style == CollectionStyle::Flow {
+                    event.push_str(" {}");
                 }
-            },
-            Event::MappingEnd => self.events.push("-MAP".to_owned()),
-            Event::SequenceStart => {
-                if self.anchor.is_empty() {
-                    self.events.push("+SEQ".to_string())
-                } else {
-                    self.events.push(format!("+SEQ &{}", self.anchor));
-                    self.anchor.clear();
-                }
-            },
-            Event::SequenceEnd => self.events.push("-SEQ".to_owned()),
-            Event::Alias => {
-                if self.anchor.is_empty() {
-                    self.events.push("=ALI".to_string());
-                    panic!();
-                } else {
-                    self.events.push(format!("=ALI *{}", self.anchor));
-                    self.anchor.clear();
-                }
-            }
-            Event::Scalar => {
-                let mut event = "=VAL".to_string();
-                if !self.anchor.is_empty() {
+                if let Some(anchor) = anchor {
                     event.push_str(" &");
-                    event.push_str(&self.anchor);
-                    self.anchor.clear();
+                    event.push_str(anchor.as_ref());
                 }
-                if !self.scalar.is_empty() {
+                if let Some(tag) = tag {
                     event.push(' ');
-                    event.push_str(&self.scalar);
-                    self.scalar.clear();
+                    event.push_str(tag.as_ref());
                 }
                 self.events.push(event);
             }
-        }
-    }
-
-    fn token(&mut self, token: Token, span: Span) {
-        // tracing::info!("{:?} {:?}", token, &self.source[span.range()]);
-        match token {
-            Token::SingleQuote | Token::DoubleQuote | Token::Literal | Token::Folded if self.scalar.is_empty() => {
-                self.scalar.push_str(&self.source[span.range()])
-            }
-            Token::SingleQuoted | Token::DoubleQuoted => {
-                self.scalar.push_str(&self.source[span.range()])
-            }
-            Token::Scalar => {
-                if self.scalar.is_empty() {
-                    self.scalar.push(':');
+            Event::MappingEnd => self.events.push("-MAP".to_owned()),
+            Event::SequenceStart { style, anchor, tag } => {
+                let mut event = "+SEQ".to_owned();
+                if style == CollectionStyle::Flow {
+                    event.push_str(" []");
                 }
-                self.scalar.push_str(&self.source[span.range()])
+                if let Some(anchor) = anchor {
+                    event.push_str(" &");
+                    event.push_str(anchor.as_ref());
+                }
+                if let Some(tag) = tag {
+                    event.push(' ');
+                    event.push_str(tag.as_ref());
+                }
+                self.events.push(event);
             }
-            Token::QuotedQuote => self.scalar.push('\''),
-            Token::EscapeCode => match self.scalar[span.range()].as_bytes() {
-                [b'0'] => self.scalar.push('\x00'),
-                [b'a'] => self.scalar.push('\x07'),
-                [b'b'] => self.scalar.push('\x08'),
-                [b't' | b'\x09'] => self.scalar.push('\x09'),
-                [b'n'] => self.scalar.push('\x0a'),
-                [b'v'] => self.scalar.push('\x0b'),
-                [b'f'] => self.scalar.push('\x0c'),
-                [b'r'] => self.scalar.push('\x0d'),
-                [b'e'] => self.scalar.push('\x1b'),
-                [b' '] => self.scalar.push('\x20'),
-                [b'"'] => self.scalar.push('\x22'),
-                [b'/'] => self.scalar.push('\x2f'),
-                [b'\\'] => self.scalar.push('\x5c'),
-                [b'N'] => self.scalar.push('\u{85}'),
-                [b'_'] => self.scalar.push('\u{a0}'),
-                [b'L'] => self.scalar.push('\u{2028}'),
-                [b'P'] => self.scalar.push('\u{2029}'),
-                // todo invalid char?
-                [b'x' | b'u' | b'U', hex @ ..] => self.scalar.push(
-                    char::from_u32(
-                        u32::from_str_radix(std::str::from_utf8(hex).unwrap(), 16).unwrap(),
-                    )
-                    .unwrap(),
-                ),
-                _ => panic!("invalid escape"),
-            },
-            Token::AnchorName => self.anchor.push_str(&self.source[span.range()]),
-            Token::ScalarBreak => self.scalar.push_str("\n"),
-            Token::ScalarSpace => self.scalar.push(' '),
-            _ => (),
+            Event::SequenceEnd => self.events.push("-SEQ".to_owned()),
+            Event::Alias { value } => {
+                self.events.push(format!("=ALI *{}", value));
+            }
+            Event::Scalar {
+                style,
+                value,
+                anchor,
+                tag,
+            } => {
+                let mut event = "=VAL".to_owned();
+                if let Some(anchor) = anchor {
+                    event.push_str(" &");
+                    event.push_str(anchor.as_ref());
+                }
+                if let Some(tag) = tag {
+                    event.push(' ');
+                    event.push_str(tag.as_ref());
+                }
+                match style {
+                    ScalarStyle::Plain => event.push_str(" :"),
+                    ScalarStyle::SingleQuoted => event.push_str(" '"),
+                    ScalarStyle::DoubleQuoted => event.push_str(" \""),
+                    ScalarStyle::Literal => event.push_str(" |"),
+                    ScalarStyle::Folded => event.push_str(" >"),
+                }
+                event.push_str(value.escape_default().to_string().as_ref());
+                self.events.push(event);
+            }
         }
     }
 }
@@ -149,6 +116,17 @@ macro_rules! case {
     };
 }
 
+fn parse(text: &str) -> Result<Vec<String>, Vec<Diagnostic>> {
+    let mut receiver = TestReceiver {
+        events: Vec::new(),
+        text,
+    };
+    match yaml_parser::parse(&mut receiver, text) {
+        Ok(()) => Ok(receiver.events),
+        Err(errors) => Err(errors),
+    }
+}
+
 fn case(name: &str, success: bool) {
     let _ = tracing_subscriber::fmt::try_init();
 
@@ -163,17 +141,10 @@ fn case(name: &str, success: bool) {
         .map(|line| line.to_owned())
         .collect();
 
-    let mut receiver = TestReceiver {
-        source: yaml.clone(),
-        events: Vec::new(),
-        scalar: String::new(),
-        anchor: String::new(),
-    };
     if success {
-        assert!(yaml_parser::parse(&mut receiver, &yaml).is_ok());
-        assert_eq!(receiver.events, events);
+        assert_eq!(parse(&yaml).unwrap(), events);
     } else {
-        assert!(yaml_parser::parse(&mut receiver, &yaml).is_err());
+        assert!(parse(&yaml).is_err());
     }
 }
 

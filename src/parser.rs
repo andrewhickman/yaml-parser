@@ -1,14 +1,17 @@
 mod char;
 mod grammar;
 
-use core::str::Chars;
+use core::{mem, ops::Range, str::Chars, unreachable};
 
-use alloc::vec::Vec;
+use alloc::{borrow::Cow, string::String, vec::Vec};
 
-use crate::{Event, Location, Receiver, Span, Token};
+use crate::{Diagnostic, Event, Location, Receiver, Span, Token};
 
 /// Parse a YAML stream, emitting events into the given receiver.
-pub fn parse<R: Receiver>(receiver: &mut R, text: &str) -> Result<(), Vec<Diagnostic>> {
+pub fn parse<'t, R: Receiver>(receiver: &mut R, text: &'t str) -> Result<(), Vec<Diagnostic>>
+where
+    R: 't,
+{
     let mut parser = Parser::new(receiver, text);
     match grammar::l_yaml_stream(&mut parser) {
         Ok(()) => Ok(()),
@@ -20,9 +23,10 @@ struct Parser<'t, R> {
     text: &'t str,
     iter: Chars<'t>,
 
-    events: Vec<(EventOrToken, Span)>,
+    events: Vec<(EventOrToken<'t>, Span)>,
     diagnostics: Vec<Diagnostic>,
     yaml_version: Option<&'t str>,
+    value: CowBuilder,
 
     receiver: &'t mut R,
     alt_depth: u32,
@@ -54,16 +58,18 @@ enum Chomping {
     Keep,
 }
 
-#[derive(Debug, Clone)]
-pub struct Diagnostic {
-    pub message: &'static str,
-    pub span: Span,
+#[derive(Clone, Debug)]
+enum EventOrToken<'t> {
+    Event(Event<'t>),
+    Token(Token),
 }
 
-#[derive(Copy, Clone, Debug)]
-enum EventOrToken {
-    Event(Event),
-    Token(Token),
+type Properties<'t> = (Option<Cow<'t, str>>, Option<Cow<'t, str>>);
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum CowBuilder {
+    Borrowed { range: Range<usize> },
+    Owned { value: String },
 }
 
 impl<'t, R> Parser<'t, R>
@@ -76,6 +82,7 @@ where
             iter: text.chars(),
             events: Vec::new(),
             diagnostics: Vec::new(),
+            value: CowBuilder::new(),
             yaml_version: None,
             receiver,
             in_token: false,
@@ -150,9 +157,10 @@ where
         }
     }
 
-    fn with_rollback<T>(&mut self, f: impl Fn(&mut Self) -> Result<T, ()>) -> Result<T, ()> {
+    fn with_rollback<T>(&mut self, mut f: impl FnMut(&mut Self) -> Result<T, ()>) -> Result<T, ()> {
         let events_len = self.events.len();
         let diagnostics_len = self.diagnostics.len();
+        let value = self.value.clone();
         let offset = self.offset();
         let line_number = self.line_number;
         let line_offset = self.line_offset;
@@ -179,6 +187,7 @@ where
                 self.iter = self.text[offset..].chars();
                 self.events.truncate(events_len);
                 self.diagnostics.truncate(diagnostics_len);
+                self.value = value;
                 self.line_number = line_number;
                 self.line_offset = line_offset;
                 self.length_limit = length_limit;
@@ -190,7 +199,7 @@ where
     fn with_length_limit(
         &mut self,
         max_len: usize,
-        f: impl Fn(&mut Self) -> Result<(), ()>,
+        mut f: impl FnMut(&mut Self) -> Result<(), ()>,
     ) -> Result<(), ()> {
         let prev_length_limit = self.length_limit;
         self.length_limit = Some(match prev_length_limit {
@@ -205,7 +214,11 @@ where
         res
     }
 
-    fn token(&mut self, token: Token, f: impl Fn(&mut Self) -> Result<(), ()>) -> Result<(), ()> {
+    fn token(
+        &mut self,
+        token: Token,
+        mut f: impl FnMut(&mut Self) -> Result<(), ()>,
+    ) -> Result<(), ()> {
         let start = self.location();
 
         debug_assert!(!self.in_token, "nested tokens");
@@ -215,12 +228,6 @@ where
 
         match res {
             Ok(()) => {
-                // #[cfg(feature = "tracing")]
-                // tracing::info!(
-                //     "token {:?}, {:?}",
-                //     token,
-                //     &self.text[start.index..self.offset()]
-                // );
                 self.queue(EventOrToken::Token(token), self.span(start));
                 Ok(())
             }
@@ -228,7 +235,7 @@ where
         }
     }
 
-    fn queue(&mut self, event: EventOrToken, span: Span) {
+    fn queue(&mut self, event: EventOrToken<'t>, span: Span) {
         if self.alt_depth > 0 {
             self.events.push((event, span));
         } else {
@@ -237,6 +244,15 @@ where
                 EventOrToken::Token(token) => self.receiver.token(token, span),
             }
         }
+    }
+
+    fn begin_value(&mut self) {
+        debug_assert!(self.value.is_empty());
+        self.value = CowBuilder::new();
+    }
+
+    fn end_value(&mut self) -> Cow<'t, str> {
+        mem::take(&mut self.value).finish(self.text)
     }
 
     fn eat(&mut self, pred: impl Fn(char) -> bool) -> Result<(), ()> {
@@ -405,5 +421,68 @@ impl Context {
                 unimplemented!()
             }
         }
+    }
+}
+
+impl CowBuilder {
+    fn new() -> Self {
+        CowBuilder::Borrowed { range: 0..0 }
+    }
+
+    fn is_empty(&self) -> bool {
+        match self {
+            CowBuilder::Borrowed { range } => range.start == range.end,
+            CowBuilder::Owned { value } => value.is_empty(),
+        }
+    }
+
+    fn push_range(&mut self, text: &str, value: Range<usize>) {
+        if value.is_empty() {
+            return;
+        }
+
+        if self.is_empty() {
+            *self = CowBuilder::Borrowed { range: value }
+        } else {
+            match self {
+                CowBuilder::Borrowed { range } if range.end == value.start => range.end = value.end,
+                _ => self.to_mut(text, value.len()).push_str(&text[value]),
+            }
+        }
+    }
+
+    fn push_char(&mut self, text: &str, char: char) {
+        self.to_mut(text, char.len_utf8()).push(char)
+    }
+
+    fn to_mut(&mut self, text: &str, reserve: usize) -> &mut String {
+        let value = match self {
+            CowBuilder::Borrowed { range } => {
+                let mut value = String::with_capacity(range.len() + reserve);
+                value.push_str(&text[range.clone()]);
+                value
+            }
+            CowBuilder::Owned { value } => return value,
+        };
+
+        *self = CowBuilder::Owned { value };
+
+        match self {
+            CowBuilder::Borrowed { .. } => unreachable!(),
+            CowBuilder::Owned { value } => value,
+        }
+    }
+
+    fn finish(self, text: &str) -> Cow<'_, str> {
+        match self {
+            CowBuilder::Borrowed { range } => Cow::Borrowed(&text[range]),
+            CowBuilder::Owned { value } => Cow::Owned(value),
+        }
+    }
+}
+
+impl Default for CowBuilder {
+    fn default() -> Self {
+        CowBuilder::new()
     }
 }
