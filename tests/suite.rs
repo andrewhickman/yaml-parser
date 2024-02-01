@@ -22,7 +22,14 @@ impl<'t> Receiver for TestReceiver<'t> {
                         .push(format!("+DOC {}", &self.text[span.range()]))
                 }
             }
-            Event::DocumentEnd => self.events.push("-DOC".to_owned()),
+            Event::DocumentEnd => {
+                if span.is_empty() {
+                    self.events.push("-DOC".to_string())
+                } else {
+                    self.events
+                        .push(format!("-DOC {}", &self.text[span.range()]))
+                }
+            }
             Event::MappingStart { style, anchor, tag } => {
                 let mut event = "+MAP".to_owned();
                 if style == CollectionStyle::Flow {

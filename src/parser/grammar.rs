@@ -243,7 +243,21 @@ fn ns_uri_char<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
         let start = parser.location();
         parser.eat_char('%').unwrap();
         if ns_hex_digit(parser).is_ok() && ns_hex_digit(parser).is_ok() {
-            Ok(())
+            let hex = &parser.text[start.index..parser.offset()];
+            let codepoint = u32::from_str_radix(hex, 16).unwrap();
+            match char::try_from(codepoint) {
+                Ok(ch) => {
+                    parser.value.push_char(parser.text, ch);
+                    Ok(())
+                }
+                Err(_) => {
+                    parser.diagnostics.push(Diagnostic {
+                        message: "invalid percent escape".to_owned(),
+                        span: parser.span(start),
+                    });
+                    Err(())
+                }
+            }
         } else {
             parser.diagnostics.push(Diagnostic {
                 message: "invalid percent escape".to_owned(),
@@ -252,6 +266,7 @@ fn ns_uri_char<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
             Err(())
         }
     } else {
+        let start = parser.offset();
         parser.eat(|ch| {
             char::word(ch)
                 || matches!(
@@ -277,7 +292,9 @@ fn ns_uri_char<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
                         | '['
                         | ']'
                 )
-        })
+        })?;
+        parser.value.push_range(parser.text, start..parser.offset());
+        Ok(())
     }
 }
 
@@ -391,8 +408,7 @@ fn s_indent_less_or_equal<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Re
 
 fn s_separate_in_line<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
     if parser.is(char::space) {
-        parser.token(Token::Separator,
-            s_whites)
+        parser.token(Token::Separator, s_whites)
     } else if parser.is_start_of_line() {
         Ok(())
     } else {
@@ -569,9 +585,13 @@ fn ns_yaml_version<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
 fn ns_tag_directive<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
     parser.token(Token::DirectiveName, |parser| parser.eat_str("TAG"))?;
     s_separate_in_line(parser)?;
+    let start = parser.offset();
     c_tag_handle(parser)?;
+    let tag_handle = &parser.text[start..parser.offset()];
     s_separate_in_line(parser)?;
-    ns_tag_prefix(parser)
+    let prefix = ns_tag_prefix(parser)?;
+    parser.tags.insert(tag_handle, prefix);
+    Ok(())
 }
 
 fn c_tag_handle<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
@@ -586,31 +606,61 @@ fn c_tag_handle<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
 }
 
 fn c_primary_tag_handle<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-    parser.eat_char('!')
+    let start = parser.offset();
+    parser.eat_char('!')?;
+    if let Some(tag) = parser.tags.get("!") {
+        parser.value.push_str(parser.text, tag);
+    } else {
+        parser.value.push_range(parser.text, start..parser.offset());
+    }
+    Ok(())
 }
 
 fn c_secondary_tag_handle<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-    parser.eat_str("!!")
+    let start = parser.offset();
+    parser.eat_str("!!")?;
+    if let Some(tag) = parser.tags.get("!!") {
+        parser.value.push_str(parser.text, tag);
+    } else {
+        parser.value.push_range(parser.text, start..parser.offset());
+    }
+    Ok(())
 }
 
 fn c_named_tag_handle<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
+    let start = parser.location();
     parser.eat_char('!')?;
     plus_fast!(parser, ns_word_char(parser))?;
-    parser.eat_char('!')
+    parser.eat_char('!')?;
+
+    if let Some(tag) = parser.tags.get(parser.value.as_str(parser.text)) {
+        parser.value.push_str(parser.text, tag);
+        Ok(())
+    } else {
+        parser.diagnostics.push(Diagnostic {
+            message: format!("unknown tag {}", parser.value.as_str(parser.text)),
+            span: parser.span(start),
+        });
+        Err(())
+    }
 }
 
-fn ns_tag_prefix<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
+fn ns_tag_prefix<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<'t, str>, ()> {
+    parser.begin_value();
     parser.token(Token::TagPrefix, |parser| {
         if parser.is_char('!') {
             c_ns_local_tag_prefix(parser)
         } else {
             ns_global_tag_prefix(parser)
         }
-    })
+    })?;
+    Ok(parser.end_value())
 }
 
 fn c_ns_local_tag_prefix<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
+    let start = parser.offset();
     parser.eat_char('!')?;
+    parser.value.push_range(parser.text, start..parser.offset());
     star!(parser, ns_uri_char(parser));
     Ok(())
 }
@@ -660,7 +710,7 @@ fn c_ns_properties<'t, R: Receiver>(
 }
 
 fn c_ns_tag_property<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<'t, str>, ()> {
-    let start = parser.offset();
+    parser.begin_value();
     if parser.peek_next() == Some('<') {
         c_verbatim_tag(parser)?
     } else {
@@ -670,14 +720,18 @@ fn c_ns_tag_property<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<
             c_non_specific_tag(parser)
         )?
     }
-    Ok(Cow::Borrowed(&parser.text[start..parser.offset()]))
+    Ok(parser.end_value())
 }
 
 fn c_verbatim_tag<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
     parser.token(Token::VerbatimTag, |parser| {
+        let start = parser.offset();
         parser.eat_str("!<")?;
+        parser.value.push_range(parser.text, start..parser.offset());
         plus!(parser, ns_uri_char(parser))?;
+        let start = parser.offset();
         parser.eat_str(">")?;
+        parser.value.push_range(parser.text, start..parser.offset());
         Ok(())
     })
 }
@@ -690,7 +744,9 @@ fn c_ns_shorthand_tag<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()>
 }
 
 fn c_non_specific_tag<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-    parser.token(Token::NonSpecificTag, |parser| parser.eat_char('!'))
+    let start = parser.offset();
+    parser.token(Token::NonSpecificTag, |parser| parser.eat_char('!'))?;
+    Ok(())
 }
 
 fn c_ns_anchor_property<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<'t, str>, ()> {
