@@ -1,6 +1,6 @@
 use std::{fs, path::PathBuf};
 
-use yaml_parser::{CollectionStyle, Diagnostic, Event, Receiver, ScalarStyle, Span};
+use yaml_parser::{CollectionStyle, Diagnostic, Event, Receiver, ScalarStyle, Span, Token};
 
 #[derive(Default)]
 struct TestReceiver<'t> {
@@ -9,7 +9,6 @@ struct TestReceiver<'t> {
 }
 
 impl<'t> Receiver for TestReceiver<'t> {
-    #[cfg_attr(not(feature = "tracing"), allow(unused_variables))]
     fn event(&mut self, event: Event, span: Span) {
         match event {
             Event::StreamStart => self.events.push("+STR".to_owned()),
@@ -87,10 +86,28 @@ impl<'t> Receiver for TestReceiver<'t> {
                     ScalarStyle::Literal => event.push_str(" |"),
                     ScalarStyle::Folded => event.push_str(" >"),
                 }
-                event.push_str(value.escape_default().to_string().as_ref());
+                for ch in value.chars() {
+                    match ch {
+                        '\0' => event.push_str("\\0"),
+                        '\x07' => event.push_str("\\a"),
+                        '\x08' => event.push_str("\\b"),
+                        '\x09' => event.push_str("\\t"),
+                        '\x0a' => event.push_str("\\n"),
+                        '\x0b' => event.push_str("\\v"),
+                        '\x0c' => event.push_str("\\f"),
+                        '\x0d' => event.push_str("\\r"),
+                        '\x1b' => event.push_str("\\e"),
+                        '\\' => event.push_str("\\\\"),
+                        _ => event.push(ch),
+                    }
+                }
                 self.events.push(event);
             }
         }
+    }
+
+    fn token(&mut self, token: Token, span: Span) {
+        println!("{} {:?}", span.len(), token);
     }
 }
 

@@ -242,8 +242,9 @@ fn ns_uri_char<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
     if parser.is_char('%') {
         let start = parser.location();
         parser.eat_char('%').unwrap();
+        let hex_start = parser.offset();
         if ns_hex_digit(parser).is_ok() && ns_hex_digit(parser).is_ok() {
-            let hex = &parser.text[start.index..parser.offset()];
+            let hex = &parser.text[hex_start..parser.offset()];
             let codepoint = u32::from_str_radix(hex, 16).unwrap();
             match char::try_from(codepoint) {
                 Ok(ch) => {
@@ -368,9 +369,9 @@ fn ns_esc_hex<R: Receiver>(parser: &mut Parser<'_, R>, initial: char, len: u32) 
 fn c_ns_esc_char<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
     c_escape(parser)?;
     parser.token(Token::EscapeCode, |parser| match parser.peek() {
-        Some('x') => ns_esc_hex(parser, 'x', 8),
-        Some('u') => ns_esc_hex(parser, 'u', 16),
-        Some('U') => ns_esc_hex(parser, 'U', 32),
+        Some('x') => ns_esc_hex(parser, 'x', 2),
+        Some('u') => ns_esc_hex(parser, 'u', 4),
+        Some('U') => ns_esc_hex(parser, 'U', 8),
         _ => ns_esc_char(parser),
     })
 }
@@ -585,16 +586,15 @@ fn ns_yaml_version<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
 fn ns_tag_directive<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
     parser.token(Token::DirectiveName, |parser| parser.eat_str("TAG"))?;
     s_separate_in_line(parser)?;
-    let start = parser.offset();
-    c_tag_handle(parser)?;
-    let tag_handle = &parser.text[start..parser.offset()];
+    let tag_handle = c_tag_handle(parser)?;
     s_separate_in_line(parser)?;
     let prefix = ns_tag_prefix(parser)?;
     parser.tags.insert(tag_handle, prefix);
     Ok(())
 }
 
-fn c_tag_handle<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
+fn c_tag_handle<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<'t, str>, ()> {
+    parser.begin_value();
     parser.token(Token::TagHandle, |parser| {
         alt!(
             parser,
@@ -602,47 +602,28 @@ fn c_tag_handle<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
             c_secondary_tag_handle(parser),
             c_primary_tag_handle(parser)
         )
-    })
+    })?;
+    Ok(parser.end_value())
 }
 
 fn c_primary_tag_handle<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
     let start = parser.offset();
     parser.eat_char('!')?;
-    if let Some(tag) = parser.tags.get("!") {
-        parser.value.push_str(parser.text, tag);
-    } else {
-        parser.value.push_range(parser.text, start..parser.offset());
-    }
+    parser.value.push_range(parser.text, start..parser.offset());
     Ok(())
 }
 
 fn c_secondary_tag_handle<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
     let start = parser.offset();
     parser.eat_str("!!")?;
-    if let Some(tag) = parser.tags.get("!!") {
-        parser.value.push_str(parser.text, tag);
-    } else {
-        parser.value.push_range(parser.text, start..parser.offset());
-    }
+    parser.value.push_range(parser.text, start..parser.offset());
     Ok(())
 }
 
 fn c_named_tag_handle<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-    let start = parser.location();
     parser.eat_char('!')?;
     plus_fast!(parser, ns_word_char(parser))?;
-    parser.eat_char('!')?;
-
-    if let Some(tag) = parser.tags.get(parser.value.as_str(parser.text)) {
-        parser.value.push_str(parser.text, tag);
-        Ok(())
-    } else {
-        parser.diagnostics.push(Diagnostic {
-            message: format!("unknown tag {}", parser.value.as_str(parser.text)),
-            span: parser.span(start),
-        });
-        Err(())
-    }
+    parser.eat_char('!')
 }
 
 fn ns_tag_prefix<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<'t, str>, ()> {
@@ -710,43 +691,65 @@ fn c_ns_properties<'t, R: Receiver>(
 }
 
 fn c_ns_tag_property<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<'t, str>, ()> {
-    parser.begin_value();
     if parser.peek_next() == Some('<') {
-        c_verbatim_tag(parser)?
+        c_verbatim_tag(parser)
     } else {
         alt!(
             parser,
             c_ns_shorthand_tag(parser),
             c_non_specific_tag(parser)
-        )?
+        )
     }
-    Ok(parser.end_value())
 }
 
-fn c_verbatim_tag<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
+fn c_verbatim_tag<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<'t, str>, ()> {
+    parser.begin_value();
     parser.token(Token::VerbatimTag, |parser| {
+        parser.eat_char('!')?;
         let start = parser.offset();
-        parser.eat_str("!<")?;
+        parser.eat_char('<')?;
         parser.value.push_range(parser.text, start..parser.offset());
         plus!(parser, ns_uri_char(parser))?;
         let start = parser.offset();
-        parser.eat_str(">")?;
+        parser.eat_char('>')?;
         parser.value.push_range(parser.text, start..parser.offset());
         Ok(())
-    })
+    })?;
+    Ok(parser.end_value())
 }
 
-fn c_ns_shorthand_tag<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-    c_tag_handle(parser)?;
+fn c_ns_shorthand_tag<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<'t, str>, ()> {
+    let handle = c_tag_handle(parser)?;
+
+    parser.begin_value();
     parser.token(Token::TagSuffix, |parser| {
         plus!(parser, ns_tag_char(parser))
-    })
+    })?;
+    let suffix = parser.end_value();
+
+    let resolved = match parser.tags.get(handle.as_ref()) {
+        Some(prefix) => Cow::Owned(format!("<{}{}>", prefix, suffix)),
+        None if handle.as_ref() == "!" => Cow::Owned(format!("<!{}>", suffix)),
+        None if handle.as_ref() == "!!" => Cow::Owned(format!("<tag:yaml.org,2002:{}>", suffix)),
+        None => {
+            parser.diagnostics.push(Diagnostic {
+                message: format!("unknown tag handle {}", handle),
+                span: Span::empty(Location {
+                    index: 0,
+                    line: 0,
+                    column: 0,
+                }),
+            });
+            return Err(());
+        }
+    };
+
+    Ok(resolved)
 }
 
-fn c_non_specific_tag<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-    let start = parser.offset();
+fn c_non_specific_tag<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<'t, str>, ()> {
     parser.token(Token::NonSpecificTag, |parser| parser.eat_char('!'))?;
-    Ok(())
+    Ok(Cow::Borrowed("<!>"))
 }
 
 fn c_ns_anchor_property<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<'t, str>, ()> {
@@ -894,7 +897,10 @@ fn nb_ns_double_in_line<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), (
 
 fn s_double_next_line<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
     fn trailing_whites<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-        parser.token(Token::Separator, s_whites)
+        let start = parser.offset();
+        parser.token(Token::DoubleQuoted, s_whites)?;
+        parser.value.push_range(parser.text, start..parser.offset());
+        Ok(())
     }
 
     fn line<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
@@ -915,7 +921,10 @@ fn s_double_next_line<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result
 
 fn nb_double_multi_line<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
     fn trailing_whites<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-        parser.token(Token::Separator, s_whites)
+        let start = parser.offset();
+        parser.token(Token::SingleQuoted, s_whites)?;
+        parser.value.push_range(parser.text, start..parser.offset());
+        Ok(())
     }
 
     nb_ns_double_in_line(parser)?;
@@ -991,7 +1000,9 @@ fn nb_single_one_line<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()>
 
 fn nb_ns_single_in_line<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
     fn char<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
+        let start = parser.offset();
         parser.token(Token::SingleQuoted, s_whites)?;
+        parser.value.push_range(parser.text, start..parser.offset());
         ns_single_char(parser)
     }
 
@@ -1001,7 +1012,10 @@ fn nb_ns_single_in_line<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), (
 
 fn s_single_next_line<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
     fn trailing_whites<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-        parser.token(Token::Separator, s_whites)
+        let start = parser.offset();
+        parser.token(Token::SingleQuoted, s_whites)?;
+        parser.value.push_range(parser.text, start..parser.offset());
+        Ok(())
     }
 
     fn line<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
@@ -1021,7 +1035,10 @@ fn s_single_next_line<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result
 
 fn nb_single_multi_line<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
     fn trailing_whites<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-        parser.token(Token::Separator, s_whites)
+        let start = parser.offset();
+        parser.token(Token::SingleQuoted, s_whites)?;
+        parser.value.push_range(parser.text, start..parser.offset());
+        Ok(())
     }
 
     nb_ns_single_in_line(parser)?;
@@ -1344,13 +1361,26 @@ fn c_ns_flow_map_adjacent_value<R: Receiver>(
 }
 
 fn ns_flow_pair<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -> Result<(), ()> {
+    parser.queue(
+        EventOrToken::Event(Event::MappingStart {
+            style: CollectionStyle::Flow,
+            anchor: None,
+            tag: None,
+        }),
+        Span::empty(parser.location()),
+    );
     if parser.is_char('?') && !parser.next_is(char::non_space) {
         c_mapping_key(parser)?;
         s_separate(parser, n, c)?;
-        ns_flow_map_explicit_entry(parser, n, c)
+        ns_flow_map_explicit_entry(parser, n, c)?;
     } else {
-        ns_flow_pair_entry(parser, n, c)
+        ns_flow_pair_entry(parser, n, c)?;
     }
+    parser.queue(
+        EventOrToken::Event(Event::MappingEnd),
+        Span::empty(parser.location()),
+    );
+    Ok(())
 }
 
 fn ns_flow_pair_entry<R: Receiver>(
@@ -1595,6 +1625,9 @@ fn c_chomping_indicator<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<Chomp
 
 fn b_chomped_last<R: Receiver>(parser: &mut Parser<'_, R>, t: Chomping) -> Result<(), ()> {
     if parser.is_end_of_input() {
+        if matches!(t, Chomping::Clip | Chomping::Keep) {
+            parser.value.push_char(parser.text, '\n');
+        }
         Ok(())
     } else {
         match t {
@@ -1605,25 +1638,21 @@ fn b_chomped_last<R: Receiver>(parser: &mut Parser<'_, R>, t: Chomping) -> Resul
 }
 
 fn l_chomped_empty<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, t: Chomping) -> Result<(), ()> {
-    match t {
-        Chomping::Strip | Chomping::Clip => l_strip_empty(parser, n),
-        Chomping::Keep => l_keep_empty(parser, n),
-    }
-}
+    let t = match t {
+        Chomping::Strip | Chomping::Clip => Chomping::Strip,
+        Chomping::Keep => Chomping::Keep,
+    };
 
-fn l_strip_empty<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
-    fn line<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
+    fn line<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, t: Chomping) -> Result<(), ()> {
+        if parser.is_end_of_input() {
+            return Err(());
+        }
+
         s_indent_less_or_equal(parser, n)?;
-        b_non_content(parser)
+        b_chomped_last(parser, t)
     }
 
-    star!(parser, line(parser, n));
-    question!(parser, l_trail_comments(parser, n));
-    Ok(())
-}
-
-fn l_keep_empty<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
-    star!(parser, l_empty(parser, n, Context::BlockIn));
+    star!(parser, line(parser, n, t));
     question!(parser, l_trail_comments(parser, n));
     Ok(())
 }
@@ -1809,6 +1838,10 @@ fn l_block_sequence<'t, R: Receiver>(
     }
 
     let m = parser.detect_collection_indent(n);
+    if m <= 0 {
+        return Err(());
+    }
+
     parser.queue(
         EventOrToken::Event(Event::SequenceStart {
             style: CollectionStyle::Block,
@@ -1896,6 +1929,10 @@ fn l_block_mapping<'t, R: Receiver>(
     }
 
     let m = parser.detect_collection_indent(n);
+    if m <= 0 {
+        return Err(());
+    }
+
     parser.queue(
         EventOrToken::Event(Event::MappingStart {
             style: CollectionStyle::Block,
@@ -2121,21 +2158,21 @@ fn c_directives_end<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
 }
 
 fn c_document_end<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-    let start = parser.location();
     parser.token(Token::DocumentEnd, |parser| {
         parser.eat_str("...")?;
         if parser.is(char::non_space) {
             return Err(());
         }
         Ok(())
-    })?;
-    parser.queue(EventOrToken::Event(Event::DocumentEnd), parser.span(start));
-    Ok(())
+    })
 }
 
-fn l_document_suffix<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
+fn l_document_suffix<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<Span, ()> {
+    let start = parser.location();
     c_document_end(parser)?;
-    s_l_comments(parser)
+    let span = parser.span(start);
+    s_l_comments(parser)?;
+    Ok(span)
 }
 
 fn l_bare_document<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
@@ -2162,7 +2199,9 @@ fn l_directive_document<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), (
 fn l_any_document<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
     if parser.is_char('%') {
         l_directive_document(parser)
-    } else if parser.is_str("---") {
+    } else if parser.is_str("---")
+        && matches!(parser.peek_nth(3), None | Some('\r' | '\n' | '\t' | ' '))
+    {
         l_explicit_document(parser)
     } else {
         parser.queue(
@@ -2189,14 +2228,18 @@ pub(super) fn l_yaml_stream<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(
         } else {
             question!(parser, l_any_document(parser)).is_some()
         };
-        terminated = question!(parser, l_document_suffix(parser)).is_some();
-        if !terminated {
-            if read_document {
-                parser.queue(
-                    EventOrToken::Event(Event::DocumentEnd),
-                    Span::empty(parser.location()),
-                );
-            } else if parser.is_end_of_input() {
+        let suffix_span = question!(parser, l_document_suffix(parser));
+        terminated = suffix_span.is_some();
+
+        if read_document {
+            parser.queue(
+                EventOrToken::Event(Event::DocumentEnd),
+                suffix_span.unwrap_or_else(|| Span::empty(parser.location())),
+            );
+        }
+
+        if !terminated && !read_document {
+            if parser.is_end_of_input() {
                 parser.queue(
                     EventOrToken::Event(Event::StreamEnd),
                     Span::empty(parser.location()),

@@ -28,7 +28,7 @@ struct Parser<'t, R> {
     events: Vec<(EventOrToken<'t>, Span)>,
     diagnostics: Vec<Diagnostic>,
     yaml_version: Option<&'t str>,
-    tags: HashMap<&'t str, Cow<'t, str>>,
+    tags: HashMap<Cow<'t, str>, Cow<'t, str>>,
     value: CowBuilder,
 
     receiver: &'t mut R,
@@ -122,7 +122,7 @@ where
                 }
                 Some(_) if len < max_len => return Err(()),
                 Some(_) => break len,
-                None => break max_len, // is this case correct / tested ??
+                None => break max_len.max(len),
             }
         };
 
@@ -152,6 +152,7 @@ where
         debug_assert!(matches!(self.peek_prev(), Some('-' | '?' | ':')));
 
         let mut iter = self.iter.clone();
+        // todo needed?
         let mut len = if n == -1 { 1 } else { 0 };
 
         loop {
@@ -458,17 +459,6 @@ impl CowBuilder {
 
     fn push_char(&mut self, text: &str, char: char) {
         self.to_mut(text, char.len_utf8()).push(char)
-    }
-
-    fn push_str(&mut self, text: &str, s: &str) {
-        self.to_mut(text, s.len()).push_str(s)
-    }
-
-    fn as_str<'a>(&'a self, text: &'a str) -> &'a str {
-        match self {
-            CowBuilder::Borrowed { range } => &text[range.clone()],
-            CowBuilder::Owned { value } => value.as_str(),
-        }
     }
 
     fn to_mut(&mut self, text: &str, reserve: usize) -> &mut String {
