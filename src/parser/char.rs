@@ -69,3 +69,7 @@ pub(super) fn plain_safe(ch: char, c: Context) -> bool {
         Context::BlockIn | Context::BlockOut => unimplemented!(),
     }
 }
+
+pub(super) fn json(ch: char) -> bool {
+    matches!(ch, '\x09' | '\x20'..='\u{10ffff}')
+}

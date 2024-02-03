@@ -107,7 +107,7 @@ macro_rules! alt {
 
 fn nb_json<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
     let start = parser.offset();
-    parser.eat(|ch| matches!(ch, '\x09' | '\x20'..='\u{10ffff}'))?;
+    parser.eat(char::json)?;
     parser.value.push_range(parser.text, start..parser.offset());
     Ok(())
 }
@@ -385,25 +385,25 @@ fn s_indent<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
     })
 }
 
-fn s_indent_less_than<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
+fn s_indent_less_than<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<i32, ()> {
     parser.token(Token::Indent, |parser| {
-        for _ in 1..n {
+        for i in 0..(n - 1) {
             if s_space(parser).is_err() {
-                return Ok(());
+                return Ok(i);
             }
         }
-        Ok(())
+        Ok(n - 1)
     })
 }
 
-fn s_indent_less_or_equal<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
+fn s_indent_less_or_equal<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<i32, ()> {
     parser.token(Token::Indent, |parser| {
-        for _ in 0..n {
+        for i in 0..n {
             if s_space(parser).is_err() {
-                return Ok(());
+                return Ok(i);
             }
         }
-        Ok(())
+        Ok(n)
     })
 }
 
@@ -417,18 +417,6 @@ fn s_separate_in_line<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()>
     }
 }
 
-fn s_line_prefix<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -> Result<(), ()> {
-    match c {
-        Context::BlockIn | Context::BlockOut => s_block_line_prefix(parser, n),
-        Context::FlowIn | Context::FlowOut => s_flow_line_prefix(parser, n),
-        Context::BlockKey | Context::FlowKey => unimplemented!(),
-    }
-}
-
-fn s_block_line_prefix<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
-    s_indent(parser, n)
-}
-
 fn s_flow_line_prefix<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
     s_indent(parser, n)?;
     question!(parser, s_separate_in_line(parser));
@@ -436,11 +424,9 @@ fn s_flow_line_prefix<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result
 }
 
 fn l_empty<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -> Result<(), ()> {
-    alt!(
-        parser,
-        s_line_prefix(parser, n, c),
-        s_indent_less_than(parser, n)
-    )?;
+    if s_indent_less_or_equal(parser, n)? == n && matches!(c, Context::FlowIn | Context::FlowOut) {
+        question!(parser, s_separate_in_line(parser));
+    }
     b_as_line_feed(parser)
 }
 
@@ -811,7 +797,7 @@ fn nb_double_char<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
     match parser.peek() {
         Some('\\') => c_ns_esc_char(parser),
         Some('"') => Err(()),
-        _ => parser.token(Token::DoubleQuoted, |parser| nb_json(parser)),
+        _ => parser.token(Token::DoubleQuoted, nb_json),
     }
 }
 
@@ -934,7 +920,7 @@ fn nb_single_char<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
     if parser.is_char('\'') {
         c_quoted_quote(parser)
     } else {
-        parser.token(Token::SingleQuoted, |parser| nb_json(parser))
+        parser.token(Token::SingleQuoted, nb_json)
     }
 }
 

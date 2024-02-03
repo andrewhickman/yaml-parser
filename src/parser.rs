@@ -2,8 +2,8 @@ mod char;
 // mod cursor;
 mod grammar;
 
+use alloc::{borrow::Cow, collections::BTreeMap, string::String, vec::Vec};
 use core::{mem, ops::Range, str::Chars, unreachable};
-use alloc::{borrow::Cow, string::String, vec::Vec, collections::BTreeMap};
 
 use crate::{Diagnostic, Event, Location, Receiver, Span, Token};
 
@@ -217,11 +217,11 @@ where
         res
     }
 
-    fn token(
+    fn token<T>(
         &mut self,
         token: Token,
-        mut f: impl FnMut(&mut Self) -> Result<(), ()>,
-    ) -> Result<(), ()> {
+        mut f: impl FnMut(&mut Self) -> Result<T, ()>,
+    ) -> Result<T, ()> {
         let start = self.location();
 
         debug_assert!(!self.in_token, "nested tokens");
@@ -230,9 +230,9 @@ where
         self.in_token = false;
 
         match res {
-            Ok(()) => {
+            Ok(value) => {
                 self.queue(EventOrToken::Token(token), self.span(start));
-                Ok(())
+                Ok(value)
             }
             Err(()) => Err(()),
         }
