@@ -2179,28 +2179,31 @@ fn l_any_document<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
     }
 }
 
-pub(super) fn l_yaml_stream<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-    let mut terminated = true;
+pub(super) fn l_document<R: Receiver>(
+    parser: &mut Parser<'_, R>,
+    terminated: &mut bool,
+) -> Result<Option<Span>, ()> {
     loop {
         l_document_prefix(parser)?;
-        let read_document = if !terminated {
+        println!("l_document1 {}", terminated);
+        let read_document = if !*terminated {
             question!(parser, l_explicit_document(parser)).is_some()
         } else {
             question!(parser, l_any_document(parser)).is_some()
         };
         let suffix_span = question!(parser, l_document_suffix(parser));
-        terminated = suffix_span.is_some();
 
+        *terminated = suffix_span.is_some();
+        println!("l_document2 {} {}", read_document, terminated);
         if read_document {
-            parser.queue(
-                EventOrToken::Event(Event::DocumentEnd),
+            return Ok(Some(
                 suffix_span.unwrap_or_else(|| Span::empty(parser.location())),
-            );
+            ));
         }
 
-        if !terminated && !read_document {
+        if !*terminated {
             if parser.is_end_of_input() {
-                return Ok(());
+                return Ok(None);
             } else {
                 #[cfg(feature = "tracing")]
                 tracing::error!("remaining tokens {:?}", parser.iter.as_str());
@@ -2213,16 +2216,18 @@ pub(super) fn l_yaml_stream<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(
 pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Event<'t>, Span), ()> {
     match parser.state() {
         State::Stream => {
-            parser.replace_state(State::Document);
+            parser.push_state(State::Document { terminated: true });
             Ok((Event::StreamStart, Span::empty(parser.location())))
         }
-        State::Document => {
-            l_yaml_stream(parser)?;
-            parser.pop_state();
-            Ok((
-                Event::StreamEnd,
-                Span::empty(parser.location()),
-            ))
+        State::Document { mut terminated } => {
+            if let Some(span) = l_document(parser, &mut terminated)? {
+                parser.replace_state(State::Document { terminated });
+                Ok((Event::DocumentEnd, span))
+            } else {
+                parser.pop_state();
+                parser.pop_state();
+                Ok((Event::StreamEnd, Span::empty(parser.location())))
+            }
         }
         State::Node => todo!(),
         State::Sequence => todo!(),

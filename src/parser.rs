@@ -27,7 +27,9 @@ enum State {
     // Expecting a StreamStart event.
     Stream,
     // Expecting a DocumentStart or StreamEnd event
-    Document,
+    Document {
+        terminated: bool,
+    },
     /// Expecting a SequenceStart, MappingStart, Alias or Scalar event
     Node,
     /// Expecting a Node event, or SequenceEnd
