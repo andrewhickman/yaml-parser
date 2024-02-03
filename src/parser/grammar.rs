@@ -903,36 +903,25 @@ fn s_double_next_line<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result
         Ok(())
     }
 
-    fn line<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
+    fn line<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
         ns_double_char(parser)?;
-        nb_ns_double_in_line(parser)?;
-        // todo unroll recursion
-        alt!(
-            parser,
-            s_double_next_line(parser, n),
-            trailing_whites(parser)
-        )
+        nb_ns_double_in_line(parser)
     }
 
-    s_double_break(parser, n)?;
-    question!(parser, line(parser, n));
-    Ok(())
+    loop {
+        if question!(parser, s_double_break(parser, n)).is_none() {
+            break;
+        }
+        if question!(parser, line(parser)).is_none() {
+            break;
+        }
+    }
+    trailing_whites(parser)
 }
 
 fn nb_double_multi_line<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
-    fn trailing_whites<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-        let start = parser.offset();
-        parser.token(Token::SingleQuoted, s_whites)?;
-        parser.value.push_range(parser.text, start..parser.offset());
-        Ok(())
-    }
-
     nb_ns_double_in_line(parser)?;
-    alt!(
-        parser,
-        s_double_next_line(parser, n),
-        trailing_whites(parser)
-    )
+    s_double_next_line(parser, n)
 }
 
 fn c_quoted_quote<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
@@ -1018,35 +1007,25 @@ fn s_single_next_line<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result
         Ok(())
     }
 
-    fn line<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
+    fn line<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
         ns_single_char(parser)?;
-        nb_ns_single_in_line(parser)?;
-        alt!(
-            parser,
-            s_single_next_line(parser, n),
-            trailing_whites(parser)
-        )
+        nb_ns_single_in_line(parser)
     }
 
-    s_flow_folded(parser, n)?;
-    question!(parser, line(parser, n));
-    Ok(())
+    loop {
+        if question!(parser, s_flow_folded(parser, n)).is_none() {
+            break;
+        }
+        if question!(parser, line(parser)).is_none() {
+            break;
+        }
+    }
+    trailing_whites(parser)
 }
 
 fn nb_single_multi_line<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
-    fn trailing_whites<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-        let start = parser.offset();
-        parser.token(Token::SingleQuoted, s_whites)?;
-        parser.value.push_range(parser.text, start..parser.offset());
-        Ok(())
-    }
-
     nb_ns_single_in_line(parser)?;
-    alt!(
-        parser,
-        s_single_next_line(parser, n),
-        trailing_whites(parser)
-    )
+    s_single_next_line(parser, n)
 }
 
 fn ns_plain_first<R: Receiver>(parser: &mut Parser<'_, R>, c: Context) -> Result<(), ()> {
@@ -1872,7 +1851,7 @@ fn s_l_block_indented<R: Receiver>(
     c: Context,
 ) -> Result<(), ()> {
     fn collection<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
-        let m: i32 = parser.detect_compact_indent(n);
+        let m: i32 = parser.detect_compact_indent();
         s_indent(parser, m)?;
         alt!(
             parser,

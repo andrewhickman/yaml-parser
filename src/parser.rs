@@ -148,12 +148,11 @@ where
         }
     }
 
-    fn detect_compact_indent(&self, n: i32) -> i32 {
+    fn detect_compact_indent(&self) -> i32 {
         debug_assert!(matches!(self.peek_prev(), Some('-' | '?' | ':')));
 
         let mut iter = self.iter.clone();
-        // todo needed?
-        let mut len = if n == -1 { 1 } else { 0 };
+        let mut len = 0;
 
         loop {
             match iter.next() {
