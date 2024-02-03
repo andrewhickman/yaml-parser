@@ -4,7 +4,7 @@ use alloc::{
 };
 
 use crate::{
-    parser::{char, Chomping, Context, Diagnostic, EventOrToken, Parser, Properties},
+    parser::{char, Chomping, Context, Diagnostic, EventOrToken, Parser, Properties, State},
     CollectionStyle, Event, Location, Receiver, ScalarStyle, Span, Token,
 };
 
@@ -2180,11 +2180,6 @@ fn l_any_document<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
 }
 
 pub(super) fn l_yaml_stream<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-    parser.queue(
-        EventOrToken::Event(Event::StreamStart),
-        Span::empty(parser.location()),
-    );
-
     let mut terminated = true;
     loop {
         l_document_prefix(parser)?;
@@ -2205,10 +2200,6 @@ pub(super) fn l_yaml_stream<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(
 
         if !terminated && !read_document {
             if parser.is_end_of_input() {
-                parser.queue(
-                    EventOrToken::Event(Event::StreamEnd),
-                    Span::empty(parser.location()),
-                );
                 return Ok(());
             } else {
                 #[cfg(feature = "tracing")]
@@ -2216,5 +2207,26 @@ pub(super) fn l_yaml_stream<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(
                 return Err(());
             }
         }
+    }
+}
+
+pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Event<'t>, Span), ()> {
+    match parser.state() {
+        State::Stream => {
+            parser.replace_state(State::Document);
+            Ok((Event::StreamStart, Span::empty(parser.location())))
+        }
+        State::Document => {
+            l_yaml_stream(parser)?;
+            parser.pop_state();
+            Ok((
+                Event::StreamEnd,
+                Span::empty(parser.location()),
+            ))
+        }
+        State::Node => todo!(),
+        State::Sequence => todo!(),
+        State::MappingKey => todo!(),
+        State::Mapping => todo!(),
     }
 }

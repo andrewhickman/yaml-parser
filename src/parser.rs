@@ -13,10 +13,29 @@ where
     R: 't,
 {
     let mut parser = Parser::new(receiver, text);
-    match grammar::l_yaml_stream(&mut parser) {
-        Ok(()) => Ok(()),
-        Err(()) => Err(parser.diagnostics),
+    while !parser.state.is_empty() {
+        match grammar::event(&mut parser) {
+            Ok((event, span)) => parser.receiver.event(event, span),
+            Err(()) => return Err(parser.diagnostics),
+        }
     }
+    Ok(())
+}
+
+#[derive(Debug, Clone, Copy)]
+enum State {
+    // Expecting a StreamStart event.
+    Stream,
+    // Expecting a DocumentStart or StreamEnd event
+    Document,
+    /// Expecting a SequenceStart, MappingStart, Alias or Scalar event
+    Node,
+    /// Expecting a Node event, or SequenceEnd
+    Sequence,
+    /// Expecting a Node event
+    MappingKey,
+    /// Expecting a Node event
+    Mapping,
 }
 
 struct Parser<'t, R> {
@@ -28,6 +47,7 @@ struct Parser<'t, R> {
     yaml_version: Option<&'t str>,
     tags: BTreeMap<Cow<'t, str>, Cow<'t, str>>,
     value: CowBuilder,
+    state: Vec<State>,
 
     receiver: &'t mut R,
     alt_depth: u32,
@@ -78,6 +98,9 @@ where
     R: Receiver,
 {
     fn new(receiver: &'t mut R, text: &'t str) -> Self {
+        let mut state = Vec::with_capacity(16);
+        state.push(State::Stream);
+
         Parser {
             text,
             iter: text.chars(),
@@ -94,7 +117,25 @@ where
             line_number: 0,
             line_offset: 0,
             peek_count: 0,
+            state,
         }
+    }
+
+    fn state(&self) -> State {
+        *self.state.last().unwrap()
+    }
+
+    fn replace_state(&mut self, state: State) {
+        self.state.pop().unwrap();
+        self.state.push(state);
+    }
+
+    fn push_state(&mut self, state: State) {
+        self.state.push(state);
+    }
+
+    fn pop_state(&mut self) {
+        self.state.pop().unwrap();
     }
 
     fn document(&mut self, f: impl Fn(&mut Self) -> Result<(), ()>) -> Result<(), ()> {
