@@ -2111,15 +2111,7 @@ fn l_document_prefix<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> 
 }
 
 fn c_directives_end<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-    let start = parser.location();
-    parser.token(Token::DirectivesEnd, |parser| parser.eat_str("---"))?;
-    parser.queue(
-        EventOrToken::Event(Event::DocumentStart {
-            version: parser.yaml_version.map(Cow::Borrowed),
-        }),
-        parser.span(start),
-    );
-    Ok(())
+    parser.token(Token::DirectivesEnd, |parser| parser.eat_str("---"))
 }
 
 fn c_document_end<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
@@ -2144,73 +2136,83 @@ fn l_bare_document<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
     parser.document(|parser| s_l_block_node(parser, -1, Context::BlockIn))
 }
 
-fn l_explicit_document<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-    fn empty<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-        e_node(parser, (None, None))?;
-        s_l_comments(parser)
-    }
-
-    c_directives_end(parser)?;
-    alt!(parser, l_bare_document(parser), empty(parser))
+fn l_empty_document<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
+    e_node(parser, (None, None))?;
+    s_l_comments(parser)
 }
 
-fn l_directive_document<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-    while parser.is_char('%') {
-        l_directive(parser)?;
-    }
-    l_explicit_document(parser)
-}
-
-fn l_any_document<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-    if parser.is_char('%') {
-        l_directive_document(parser)
-    } else if parser.is_str("---")
-        && matches!(parser.peek_nth(3), None | Some('\r' | '\n' | '\t' | ' '))
-    {
-        l_explicit_document(parser)
-    } else {
-        parser.queue(
-            EventOrToken::Event(Event::DocumentStart {
-                version: parser.yaml_version.map(Cow::Borrowed),
-            }),
-            Span::empty(parser.location()),
-        );
-        l_bare_document(parser)
-    }
-}
-
-pub(super) fn l_document<R: Receiver>(
+fn nb_document_prefix<R: Receiver>(
     parser: &mut Parser<'_, R>,
-    terminated: &mut bool,
-) -> Result<Option<Span>, ()> {
+    terminated: bool,
+) -> Result<Option<(bool, Span)>, ()> {
+    let start = parser.location();
+    if parser.is_char('%') && !terminated {
+        return Err(());
+    }
+    if parser.is_char('%')
+        || (parser.is_str("---")
+            && matches!(parser.peek_nth(3), None | Some('\r' | '\n' | '\t' | ' ')))
+    {
+        while parser.is_char('%') {
+            l_directive(parser)?;
+        }
+        c_directives_end(parser)?;
+        let span = parser.span(start);
+        if lookahead_l_bare_document(parser) {
+            Ok(Some((false, span)))
+        } else {
+            Ok(Some((true, span)))
+        }
+    } else if terminated {
+        let span = parser.span(start);
+        if lookahead_l_bare_document(parser) {
+            Ok(Some((false, span)))
+        } else {
+            Ok(None)
+        }
+    } else {
+        Ok(None)
+    }
+}
+
+fn find_next_document<R: Receiver>(
+    parser: &mut Parser<'_, R>,
+    mut terminated: bool,
+) -> Result<Option<(bool, Span)>, ()> {
     loop {
         l_document_prefix(parser)?;
-        println!("l_document1 {}", terminated);
-        let read_document = if !*terminated {
-            question!(parser, l_explicit_document(parser)).is_some()
-        } else {
-            question!(parser, l_any_document(parser)).is_some()
-        };
-        let suffix_span = question!(parser, l_document_suffix(parser));
-
-        *terminated = suffix_span.is_some();
-        println!("l_document2 {} {}", read_document, terminated);
-        if read_document {
-            return Ok(Some(
-                suffix_span.unwrap_or_else(|| Span::empty(parser.location())),
-            ));
-        }
-
-        if !*terminated {
-            if parser.is_end_of_input() {
-                return Ok(None);
-            } else {
-                #[cfg(feature = "tracing")]
-                tracing::error!("remaining tokens {:?}", parser.iter.as_str());
-                return Err(());
+        match nb_document_prefix(parser, terminated)? {
+            Some(result) => return Ok(Some(result)),
+            None => {
+                let suffix_span = question!(parser, l_document_suffix(parser));
+                terminated = suffix_span.is_some();
+                if !terminated {
+                    if parser.is_end_of_input() {
+                        return Ok(None);
+                    } else {
+                        parser.diagnostics.push(Diagnostic {
+                            message: format!("remaining tokens: {:?}", parser.iter.as_str()),
+                            span: Span::empty(parser.location()),
+                        });
+                        return Err(());
+                    }
+                } else {
+                    continue;
+                }
             }
-        }
+        };
     }
+}
+
+fn lookahead_l_bare_document<R: Receiver>(parser: &mut Parser<'_, R>) -> bool {
+    parser.lookahead(|parser| {
+        s_separate_lines(parser, 0)?;
+        if parser.is_end_of_document() || parser.is_end_of_input() {
+            Err(())
+        } else {
+            Ok(())
+        }
+    })
 }
 
 pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Event<'t>, Span), ()> {
@@ -2219,19 +2221,42 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
             parser.push_state(State::Document { terminated: true });
             Ok((Event::StreamStart, Span::empty(parser.location())))
         }
-        State::Document { mut terminated } => {
-            if let Some(span) = l_document(parser, &mut terminated)? {
-                parser.replace_state(State::Document { terminated });
-                Ok((Event::DocumentEnd, span))
-            } else {
+        State::Document { terminated } => match find_next_document(parser, terminated)? {
+            Some((empty, span)) => {
+                parser.push_state(State::DocumentNode { empty });
+                Ok((
+                    Event::DocumentStart {
+                        version: parser.yaml_version.map(Cow::Borrowed),
+                    },
+                    span,
+                ))
+            }
+            None => {
                 parser.pop_state();
                 parser.pop_state();
                 Ok((Event::StreamEnd, Span::empty(parser.location())))
             }
+        },
+        State::DocumentNode { empty } => {
+            if empty {
+                l_empty_document(parser)?;
+            } else {
+                l_bare_document(parser)?;
+            }
+
+            let suffix_span = question!(parser, l_document_suffix(parser));
+            parser.pop_state();
+            parser.replace_state(State::Document {
+                terminated: suffix_span.is_some(),
+            });
+            Ok((
+                Event::DocumentEnd,
+                suffix_span.unwrap_or_else(|| Span::empty(parser.location())),
+            ))
         }
-        State::Node => todo!(),
         State::Sequence => todo!(),
         State::MappingKey => todo!(),
         State::Mapping => todo!(),
+        State::DocumentEnd => todo!(),
     }
 }

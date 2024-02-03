@@ -30,8 +30,12 @@ enum State {
     Document {
         terminated: bool,
     },
+    /// Expecting a DocumentEnd
+    DocumentEnd,
     /// Expecting a SequenceStart, MappingStart, Alias or Scalar event
-    Node,
+    DocumentNode {
+        empty: bool,
+    },
     /// Expecting a Node event, or SequenceEnd
     Sequence,
     /// Expecting a Node event
@@ -240,6 +244,16 @@ where
                 Err(())
             }
         }
+    }
+
+    fn lookahead<T>(&mut self, mut f: impl FnMut(&mut Self) -> Result<T, ()>) -> bool {
+        let mut result: Option<bool> = None;
+        self.with_rollback::<()>(|parser| {
+            result = Some(f(parser).is_ok());
+            Err(())
+        })
+        .unwrap_err();
+        result.unwrap()
     }
 
     fn with_length_limit(

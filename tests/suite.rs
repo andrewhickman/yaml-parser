@@ -39,15 +39,14 @@ impl<'t> Receiver for TestReceiver<'t> {
             Event::StreamEnd => self.events.push("-STR".to_owned()),
             Event::DocumentStart { .. } => {
                 if span.is_empty() {
-                    self.events.push("+DOC".to_string())
+                    self.events.push("+DOC".to_owned())
                 } else {
-                    self.events
-                        .push(format!("+DOC {}", &self.text[span.range()]))
+                    self.events.push("+DOC ---".to_owned())
                 }
             }
             Event::DocumentEnd => {
                 if span.is_empty() {
-                    self.events.push("-DOC".to_string())
+                    self.events.push("-DOC".to_owned())
                 } else {
                     self.events
                         .push(format!("-DOC {}", &self.text[span.range()]))

@@ -2,5 +2,13 @@
 source: tests/suite/cases.gen.rs
 expression: diagnostics
 ---
-[]
+- message: "remaining tokens: \" - item1\\r\\n\""
+  start:
+    index: 14
+    line: 1
+    column: 0
+  end:
+    index: 14
+    line: 1
+    column: 0
 
