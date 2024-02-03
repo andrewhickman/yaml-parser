@@ -3,9 +3,7 @@ mod char;
 mod grammar;
 
 use core::{mem, ops::Range, str::Chars, unreachable};
-use std::collections::HashMap;
-
-use alloc::{borrow::Cow, string::String, vec::Vec};
+use alloc::{borrow::Cow, string::String, vec::Vec, collections::BTreeMap};
 
 use crate::{Diagnostic, Event, Location, Receiver, Span, Token};
 
@@ -28,7 +26,7 @@ struct Parser<'t, R> {
     events: Vec<(EventOrToken<'t>, Span)>,
     diagnostics: Vec<Diagnostic>,
     yaml_version: Option<&'t str>,
-    tags: HashMap<Cow<'t, str>, Cow<'t, str>>,
+    tags: BTreeMap<Cow<'t, str>, Cow<'t, str>>,
     value: CowBuilder,
 
     receiver: &'t mut R,
@@ -87,7 +85,7 @@ where
             diagnostics: Vec::new(),
             value: CowBuilder::new(),
             yaml_version: None,
-            tags: HashMap::new(),
+            tags: BTreeMap::new(),
             receiver,
             in_token: false,
             in_document: false,
