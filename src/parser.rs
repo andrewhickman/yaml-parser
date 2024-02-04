@@ -23,6 +23,7 @@ where
 }
 
 #[derive(Debug, Clone, Copy)]
+#[allow(dead_code)]
 enum State {
     // Expecting a StreamStart event.
     Stream,
@@ -470,16 +471,6 @@ impl Context {
             Context::BlockKey | Context::FlowKey => Context::FlowKey,
             Context::FlowIn | Context::FlowOut => Context::FlowIn,
             Context::BlockIn | Context::BlockOut => unimplemented!(),
-        }
-    }
-
-    fn seq_spaces(&self, n: i32) -> i32 {
-        match self {
-            Context::BlockIn => n,
-            Context::BlockOut => n - 1,
-            Context::BlockKey | Context::FlowIn | Context::FlowOut | Context::FlowKey => {
-                unimplemented!()
-            }
         }
     }
 }

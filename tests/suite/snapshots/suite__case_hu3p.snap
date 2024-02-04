@@ -2,7 +2,7 @@
 source: tests/suite/cases.gen.rs
 expression: diagnostics
 ---
-- message: "remaining tokens: \"  word1 word2\\r\\n  no: key\\r\\n\""
+- message: "remaining tokens:   word1 word2\r\n  no: key\r\n"
   start:
     index: 6
     line: 1

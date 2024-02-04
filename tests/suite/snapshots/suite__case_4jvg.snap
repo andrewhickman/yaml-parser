@@ -2,13 +2,13 @@
 source: tests/suite/cases.gen.rs
 expression: diagnostics
 ---
-- message: "remaining tokens: \"  &v2 val2\\r\\n\""
+- message: "remaining tokens: top2: &node2\r\n  &v2 val2\r\n"
   start:
-    index: 46
-    line: 3
+    index: 32
+    line: 2
     column: 0
   end:
-    index: 46
-    line: 3
+    index: 32
+    line: 2
     column: 0
 

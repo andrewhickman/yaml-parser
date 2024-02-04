@@ -2,7 +2,7 @@
 source: tests/suite/cases.gen.rs
 expression: diagnostics
 ---
-- message: "remaining tokens: \" - item1\\r\\n\""
+- message: "remaining tokens:  - item1\r\n"
   start:
     index: 14
     line: 1
