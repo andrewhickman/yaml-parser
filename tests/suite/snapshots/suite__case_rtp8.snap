@@ -1,0 +1,140 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Directive
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 1
+    line: 0
+    column: 1
+- token: DirectiveName
+  start:
+    index: 1
+    line: 0
+    column: 1
+  end:
+    index: 5
+    line: 0
+    column: 5
+- token: Separator
+  start:
+    index: 5
+    line: 0
+    column: 5
+  end:
+    index: 6
+    line: 0
+    column: 6
+- token: YamlVersion
+  start:
+    index: 6
+    line: 0
+    column: 6
+  end:
+    index: 9
+    line: 0
+    column: 9
+- token: Break
+  start:
+    index: 9
+    line: 0
+    column: 9
+  end:
+    index: 11
+    line: 1
+    column: 0
+- token: DirectivesEnd
+  start:
+    index: 11
+    line: 1
+    column: 0
+  end:
+    index: 14
+    line: 1
+    column: 3
+- token: Break
+  start:
+    index: 14
+    line: 1
+    column: 3
+  end:
+    index: 16
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 16
+    line: 2
+    column: 0
+  end:
+    index: 16
+    line: 2
+    column: 0
+- token: Scalar
+  start:
+    index: 16
+    line: 2
+    column: 0
+  end:
+    index: 24
+    line: 2
+    column: 8
+- token: Break
+  start:
+    index: 24
+    line: 2
+    column: 8
+  end:
+    index: 26
+    line: 3
+    column: 0
+- token: DocumentEnd
+  start:
+    index: 26
+    line: 3
+    column: 0
+  end:
+    index: 29
+    line: 3
+    column: 3
+- token: Separator
+  start:
+    index: 29
+    line: 3
+    column: 3
+  end:
+    index: 30
+    line: 3
+    column: 4
+- token: Comment
+  start:
+    index: 30
+    line: 3
+    column: 4
+  end:
+    index: 31
+    line: 3
+    column: 5
+- token: CommentText
+  start:
+    index: 31
+    line: 3
+    column: 5
+  end:
+    index: 38
+    line: 3
+    column: 12
+- token: Break
+  start:
+    index: 38
+    line: 3
+    column: 12
+  end:
+    index: 40
+    line: 4
+    column: 0
+

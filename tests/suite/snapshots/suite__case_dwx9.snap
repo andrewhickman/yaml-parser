@@ -1,0 +1,221 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 0
+    line: 0
+    column: 0
+- token: Literal
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 1
+    line: 0
+    column: 1
+- token: Break
+  start:
+    index: 1
+    line: 0
+    column: 1
+  end:
+    index: 3
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 3
+    line: 1
+    column: 0
+  end:
+    index: 4
+    line: 1
+    column: 1
+- token: ScalarBreak
+  start:
+    index: 4
+    line: 1
+    column: 1
+  end:
+    index: 6
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 6
+    line: 2
+    column: 0
+  end:
+    index: 8
+    line: 2
+    column: 2
+- token: ScalarBreak
+  start:
+    index: 8
+    line: 2
+    column: 2
+  end:
+    index: 10
+    line: 3
+    column: 0
+- token: Indent
+  start:
+    index: 10
+    line: 3
+    column: 0
+  end:
+    index: 12
+    line: 3
+    column: 2
+- token: Scalar
+  start:
+    index: 12
+    line: 3
+    column: 2
+  end:
+    index: 19
+    line: 3
+    column: 9
+- token: ScalarBreak
+  start:
+    index: 19
+    line: 3
+    column: 9
+  end:
+    index: 21
+    line: 4
+    column: 0
+- token: Indent
+  start:
+    index: 21
+    line: 4
+    column: 0
+  end:
+    index: 23
+    line: 4
+    column: 2
+- token: Scalar
+  start:
+    index: 23
+    line: 4
+    column: 2
+  end:
+    index: 24
+    line: 4
+    column: 3
+- token: ScalarBreak
+  start:
+    index: 24
+    line: 4
+    column: 3
+  end:
+    index: 26
+    line: 5
+    column: 0
+- token: Indent
+  start:
+    index: 26
+    line: 5
+    column: 0
+  end:
+    index: 28
+    line: 5
+    column: 2
+- token: ScalarBreak
+  start:
+    index: 28
+    line: 5
+    column: 2
+  end:
+    index: 30
+    line: 6
+    column: 0
+- token: Indent
+  start:
+    index: 30
+    line: 6
+    column: 0
+  end:
+    index: 32
+    line: 6
+    column: 2
+- token: Scalar
+  start:
+    index: 32
+    line: 6
+    column: 2
+  end:
+    index: 36
+    line: 6
+    column: 6
+- token: ScalarBreak
+  start:
+    index: 36
+    line: 6
+    column: 6
+  end:
+    index: 38
+    line: 7
+    column: 0
+- token: Indent
+  start:
+    index: 38
+    line: 7
+    column: 0
+  end:
+    index: 38
+    line: 7
+    column: 0
+- token: Break
+  start:
+    index: 38
+    line: 7
+    column: 0
+  end:
+    index: 40
+    line: 8
+    column: 0
+- token: Indent
+  start:
+    index: 40
+    line: 8
+    column: 0
+  end:
+    index: 41
+    line: 8
+    column: 1
+- token: Comment
+  start:
+    index: 41
+    line: 8
+    column: 1
+  end:
+    index: 42
+    line: 8
+    column: 2
+- token: CommentText
+  start:
+    index: 42
+    line: 8
+    column: 2
+  end:
+    index: 50
+    line: 8
+    column: 10
+- token: Break
+  start:
+    index: 50
+    line: 8
+    column: 10
+  end:
+    index: 52
+    line: 9
+    column: 0
+

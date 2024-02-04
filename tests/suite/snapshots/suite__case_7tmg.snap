@@ -1,0 +1,149 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: DirectivesEnd
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 3
+    line: 0
+    column: 3
+- token: Break
+  start:
+    index: 3
+    line: 0
+    column: 3
+  end:
+    index: 5
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 5
+    line: 1
+    column: 0
+  end:
+    index: 5
+    line: 1
+    column: 0
+- token: SequenceStart
+  start:
+    index: 5
+    line: 1
+    column: 0
+  end:
+    index: 6
+    line: 1
+    column: 1
+- token: Separator
+  start:
+    index: 6
+    line: 1
+    column: 1
+  end:
+    index: 7
+    line: 1
+    column: 2
+- token: Scalar
+  start:
+    index: 7
+    line: 1
+    column: 2
+  end:
+    index: 12
+    line: 1
+    column: 7
+- token: Break
+  start:
+    index: 12
+    line: 1
+    column: 7
+  end:
+    index: 14
+    line: 2
+    column: 0
+- token: Comment
+  start:
+    index: 14
+    line: 2
+    column: 0
+  end:
+    index: 15
+    line: 2
+    column: 1
+- token: CommentText
+  start:
+    index: 15
+    line: 2
+    column: 1
+  end:
+    index: 23
+    line: 2
+    column: 9
+- token: Break
+  start:
+    index: 23
+    line: 2
+    column: 9
+  end:
+    index: 25
+    line: 3
+    column: 0
+- token: Indent
+  start:
+    index: 25
+    line: 3
+    column: 0
+  end:
+    index: 25
+    line: 3
+    column: 0
+- token: CollectionEntry
+  start:
+    index: 25
+    line: 3
+    column: 0
+  end:
+    index: 26
+    line: 3
+    column: 1
+- token: Separator
+  start:
+    index: 26
+    line: 3
+    column: 1
+  end:
+    index: 27
+    line: 3
+    column: 2
+- token: Scalar
+  start:
+    index: 27
+    line: 3
+    column: 2
+  end:
+    index: 32
+    line: 3
+    column: 7
+- token: SequenceEnd
+  start:
+    index: 32
+    line: 3
+    column: 7
+  end:
+    index: 33
+    line: 3
+    column: 8
+- token: Break
+  start:
+    index: 33
+    line: 3
+    column: 8
+  end:
+    index: 35
+    line: 4
+    column: 0
+

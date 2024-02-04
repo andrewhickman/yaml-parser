@@ -1,0 +1,221 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 0
+    line: 0
+    column: 0
+- token: MappingKey
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 1
+    line: 0
+    column: 1
+- token: Separator
+  start:
+    index: 1
+    line: 0
+    column: 1
+  end:
+    index: 2
+    line: 0
+    column: 2
+- token: Scalar
+  start:
+    index: 2
+    line: 0
+    column: 2
+  end:
+    index: 3
+    line: 0
+    column: 3
+- token: Break
+  start:
+    index: 3
+    line: 0
+    column: 3
+  end:
+    index: 5
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 5
+    line: 1
+    column: 0
+  end:
+    index: 5
+    line: 1
+    column: 0
+- token: MappingValue
+  start:
+    index: 5
+    line: 1
+    column: 0
+  end:
+    index: 6
+    line: 1
+    column: 1
+- token: Indent
+  start:
+    index: 6
+    line: 1
+    column: 1
+  end:
+    index: 7
+    line: 1
+    column: 2
+- token: SequenceEntry
+  start:
+    index: 7
+    line: 1
+    column: 2
+  end:
+    index: 8
+    line: 1
+    column: 3
+- token: Separator
+  start:
+    index: 8
+    line: 1
+    column: 3
+  end:
+    index: 9
+    line: 1
+    column: 4
+- token: Scalar
+  start:
+    index: 9
+    line: 1
+    column: 4
+  end:
+    index: 10
+    line: 1
+    column: 5
+- token: Break
+  start:
+    index: 10
+    line: 1
+    column: 5
+  end:
+    index: 12
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 12
+    line: 2
+    column: 0
+  end:
+    index: 14
+    line: 2
+    column: 2
+- token: SequenceEntry
+  start:
+    index: 14
+    line: 2
+    column: 2
+  end:
+    index: 15
+    line: 2
+    column: 3
+- token: Indent
+  start:
+    index: 15
+    line: 2
+    column: 3
+  end:
+    index: 17
+    line: 2
+    column: 5
+- token: SequenceEntry
+  start:
+    index: 17
+    line: 2
+    column: 5
+  end:
+    index: 18
+    line: 2
+    column: 6
+- token: Separator
+  start:
+    index: 18
+    line: 2
+    column: 6
+  end:
+    index: 19
+    line: 2
+    column: 7
+- token: Scalar
+  start:
+    index: 19
+    line: 2
+    column: 7
+  end:
+    index: 20
+    line: 2
+    column: 8
+- token: Break
+  start:
+    index: 20
+    line: 2
+    column: 8
+  end:
+    index: 22
+    line: 3
+    column: 0
+- token: Indent
+  start:
+    index: 22
+    line: 3
+    column: 0
+  end:
+    index: 27
+    line: 3
+    column: 5
+- token: SequenceEntry
+  start:
+    index: 27
+    line: 3
+    column: 5
+  end:
+    index: 28
+    line: 3
+    column: 6
+- token: Separator
+  start:
+    index: 28
+    line: 3
+    column: 6
+  end:
+    index: 29
+    line: 3
+    column: 7
+- token: Scalar
+  start:
+    index: 29
+    line: 3
+    column: 7
+  end:
+    index: 30
+    line: 3
+    column: 8
+- token: Break
+  start:
+    index: 30
+    line: 3
+    column: 8
+  end:
+    index: 32
+    line: 4
+    column: 0
+

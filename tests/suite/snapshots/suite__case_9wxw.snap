@@ -1,0 +1,302 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Comment
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 1
+    line: 0
+    column: 1
+- token: CommentText
+  start:
+    index: 1
+    line: 0
+    column: 1
+  end:
+    index: 9
+    line: 0
+    column: 9
+- token: Break
+  start:
+    index: 9
+    line: 0
+    column: 9
+  end:
+    index: 11
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 11
+    line: 1
+    column: 0
+  end:
+    index: 11
+    line: 1
+    column: 0
+- token: TagHandle
+  start:
+    index: 11
+    line: 1
+    column: 0
+  end:
+    index: 12
+    line: 1
+    column: 1
+- token: TagSuffix
+  start:
+    index: 12
+    line: 1
+    column: 1
+  end:
+    index: 15
+    line: 1
+    column: 4
+- token: Separator
+  start:
+    index: 15
+    line: 1
+    column: 4
+  end:
+    index: 16
+    line: 1
+    column: 5
+- token: DoubleQuote
+  start:
+    index: 16
+    line: 1
+    column: 5
+  end:
+    index: 17
+    line: 1
+    column: 6
+- token: DoubleQuoted
+  start:
+    index: 17
+    line: 1
+    column: 6
+  end:
+    index: 20
+    line: 1
+    column: 9
+- token: DoubleQuote
+  start:
+    index: 20
+    line: 1
+    column: 9
+  end:
+    index: 21
+    line: 1
+    column: 10
+- token: Break
+  start:
+    index: 21
+    line: 1
+    column: 10
+  end:
+    index: 23
+    line: 2
+    column: 0
+- token: DocumentEnd
+  start:
+    index: 23
+    line: 2
+    column: 0
+  end:
+    index: 26
+    line: 2
+    column: 3
+- token: Break
+  start:
+    index: 26
+    line: 2
+    column: 3
+  end:
+    index: 28
+    line: 3
+    column: 0
+- token: Comment
+  start:
+    index: 28
+    line: 3
+    column: 0
+  end:
+    index: 29
+    line: 3
+    column: 1
+- token: CommentText
+  start:
+    index: 29
+    line: 3
+    column: 1
+  end:
+    index: 36
+    line: 3
+    column: 8
+- token: Break
+  start:
+    index: 36
+    line: 3
+    column: 8
+  end:
+    index: 38
+    line: 4
+    column: 0
+- token: Directive
+  start:
+    index: 38
+    line: 4
+    column: 0
+  end:
+    index: 39
+    line: 4
+    column: 1
+- token: DirectiveName
+  start:
+    index: 39
+    line: 4
+    column: 1
+  end:
+    index: 42
+    line: 4
+    column: 4
+- token: Separator
+  start:
+    index: 42
+    line: 4
+    column: 4
+  end:
+    index: 43
+    line: 4
+    column: 5
+- token: TagHandle
+  start:
+    index: 43
+    line: 4
+    column: 5
+  end:
+    index: 44
+    line: 4
+    column: 6
+- token: Separator
+  start:
+    index: 44
+    line: 4
+    column: 6
+  end:
+    index: 45
+    line: 4
+    column: 7
+- token: TagPrefix
+  start:
+    index: 45
+    line: 4
+    column: 7
+  end:
+    index: 70
+    line: 4
+    column: 32
+- token: Break
+  start:
+    index: 70
+    line: 4
+    column: 32
+  end:
+    index: 72
+    line: 5
+    column: 0
+- token: DirectivesEnd
+  start:
+    index: 72
+    line: 5
+    column: 0
+  end:
+    index: 75
+    line: 5
+    column: 3
+- token: Break
+  start:
+    index: 75
+    line: 5
+    column: 3
+  end:
+    index: 77
+    line: 6
+    column: 0
+- token: Indent
+  start:
+    index: 77
+    line: 6
+    column: 0
+  end:
+    index: 77
+    line: 6
+    column: 0
+- token: TagHandle
+  start:
+    index: 77
+    line: 6
+    column: 0
+  end:
+    index: 78
+    line: 6
+    column: 1
+- token: TagSuffix
+  start:
+    index: 78
+    line: 6
+    column: 1
+  end:
+    index: 81
+    line: 6
+    column: 4
+- token: Separator
+  start:
+    index: 81
+    line: 6
+    column: 4
+  end:
+    index: 82
+    line: 6
+    column: 5
+- token: DoubleQuote
+  start:
+    index: 82
+    line: 6
+    column: 5
+  end:
+    index: 83
+    line: 6
+    column: 6
+- token: DoubleQuoted
+  start:
+    index: 83
+    line: 6
+    column: 6
+  end:
+    index: 86
+    line: 6
+    column: 9
+- token: DoubleQuote
+  start:
+    index: 86
+    line: 6
+    column: 9
+  end:
+    index: 87
+    line: 6
+    column: 10
+- token: Break
+  start:
+    index: 87
+    line: 6
+    column: 10
+  end:
+    index: 89
+    line: 7
+    column: 0
+

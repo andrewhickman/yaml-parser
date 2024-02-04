@@ -1,11 +1,35 @@
 use std::{fs, path::PathBuf};
 
-use yaml_parser::{CollectionStyle, Diagnostic, Event, Receiver, ScalarStyle, Span, Token};
+use insta::assert_yaml_snapshot;
+use serde::Serialize;
+use yaml_parser::{CollectionStyle, Event, Receiver, ScalarStyle, Span, Token};
 
 #[derive(Default)]
 struct TestReceiver<'t> {
     text: &'t str,
     events: Vec<String>,
+    tokens: Vec<TokenSer>,
+}
+
+#[derive(Debug, Serialize)]
+struct TokenSer {
+    token: String,
+    start: SpanSer,
+    end: SpanSer,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+struct SpanSer {
+    index: usize,
+    line: usize,
+    column: usize,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+struct DiagnosticSer {
+    message: String,
+    start: SpanSer,
+    end: SpanSer,
 }
 
 impl<'t> Receiver for TestReceiver<'t> {
@@ -107,7 +131,27 @@ impl<'t> Receiver for TestReceiver<'t> {
     }
 
     fn token(&mut self, token: Token, span: Span) {
-        println!("{} {:?}", span.len(), token);
+        let token = format!("{:?}", token);
+        let start = SpanSer {
+            index: span.start.index,
+            line: span.start.line,
+            column: span.start.column,
+        };
+        let end = SpanSer {
+            index: span.end.index,
+            line: span.end.line,
+            column: span.end.column,
+        };
+
+        if let Some(prev) = self.tokens.last_mut() {
+            debug_assert_eq!(prev.end, start);
+            if prev.token == token {
+                prev.end = end;
+                return;
+            }
+        }
+
+        self.tokens.push(TokenSer { token, start, end });
     }
 }
 
@@ -115,60 +159,61 @@ macro_rules! case {
     ($name:ident, $file:literal) => {
         #[test]
         fn $name() {
-            case($file, true);
+            let (yaml, expected_events) = load($file);
+            let (actual_events, tokens) = parse(&yaml).unwrap();
+            assert_eq!(actual_events, expected_events);
+            assert_yaml_snapshot!(tokens);
         }
     };
     ($name:ident, $file:literal, fail: true) => {
         #[test]
         fn $name() {
-            case($file, false);
-        }
-    };
-    ($name:ident, $file:literal, skip: true) => {
-        #[test]
-        #[ignore]
-        fn $name() {
-            case($file, true);
-        }
-    };
-    ($name:ident, $file:literal, skip: true, fail: true) => {
-        #[test]
-        #[ignore]
-        fn $name() {
-            case($file, false);
+            let (yaml, _) = load($file);
+            let diagnostics = parse(&yaml).unwrap_err();
+            assert_yaml_snapshot!(diagnostics);
         }
     };
 }
 
-fn parse(text: &str) -> Result<Vec<String>, Vec<Diagnostic>> {
-    let mut receiver = TestReceiver {
-        events: Vec::new(),
-        text,
-    };
-    match yaml_parser::parse(&mut receiver, text) {
-        Ok(()) => Ok(receiver.events),
-        Err(errors) => Err(errors),
-    }
-}
-
-fn case(name: &str, success: bool) {
-    let _ = tracing_subscriber::fmt::try_init();
-
+fn load(name: &str) -> (String, Vec<String>) {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("yaml-test-suite")
         .join(name);
     let yaml = fs::read_to_string(path.join("in.yaml")).unwrap();
 
-    let events: Vec<_> = fs::read_to_string(path.join("test.event"))
+    let expected_events: Vec<_> = fs::read_to_string(path.join("test.event"))
         .unwrap()
         .lines()
         .map(|line| line.to_owned())
         .collect();
 
-    if success {
-        assert_eq!(parse(&yaml).unwrap(), events);
-    } else {
-        assert!(parse(&yaml).is_err());
+    (yaml, expected_events)
+}
+
+fn parse(text: &str) -> Result<(Vec<String>, Vec<TokenSer>), Vec<DiagnosticSer>> {
+    let mut receiver = TestReceiver {
+        events: Vec::new(),
+        tokens: Vec::new(),
+        text,
+    };
+    match yaml_parser::parse(&mut receiver, text) {
+        Ok(()) => Ok((receiver.events, receiver.tokens)),
+        Err(errors) => Err(errors
+            .into_iter()
+            .map(|diag| DiagnosticSer {
+                message: diag.message,
+                start: SpanSer {
+                    index: diag.span.start.index,
+                    line: diag.span.start.line,
+                    column: diag.span.start.column,
+                },
+                end: SpanSer {
+                    index: diag.span.end.index,
+                    line: diag.span.end.line,
+                    column: diag.span.end.column,
+                },
+            })
+            .collect()),
     }
 }
 

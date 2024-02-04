@@ -1,0 +1,41 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: DirectivesEnd
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 3
+    line: 0
+    column: 3
+- token: Separator
+  start:
+    index: 3
+    line: 0
+    column: 3
+  end:
+    index: 4
+    line: 0
+    column: 4
+- token: Scalar
+  start:
+    index: 4
+    line: 0
+    column: 4
+  end:
+    index: 10
+    line: 0
+    column: 10
+- token: Break
+  start:
+    index: 10
+    line: 0
+    column: 10
+  end:
+    index: 12
+    line: 1
+    column: 0
+

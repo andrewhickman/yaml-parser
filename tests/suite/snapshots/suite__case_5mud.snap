@@ -1,0 +1,149 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: DirectivesEnd
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 3
+    line: 0
+    column: 3
+- token: Break
+  start:
+    index: 3
+    line: 0
+    column: 3
+  end:
+    index: 5
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 5
+    line: 1
+    column: 0
+  end:
+    index: 5
+    line: 1
+    column: 0
+- token: MappingStart
+  start:
+    index: 5
+    line: 1
+    column: 0
+  end:
+    index: 6
+    line: 1
+    column: 1
+- token: Separator
+  start:
+    index: 6
+    line: 1
+    column: 1
+  end:
+    index: 7
+    line: 1
+    column: 2
+- token: DoubleQuote
+  start:
+    index: 7
+    line: 1
+    column: 2
+  end:
+    index: 8
+    line: 1
+    column: 3
+- token: DoubleQuoted
+  start:
+    index: 8
+    line: 1
+    column: 3
+  end:
+    index: 11
+    line: 1
+    column: 6
+- token: DoubleQuote
+  start:
+    index: 11
+    line: 1
+    column: 6
+  end:
+    index: 12
+    line: 1
+    column: 7
+- token: Break
+  start:
+    index: 12
+    line: 1
+    column: 7
+  end:
+    index: 14
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 14
+    line: 2
+    column: 0
+  end:
+    index: 14
+    line: 2
+    column: 0
+- token: Separator
+  start:
+    index: 14
+    line: 2
+    column: 0
+  end:
+    index: 16
+    line: 2
+    column: 2
+- token: MappingValue
+  start:
+    index: 16
+    line: 2
+    column: 2
+  end:
+    index: 17
+    line: 2
+    column: 3
+- token: Scalar
+  start:
+    index: 17
+    line: 2
+    column: 3
+  end:
+    index: 20
+    line: 2
+    column: 6
+- token: Separator
+  start:
+    index: 20
+    line: 2
+    column: 6
+  end:
+    index: 21
+    line: 2
+    column: 7
+- token: MappingEnd
+  start:
+    index: 21
+    line: 2
+    column: 7
+  end:
+    index: 22
+    line: 2
+    column: 8
+- token: Break
+  start:
+    index: 22
+    line: 2
+    column: 8
+  end:
+    index: 24
+    line: 3
+    column: 0
+

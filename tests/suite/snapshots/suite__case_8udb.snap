@@ -1,0 +1,428 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 0
+    line: 0
+    column: 0
+- token: SequenceStart
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 1
+    line: 0
+    column: 1
+- token: Break
+  start:
+    index: 1
+    line: 0
+    column: 1
+  end:
+    index: 3
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 3
+    line: 1
+    column: 0
+  end:
+    index: 3
+    line: 1
+    column: 0
+- token: DoubleQuote
+  start:
+    index: 3
+    line: 1
+    column: 0
+  end:
+    index: 4
+    line: 1
+    column: 1
+- token: DoubleQuoted
+  start:
+    index: 4
+    line: 1
+    column: 1
+  end:
+    index: 10
+    line: 1
+    column: 7
+- token: ScalarSpace
+  start:
+    index: 10
+    line: 1
+    column: 7
+  end:
+    index: 12
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 12
+    line: 2
+    column: 0
+  end:
+    index: 12
+    line: 2
+    column: 0
+- token: Separator
+  start:
+    index: 12
+    line: 2
+    column: 0
+  end:
+    index: 13
+    line: 2
+    column: 1
+- token: DoubleQuoted
+  start:
+    index: 13
+    line: 2
+    column: 1
+  end:
+    index: 19
+    line: 2
+    column: 7
+- token: DoubleQuote
+  start:
+    index: 19
+    line: 2
+    column: 7
+  end:
+    index: 20
+    line: 2
+    column: 8
+- token: CollectionEntry
+  start:
+    index: 20
+    line: 2
+    column: 8
+  end:
+    index: 21
+    line: 2
+    column: 9
+- token: Separator
+  start:
+    index: 21
+    line: 2
+    column: 9
+  end:
+    index: 22
+    line: 2
+    column: 10
+- token: SingleQuote
+  start:
+    index: 22
+    line: 2
+    column: 10
+  end:
+    index: 23
+    line: 2
+    column: 11
+- token: SingleQuoted
+  start:
+    index: 23
+    line: 2
+    column: 11
+  end:
+    index: 29
+    line: 2
+    column: 17
+- token: ScalarSpace
+  start:
+    index: 29
+    line: 2
+    column: 17
+  end:
+    index: 31
+    line: 3
+    column: 0
+- token: Indent
+  start:
+    index: 31
+    line: 3
+    column: 0
+  end:
+    index: 31
+    line: 3
+    column: 0
+- token: Separator
+  start:
+    index: 31
+    line: 3
+    column: 0
+  end:
+    index: 42
+    line: 3
+    column: 11
+- token: SingleQuoted
+  start:
+    index: 42
+    line: 3
+    column: 11
+  end:
+    index: 48
+    line: 3
+    column: 17
+- token: SingleQuote
+  start:
+    index: 48
+    line: 3
+    column: 17
+  end:
+    index: 49
+    line: 3
+    column: 18
+- token: CollectionEntry
+  start:
+    index: 49
+    line: 3
+    column: 18
+  end:
+    index: 50
+    line: 3
+    column: 19
+- token: Break
+  start:
+    index: 50
+    line: 3
+    column: 19
+  end:
+    index: 52
+    line: 4
+    column: 0
+- token: Indent
+  start:
+    index: 52
+    line: 4
+    column: 0
+  end:
+    index: 52
+    line: 4
+    column: 0
+- token: Scalar
+  start:
+    index: 52
+    line: 4
+    column: 0
+  end:
+    index: 57
+    line: 4
+    column: 5
+- token: ScalarSpace
+  start:
+    index: 57
+    line: 4
+    column: 5
+  end:
+    index: 59
+    line: 5
+    column: 0
+- token: Indent
+  start:
+    index: 59
+    line: 5
+    column: 0
+  end:
+    index: 59
+    line: 5
+    column: 0
+- token: Separator
+  start:
+    index: 59
+    line: 5
+    column: 0
+  end:
+    index: 60
+    line: 5
+    column: 1
+- token: Scalar
+  start:
+    index: 60
+    line: 5
+    column: 1
+  end:
+    index: 64
+    line: 5
+    column: 5
+- token: CollectionEntry
+  start:
+    index: 64
+    line: 5
+    column: 5
+  end:
+    index: 65
+    line: 5
+    column: 6
+- token: Separator
+  start:
+    index: 65
+    line: 5
+    column: 6
+  end:
+    index: 66
+    line: 5
+    column: 7
+- token: SequenceStart
+  start:
+    index: 66
+    line: 5
+    column: 7
+  end:
+    index: 67
+    line: 5
+    column: 8
+- token: Separator
+  start:
+    index: 67
+    line: 5
+    column: 8
+  end:
+    index: 68
+    line: 5
+    column: 9
+- token: Scalar
+  start:
+    index: 68
+    line: 5
+    column: 9
+  end:
+    index: 74
+    line: 5
+    column: 15
+- token: Separator
+  start:
+    index: 74
+    line: 5
+    column: 15
+  end:
+    index: 75
+    line: 5
+    column: 16
+- token: SequenceEnd
+  start:
+    index: 75
+    line: 5
+    column: 16
+  end:
+    index: 76
+    line: 5
+    column: 17
+- token: CollectionEntry
+  start:
+    index: 76
+    line: 5
+    column: 17
+  end:
+    index: 77
+    line: 5
+    column: 18
+- token: Break
+  start:
+    index: 77
+    line: 5
+    column: 18
+  end:
+    index: 79
+    line: 6
+    column: 0
+- token: Indent
+  start:
+    index: 79
+    line: 6
+    column: 0
+  end:
+    index: 79
+    line: 6
+    column: 0
+- token: Scalar
+  start:
+    index: 79
+    line: 6
+    column: 0
+  end:
+    index: 85
+    line: 6
+    column: 6
+- token: MappingValue
+  start:
+    index: 85
+    line: 6
+    column: 6
+  end:
+    index: 86
+    line: 6
+    column: 7
+- token: Separator
+  start:
+    index: 86
+    line: 6
+    column: 7
+  end:
+    index: 87
+    line: 6
+    column: 8
+- token: Scalar
+  start:
+    index: 87
+    line: 6
+    column: 8
+  end:
+    index: 91
+    line: 6
+    column: 12
+- token: CollectionEntry
+  start:
+    index: 91
+    line: 6
+    column: 12
+  end:
+    index: 92
+    line: 6
+    column: 13
+- token: Break
+  start:
+    index: 92
+    line: 6
+    column: 13
+  end:
+    index: 94
+    line: 7
+    column: 0
+- token: Indent
+  start:
+    index: 94
+    line: 7
+    column: 0
+  end:
+    index: 94
+    line: 7
+    column: 0
+- token: SequenceEnd
+  start:
+    index: 94
+    line: 7
+    column: 0
+  end:
+    index: 95
+    line: 7
+    column: 1
+- token: Break
+  start:
+    index: 95
+    line: 7
+    column: 1
+  end:
+    index: 97
+    line: 8
+    column: 0
+

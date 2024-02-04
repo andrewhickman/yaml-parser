@@ -1,0 +1,149 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 0
+    line: 0
+    column: 0
+- token: Scalar
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 16
+    line: 0
+    column: 16
+- token: MappingValue
+  start:
+    index: 16
+    line: 0
+    column: 16
+  end:
+    index: 17
+    line: 0
+    column: 17
+- token: Separator
+  start:
+    index: 17
+    line: 0
+    column: 17
+  end:
+    index: 18
+    line: 0
+    column: 18
+- token: Anchor
+  start:
+    index: 18
+    line: 0
+    column: 18
+  end:
+    index: 19
+    line: 0
+    column: 19
+- token: AnchorName
+  start:
+    index: 19
+    line: 0
+    column: 19
+  end:
+    index: 25
+    line: 0
+    column: 25
+- token: Separator
+  start:
+    index: 25
+    line: 0
+    column: 25
+  end:
+    index: 26
+    line: 0
+    column: 26
+- token: Scalar
+  start:
+    index: 26
+    line: 0
+    column: 26
+  end:
+    index: 31
+    line: 0
+    column: 31
+- token: Break
+  start:
+    index: 31
+    line: 0
+    column: 31
+  end:
+    index: 33
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 33
+    line: 1
+    column: 0
+  end:
+    index: 33
+    line: 1
+    column: 0
+- token: Scalar
+  start:
+    index: 33
+    line: 1
+    column: 0
+  end:
+    index: 50
+    line: 1
+    column: 17
+- token: MappingValue
+  start:
+    index: 50
+    line: 1
+    column: 17
+  end:
+    index: 51
+    line: 1
+    column: 18
+- token: Separator
+  start:
+    index: 51
+    line: 1
+    column: 18
+  end:
+    index: 52
+    line: 1
+    column: 19
+- token: Alias
+  start:
+    index: 52
+    line: 1
+    column: 19
+  end:
+    index: 53
+    line: 1
+    column: 20
+- token: AnchorName
+  start:
+    index: 53
+    line: 1
+    column: 20
+  end:
+    index: 59
+    line: 1
+    column: 26
+- token: Break
+  start:
+    index: 59
+    line: 1
+    column: 26
+  end:
+    index: 61
+    line: 2
+    column: 0
+

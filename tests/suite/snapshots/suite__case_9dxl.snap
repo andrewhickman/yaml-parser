@@ -1,0 +1,248 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 0
+    line: 0
+    column: 0
+- token: Scalar
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 7
+    line: 0
+    column: 7
+- token: MappingValue
+  start:
+    index: 7
+    line: 0
+    column: 7
+  end:
+    index: 8
+    line: 0
+    column: 8
+- token: Separator
+  start:
+    index: 8
+    line: 0
+    column: 8
+  end:
+    index: 9
+    line: 0
+    column: 9
+- token: Scalar
+  start:
+    index: 9
+    line: 0
+    column: 9
+  end:
+    index: 17
+    line: 0
+    column: 17
+- token: Break
+  start:
+    index: 17
+    line: 0
+    column: 17
+  end:
+    index: 19
+    line: 1
+    column: 0
+- token: DirectivesEnd
+  start:
+    index: 19
+    line: 1
+    column: 0
+  end:
+    index: 22
+    line: 1
+    column: 3
+- token: Empty
+  start:
+    index: 22
+    line: 1
+    column: 3
+  end:
+    index: 22
+    line: 1
+    column: 3
+- token: Break
+  start:
+    index: 22
+    line: 1
+    column: 3
+  end:
+    index: 24
+    line: 2
+    column: 0
+- token: Comment
+  start:
+    index: 24
+    line: 2
+    column: 0
+  end:
+    index: 25
+    line: 2
+    column: 1
+- token: CommentText
+  start:
+    index: 25
+    line: 2
+    column: 1
+  end:
+    index: 31
+    line: 2
+    column: 7
+- token: Break
+  start:
+    index: 31
+    line: 2
+    column: 7
+  end:
+    index: 33
+    line: 3
+    column: 0
+- token: DocumentEnd
+  start:
+    index: 33
+    line: 3
+    column: 0
+  end:
+    index: 36
+    line: 3
+    column: 3
+- token: Break
+  start:
+    index: 36
+    line: 3
+    column: 3
+  end:
+    index: 38
+    line: 4
+    column: 0
+- token: Directive
+  start:
+    index: 38
+    line: 4
+    column: 0
+  end:
+    index: 39
+    line: 4
+    column: 1
+- token: DirectiveName
+  start:
+    index: 39
+    line: 4
+    column: 1
+  end:
+    index: 43
+    line: 4
+    column: 5
+- token: Separator
+  start:
+    index: 43
+    line: 4
+    column: 5
+  end:
+    index: 44
+    line: 4
+    column: 6
+- token: YamlVersion
+  start:
+    index: 44
+    line: 4
+    column: 6
+  end:
+    index: 47
+    line: 4
+    column: 9
+- token: Break
+  start:
+    index: 47
+    line: 4
+    column: 9
+  end:
+    index: 49
+    line: 5
+    column: 0
+- token: DirectivesEnd
+  start:
+    index: 49
+    line: 5
+    column: 0
+  end:
+    index: 52
+    line: 5
+    column: 3
+- token: Break
+  start:
+    index: 52
+    line: 5
+    column: 3
+  end:
+    index: 54
+    line: 6
+    column: 0
+- token: Indent
+  start:
+    index: 54
+    line: 6
+    column: 0
+  end:
+    index: 54
+    line: 6
+    column: 0
+- token: Scalar
+  start:
+    index: 54
+    line: 6
+    column: 0
+  end:
+    index: 63
+    line: 6
+    column: 9
+- token: MappingValue
+  start:
+    index: 63
+    line: 6
+    column: 9
+  end:
+    index: 64
+    line: 6
+    column: 10
+- token: Separator
+  start:
+    index: 64
+    line: 6
+    column: 10
+  end:
+    index: 65
+    line: 6
+    column: 11
+- token: Scalar
+  start:
+    index: 65
+    line: 6
+    column: 11
+  end:
+    index: 67
+    line: 6
+    column: 13
+- token: Break
+  start:
+    index: 67
+    line: 6
+    column: 13
+  end:
+    index: 69
+    line: 7
+    column: 0
+

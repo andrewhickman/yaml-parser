@@ -1,0 +1,95 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 0
+    line: 0
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 1
+    line: 0
+    column: 1
+- token: Separator
+  start:
+    index: 1
+    line: 0
+    column: 1
+  end:
+    index: 2
+    line: 0
+    column: 2
+- token: Literal
+  start:
+    index: 2
+    line: 0
+    column: 2
+  end:
+    index: 3
+    line: 0
+    column: 3
+- token: ChompingIndicator
+  start:
+    index: 3
+    line: 0
+    column: 3
+  end:
+    index: 4
+    line: 0
+    column: 4
+- token: Break
+  start:
+    index: 4
+    line: 0
+    column: 4
+  end:
+    index: 6
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 6
+    line: 1
+    column: 0
+  end:
+    index: 6
+    line: 1
+    column: 0
+- token: ScalarBreak
+  start:
+    index: 6
+    line: 1
+    column: 0
+  end:
+    index: 8
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 8
+    line: 2
+    column: 0
+  end:
+    index: 8
+    line: 2
+    column: 0
+- token: ScalarBreak
+  start:
+    index: 8
+    line: 2
+    column: 0
+  end:
+    index: 10
+    line: 3
+    column: 0
+

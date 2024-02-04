@@ -1,0 +1,140 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: DirectivesEnd
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 3
+    line: 0
+    column: 3
+- token: Separator
+  start:
+    index: 3
+    line: 0
+    column: 3
+  end:
+    index: 4
+    line: 0
+    column: 4
+- token: Literal
+  start:
+    index: 4
+    line: 0
+    column: 4
+  end:
+    index: 5
+    line: 0
+    column: 5
+- token: ChompingIndicator
+  start:
+    index: 5
+    line: 0
+    column: 5
+  end:
+    index: 6
+    line: 0
+    column: 6
+- token: Break
+  start:
+    index: 6
+    line: 0
+    column: 6
+  end:
+    index: 8
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 8
+    line: 1
+    column: 0
+  end:
+    index: 9
+    line: 1
+    column: 1
+- token: Scalar
+  start:
+    index: 9
+    line: 1
+    column: 1
+  end:
+    index: 11
+    line: 1
+    column: 3
+- token: ScalarBreak
+  start:
+    index: 11
+    line: 1
+    column: 3
+  end:
+    index: 13
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 13
+    line: 2
+    column: 0
+  end:
+    index: 14
+    line: 2
+    column: 1
+- token: ScalarBreak
+  start:
+    index: 14
+    line: 2
+    column: 1
+  end:
+    index: 16
+    line: 3
+    column: 0
+- token: Indent
+  start:
+    index: 16
+    line: 3
+    column: 0
+  end:
+    index: 17
+    line: 3
+    column: 1
+- token: Scalar
+  start:
+    index: 17
+    line: 3
+    column: 1
+  end:
+    index: 18
+    line: 3
+    column: 2
+- token: ScalarBreak
+  start:
+    index: 18
+    line: 3
+    column: 2
+  end:
+    index: 20
+    line: 4
+    column: 0
+- token: DocumentEnd
+  start:
+    index: 20
+    line: 4
+    column: 0
+  end:
+    index: 23
+    line: 4
+    column: 3
+- token: Break
+  start:
+    index: 23
+    line: 4
+    column: 3
+  end:
+    index: 25
+    line: 5
+    column: 0
+

@@ -1,7 +1,5 @@
 $TestSuite = "$PSScriptRoot/../yaml-test-suite";
 
-$Failing = @()
-
 Push-Location $TestSuite
 try
 {
@@ -9,11 +7,6 @@ try
         $Name = ((Split-Path -Parent (Resolve-Path -Path $_ -Relative)) -replace '[/\\]','/').Trim('.').Trim('/')
         $TestName = "case_" + ($Name -replace '/','_').ToLower()
 
-        if ($TestName -in $Failing) {
-            $SkipArg = ", skip: true"
-        } else {
-            $SkipArg = ""
-        }
         if (Test-Path (Join-Path (Split-Path -Parent $_.FullName) "error")) {
             $FailArg = ", fail: true"
         } else {

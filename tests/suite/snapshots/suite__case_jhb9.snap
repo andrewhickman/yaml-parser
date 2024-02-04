@@ -1,0 +1,320 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Comment
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 1
+    line: 0
+    column: 1
+- token: CommentText
+  start:
+    index: 1
+    line: 0
+    column: 1
+  end:
+    index: 27
+    line: 0
+    column: 27
+- token: Break
+  start:
+    index: 27
+    line: 0
+    column: 27
+  end:
+    index: 29
+    line: 1
+    column: 0
+- token: DirectivesEnd
+  start:
+    index: 29
+    line: 1
+    column: 0
+  end:
+    index: 32
+    line: 1
+    column: 3
+- token: Break
+  start:
+    index: 32
+    line: 1
+    column: 3
+  end:
+    index: 34
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 34
+    line: 2
+    column: 0
+  end:
+    index: 34
+    line: 2
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 34
+    line: 2
+    column: 0
+  end:
+    index: 35
+    line: 2
+    column: 1
+- token: Separator
+  start:
+    index: 35
+    line: 2
+    column: 1
+  end:
+    index: 36
+    line: 2
+    column: 2
+- token: Scalar
+  start:
+    index: 36
+    line: 2
+    column: 2
+  end:
+    index: 48
+    line: 2
+    column: 14
+- token: Break
+  start:
+    index: 48
+    line: 2
+    column: 14
+  end:
+    index: 50
+    line: 3
+    column: 0
+- token: Indent
+  start:
+    index: 50
+    line: 3
+    column: 0
+  end:
+    index: 50
+    line: 3
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 50
+    line: 3
+    column: 0
+  end:
+    index: 51
+    line: 3
+    column: 1
+- token: Separator
+  start:
+    index: 51
+    line: 3
+    column: 1
+  end:
+    index: 52
+    line: 3
+    column: 2
+- token: Scalar
+  start:
+    index: 52
+    line: 3
+    column: 2
+  end:
+    index: 62
+    line: 3
+    column: 12
+- token: Break
+  start:
+    index: 62
+    line: 3
+    column: 12
+  end:
+    index: 64
+    line: 4
+    column: 0
+- token: Indent
+  start:
+    index: 64
+    line: 4
+    column: 0
+  end:
+    index: 64
+    line: 4
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 64
+    line: 4
+    column: 0
+  end:
+    index: 65
+    line: 4
+    column: 1
+- token: Separator
+  start:
+    index: 65
+    line: 4
+    column: 1
+  end:
+    index: 66
+    line: 4
+    column: 2
+- token: Scalar
+  start:
+    index: 66
+    line: 4
+    column: 2
+  end:
+    index: 77
+    line: 4
+    column: 13
+- token: Break
+  start:
+    index: 77
+    line: 4
+    column: 13
+  end:
+    index: 81
+    line: 6
+    column: 0
+- token: Comment
+  start:
+    index: 81
+    line: 6
+    column: 0
+  end:
+    index: 82
+    line: 6
+    column: 1
+- token: CommentText
+  start:
+    index: 82
+    line: 6
+    column: 1
+  end:
+    index: 95
+    line: 6
+    column: 14
+- token: Break
+  start:
+    index: 95
+    line: 6
+    column: 14
+  end:
+    index: 97
+    line: 7
+    column: 0
+- token: DirectivesEnd
+  start:
+    index: 97
+    line: 7
+    column: 0
+  end:
+    index: 100
+    line: 7
+    column: 3
+- token: Break
+  start:
+    index: 100
+    line: 7
+    column: 3
+  end:
+    index: 102
+    line: 8
+    column: 0
+- token: Indent
+  start:
+    index: 102
+    line: 8
+    column: 0
+  end:
+    index: 102
+    line: 8
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 102
+    line: 8
+    column: 0
+  end:
+    index: 103
+    line: 8
+    column: 1
+- token: Separator
+  start:
+    index: 103
+    line: 8
+    column: 1
+  end:
+    index: 104
+    line: 8
+    column: 2
+- token: Scalar
+  start:
+    index: 104
+    line: 8
+    column: 2
+  end:
+    index: 116
+    line: 8
+    column: 14
+- token: Break
+  start:
+    index: 116
+    line: 8
+    column: 14
+  end:
+    index: 118
+    line: 9
+    column: 0
+- token: Indent
+  start:
+    index: 118
+    line: 9
+    column: 0
+  end:
+    index: 118
+    line: 9
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 118
+    line: 9
+    column: 0
+  end:
+    index: 119
+    line: 9
+    column: 1
+- token: Separator
+  start:
+    index: 119
+    line: 9
+    column: 1
+  end:
+    index: 120
+    line: 9
+    column: 2
+- token: Scalar
+  start:
+    index: 120
+    line: 9
+    column: 2
+  end:
+    index: 138
+    line: 9
+    column: 20
+- token: Break
+  start:
+    index: 138
+    line: 9
+    column: 20
+  end:
+    index: 140
+    line: 10
+    column: 0
+

@@ -1,0 +1,275 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 0
+    line: 0
+    column: 0
+- token: Scalar
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 4
+    line: 0
+    column: 4
+- token: MappingValue
+  start:
+    index: 4
+    line: 0
+    column: 4
+  end:
+    index: 5
+    line: 0
+    column: 5
+- token: Separator
+  start:
+    index: 5
+    line: 0
+    column: 5
+  end:
+    index: 6
+    line: 0
+    column: 6
+- token: Scalar
+  start:
+    index: 6
+    line: 0
+    column: 6
+  end:
+    index: 18
+    line: 0
+    column: 18
+- token: Break
+  start:
+    index: 18
+    line: 0
+    column: 18
+  end:
+    index: 20
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 20
+    line: 1
+    column: 0
+  end:
+    index: 20
+    line: 1
+    column: 0
+- token: Scalar
+  start:
+    index: 20
+    line: 1
+    column: 0
+  end:
+    index: 34
+    line: 1
+    column: 14
+- token: MappingValue
+  start:
+    index: 34
+    line: 1
+    column: 14
+  end:
+    index: 35
+    line: 1
+    column: 15
+- token: Separator
+  start:
+    index: 35
+    line: 1
+    column: 15
+  end:
+    index: 36
+    line: 1
+    column: 16
+- token: Folded
+  start:
+    index: 36
+    line: 1
+    column: 16
+  end:
+    index: 37
+    line: 1
+    column: 17
+- token: Break
+  start:
+    index: 37
+    line: 1
+    column: 17
+  end:
+    index: 39
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 39
+    line: 2
+    column: 0
+  end:
+    index: 41
+    line: 2
+    column: 2
+- token: Scalar
+  start:
+    index: 41
+    line: 2
+    column: 2
+  end:
+    index: 64
+    line: 2
+    column: 25
+- token: ScalarSpace
+  start:
+    index: 64
+    line: 2
+    column: 25
+  end:
+    index: 66
+    line: 3
+    column: 0
+- token: Indent
+  start:
+    index: 66
+    line: 3
+    column: 0
+  end:
+    index: 68
+    line: 3
+    column: 2
+- token: Scalar
+  start:
+    index: 68
+    line: 3
+    column: 2
+  end:
+    index: 92
+    line: 3
+    column: 26
+- token: ScalarBreak
+  start:
+    index: 92
+    line: 3
+    column: 26
+  end:
+    index: 94
+    line: 4
+    column: 0
+- token: Indent
+  start:
+    index: 94
+    line: 4
+    column: 0
+  end:
+    index: 94
+    line: 4
+    column: 0
+- token: Scalar
+  start:
+    index: 94
+    line: 4
+    column: 0
+  end:
+    index: 99
+    line: 4
+    column: 5
+- token: MappingValue
+  start:
+    index: 99
+    line: 4
+    column: 5
+  end:
+    index: 100
+    line: 4
+    column: 6
+- token: Separator
+  start:
+    index: 100
+    line: 4
+    column: 6
+  end:
+    index: 101
+    line: 4
+    column: 7
+- token: Literal
+  start:
+    index: 101
+    line: 4
+    column: 7
+  end:
+    index: 102
+    line: 4
+    column: 8
+- token: Break
+  start:
+    index: 102
+    line: 4
+    column: 8
+  end:
+    index: 104
+    line: 5
+    column: 0
+- token: Indent
+  start:
+    index: 104
+    line: 5
+    column: 0
+  end:
+    index: 106
+    line: 5
+    column: 2
+- token: Scalar
+  start:
+    index: 106
+    line: 5
+    column: 2
+  end:
+    index: 118
+    line: 5
+    column: 14
+- token: ScalarBreak
+  start:
+    index: 118
+    line: 5
+    column: 14
+  end:
+    index: 120
+    line: 6
+    column: 0
+- token: Indent
+  start:
+    index: 120
+    line: 6
+    column: 0
+  end:
+    index: 122
+    line: 6
+    column: 2
+- token: Scalar
+  start:
+    index: 122
+    line: 6
+    column: 2
+  end:
+    index: 143
+    line: 6
+    column: 23
+- token: ScalarBreak
+  start:
+    index: 143
+    line: 6
+    column: 23
+  end:
+    index: 145
+    line: 7
+    column: 0
+

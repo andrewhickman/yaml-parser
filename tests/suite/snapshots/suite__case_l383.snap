@@ -1,0 +1,131 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: DirectivesEnd
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 3
+    line: 0
+    column: 3
+- token: Separator
+  start:
+    index: 3
+    line: 0
+    column: 3
+  end:
+    index: 4
+    line: 0
+    column: 4
+- token: Scalar
+  start:
+    index: 4
+    line: 0
+    column: 4
+  end:
+    index: 7
+    line: 0
+    column: 7
+- token: Separator
+  start:
+    index: 7
+    line: 0
+    column: 7
+  end:
+    index: 9
+    line: 0
+    column: 9
+- token: Comment
+  start:
+    index: 9
+    line: 0
+    column: 9
+  end:
+    index: 10
+    line: 0
+    column: 10
+- token: CommentText
+  start:
+    index: 10
+    line: 0
+    column: 10
+  end:
+    index: 18
+    line: 0
+    column: 18
+- token: Break
+  start:
+    index: 18
+    line: 0
+    column: 18
+  end:
+    index: 20
+    line: 1
+    column: 0
+- token: DirectivesEnd
+  start:
+    index: 20
+    line: 1
+    column: 0
+  end:
+    index: 23
+    line: 1
+    column: 3
+- token: Separator
+  start:
+    index: 23
+    line: 1
+    column: 3
+  end:
+    index: 24
+    line: 1
+    column: 4
+- token: Scalar
+  start:
+    index: 24
+    line: 1
+    column: 4
+  end:
+    index: 27
+    line: 1
+    column: 7
+- token: Separator
+  start:
+    index: 27
+    line: 1
+    column: 7
+  end:
+    index: 29
+    line: 1
+    column: 9
+- token: Comment
+  start:
+    index: 29
+    line: 1
+    column: 9
+  end:
+    index: 30
+    line: 1
+    column: 10
+- token: CommentText
+  start:
+    index: 30
+    line: 1
+    column: 10
+  end:
+    index: 38
+    line: 1
+    column: 18
+- token: Break
+  start:
+    index: 38
+    line: 1
+    column: 18
+  end:
+    index: 40
+    line: 2
+    column: 0
+

@@ -1,0 +1,50 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 0
+    line: 0
+    column: 0
+- token: Scalar
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 1
+    line: 0
+    column: 1
+- token: MappingValue
+  start:
+    index: 1
+    line: 0
+    column: 1
+  end:
+    index: 2
+    line: 0
+    column: 2
+- token: Empty
+  start:
+    index: 2
+    line: 0
+    column: 2
+  end:
+    index: 2
+    line: 0
+    column: 2
+- token: Break
+  start:
+    index: 2
+    line: 0
+    column: 2
+  end:
+    index: 4
+    line: 1
+    column: 0
+

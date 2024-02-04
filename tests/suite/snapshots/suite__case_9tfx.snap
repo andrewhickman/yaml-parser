@@ -1,0 +1,167 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: DirectivesEnd
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 3
+    line: 0
+    column: 3
+- token: Break
+  start:
+    index: 3
+    line: 0
+    column: 3
+  end:
+    index: 5
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 5
+    line: 1
+    column: 0
+  end:
+    index: 5
+    line: 1
+    column: 0
+- token: DoubleQuote
+  start:
+    index: 5
+    line: 1
+    column: 0
+  end:
+    index: 6
+    line: 1
+    column: 1
+- token: DoubleQuoted
+  start:
+    index: 6
+    line: 1
+    column: 1
+  end:
+    index: 20
+    line: 1
+    column: 15
+- token: Break
+  start:
+    index: 20
+    line: 1
+    column: 15
+  end:
+    index: 22
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 22
+    line: 2
+    column: 0
+  end:
+    index: 22
+    line: 2
+    column: 0
+- token: ScalarBreak
+  start:
+    index: 22
+    line: 2
+    column: 0
+  end:
+    index: 24
+    line: 3
+    column: 0
+- token: Indent
+  start:
+    index: 24
+    line: 3
+    column: 0
+  end:
+    index: 24
+    line: 3
+    column: 0
+- token: Separator
+  start:
+    index: 24
+    line: 3
+    column: 0
+  end:
+    index: 25
+    line: 3
+    column: 1
+- token: DoubleQuoted
+  start:
+    index: 25
+    line: 3
+    column: 1
+  end:
+    index: 38
+    line: 3
+    column: 14
+- token: Separator
+  start:
+    index: 38
+    line: 3
+    column: 14
+  end:
+    index: 39
+    line: 3
+    column: 15
+- token: ScalarSpace
+  start:
+    index: 39
+    line: 3
+    column: 15
+  end:
+    index: 41
+    line: 4
+    column: 0
+- token: Indent
+  start:
+    index: 41
+    line: 4
+    column: 0
+  end:
+    index: 41
+    line: 4
+    column: 0
+- token: Separator
+  start:
+    index: 41
+    line: 4
+    column: 0
+  end:
+    index: 42
+    line: 4
+    column: 1
+- token: DoubleQuoted
+  start:
+    index: 42
+    line: 4
+    column: 1
+  end:
+    index: 56
+    line: 4
+    column: 15
+- token: DoubleQuote
+  start:
+    index: 56
+    line: 4
+    column: 15
+  end:
+    index: 57
+    line: 4
+    column: 16
+- token: Break
+  start:
+    index: 57
+    line: 4
+    column: 16
+  end:
+    index: 59
+    line: 5
+    column: 0
+

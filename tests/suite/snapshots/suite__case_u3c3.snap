@@ -1,0 +1,158 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Directive
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 1
+    line: 0
+    column: 1
+- token: DirectiveName
+  start:
+    index: 1
+    line: 0
+    column: 1
+  end:
+    index: 4
+    line: 0
+    column: 4
+- token: Separator
+  start:
+    index: 4
+    line: 0
+    column: 4
+  end:
+    index: 5
+    line: 0
+    column: 5
+- token: TagHandle
+  start:
+    index: 5
+    line: 0
+    column: 5
+  end:
+    index: 11
+    line: 0
+    column: 11
+- token: Separator
+  start:
+    index: 11
+    line: 0
+    column: 11
+  end:
+    index: 12
+    line: 0
+    column: 12
+- token: TagPrefix
+  start:
+    index: 12
+    line: 0
+    column: 12
+  end:
+    index: 30
+    line: 0
+    column: 30
+- token: Break
+  start:
+    index: 30
+    line: 0
+    column: 30
+  end:
+    index: 32
+    line: 1
+    column: 0
+- token: DirectivesEnd
+  start:
+    index: 32
+    line: 1
+    column: 0
+  end:
+    index: 35
+    line: 1
+    column: 3
+- token: Break
+  start:
+    index: 35
+    line: 1
+    column: 3
+  end:
+    index: 37
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 37
+    line: 2
+    column: 0
+  end:
+    index: 37
+    line: 2
+    column: 0
+- token: TagHandle
+  start:
+    index: 37
+    line: 2
+    column: 0
+  end:
+    index: 43
+    line: 2
+    column: 6
+- token: TagSuffix
+  start:
+    index: 43
+    line: 2
+    column: 6
+  end:
+    index: 46
+    line: 2
+    column: 9
+- token: Separator
+  start:
+    index: 46
+    line: 2
+    column: 9
+  end:
+    index: 47
+    line: 2
+    column: 10
+- token: DoubleQuote
+  start:
+    index: 47
+    line: 2
+    column: 10
+  end:
+    index: 48
+    line: 2
+    column: 11
+- token: DoubleQuoted
+  start:
+    index: 48
+    line: 2
+    column: 11
+  end:
+    index: 51
+    line: 2
+    column: 14
+- token: DoubleQuote
+  start:
+    index: 51
+    line: 2
+    column: 14
+  end:
+    index: 52
+    line: 2
+    column: 15
+- token: Break
+  start:
+    index: 52
+    line: 2
+    column: 15
+  end:
+    index: 54
+    line: 3
+    column: 0
+

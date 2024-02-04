@@ -1,0 +1,122 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 0
+    line: 0
+    column: 0
+- token: VerbatimTag
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 24
+    line: 0
+    column: 24
+- token: Separator
+  start:
+    index: 24
+    line: 0
+    column: 24
+  end:
+    index: 25
+    line: 0
+    column: 25
+- token: Scalar
+  start:
+    index: 25
+    line: 0
+    column: 25
+  end:
+    index: 28
+    line: 0
+    column: 28
+- token: Separator
+  start:
+    index: 28
+    line: 0
+    column: 28
+  end:
+    index: 29
+    line: 0
+    column: 29
+- token: MappingValue
+  start:
+    index: 29
+    line: 0
+    column: 29
+  end:
+    index: 30
+    line: 0
+    column: 30
+- token: Break
+  start:
+    index: 30
+    line: 0
+    column: 30
+  end:
+    index: 32
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 32
+    line: 1
+    column: 0
+  end:
+    index: 33
+    line: 1
+    column: 1
+- token: Separator
+  start:
+    index: 33
+    line: 1
+    column: 1
+  end:
+    index: 34
+    line: 1
+    column: 2
+- token: VerbatimTag
+  start:
+    index: 34
+    line: 1
+    column: 2
+  end:
+    index: 41
+    line: 1
+    column: 9
+- token: Separator
+  start:
+    index: 41
+    line: 1
+    column: 9
+  end:
+    index: 42
+    line: 1
+    column: 10
+- token: Scalar
+  start:
+    index: 42
+    line: 1
+    column: 10
+  end:
+    index: 45
+    line: 1
+    column: 13
+- token: Break
+  start:
+    index: 45
+    line: 1
+    column: 13
+  end:
+    index: 47
+    line: 2
+    column: 0
+

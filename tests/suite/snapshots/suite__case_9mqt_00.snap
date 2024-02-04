@@ -1,0 +1,113 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: DirectivesEnd
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 3
+    line: 0
+    column: 3
+- token: Separator
+  start:
+    index: 3
+    line: 0
+    column: 3
+  end:
+    index: 4
+    line: 0
+    column: 4
+- token: DoubleQuote
+  start:
+    index: 4
+    line: 0
+    column: 4
+  end:
+    index: 5
+    line: 0
+    column: 5
+- token: DoubleQuoted
+  start:
+    index: 5
+    line: 0
+    column: 5
+  end:
+    index: 6
+    line: 0
+    column: 6
+- token: ScalarSpace
+  start:
+    index: 6
+    line: 0
+    column: 6
+  end:
+    index: 8
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 8
+    line: 1
+    column: 0
+  end:
+    index: 8
+    line: 1
+    column: 0
+- token: DoubleQuoted
+  start:
+    index: 8
+    line: 1
+    column: 0
+  end:
+    index: 12
+    line: 1
+    column: 4
+- token: ScalarSpace
+  start:
+    index: 12
+    line: 1
+    column: 4
+  end:
+    index: 14
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 14
+    line: 2
+    column: 0
+  end:
+    index: 14
+    line: 2
+    column: 0
+- token: DoubleQuoted
+  start:
+    index: 14
+    line: 2
+    column: 0
+  end:
+    index: 15
+    line: 2
+    column: 1
+- token: DoubleQuote
+  start:
+    index: 15
+    line: 2
+    column: 1
+  end:
+    index: 16
+    line: 2
+    column: 2
+- token: Break
+  start:
+    index: 16
+    line: 2
+    column: 2
+  end:
+    index: 18
+    line: 3
+    column: 0
+

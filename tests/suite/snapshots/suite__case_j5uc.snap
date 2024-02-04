@@ -1,0 +1,167 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 0
+    line: 0
+    column: 0
+- token: Scalar
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 3
+    line: 0
+    column: 3
+- token: MappingValue
+  start:
+    index: 3
+    line: 0
+    column: 3
+  end:
+    index: 4
+    line: 0
+    column: 4
+- token: Separator
+  start:
+    index: 4
+    line: 0
+    column: 4
+  end:
+    index: 5
+    line: 0
+    column: 5
+- token: Scalar
+  start:
+    index: 5
+    line: 0
+    column: 5
+  end:
+    index: 9
+    line: 0
+    column: 9
+- token: Break
+  start:
+    index: 9
+    line: 0
+    column: 9
+  end:
+    index: 11
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 11
+    line: 1
+    column: 0
+  end:
+    index: 11
+    line: 1
+    column: 0
+- token: Scalar
+  start:
+    index: 11
+    line: 1
+    column: 0
+  end:
+    index: 14
+    line: 1
+    column: 3
+- token: MappingValue
+  start:
+    index: 14
+    line: 1
+    column: 3
+  end:
+    index: 15
+    line: 1
+    column: 4
+- token: Separator
+  start:
+    index: 15
+    line: 1
+    column: 4
+  end:
+    index: 16
+    line: 1
+    column: 5
+- token: Scalar
+  start:
+    index: 16
+    line: 1
+    column: 5
+  end:
+    index: 20
+    line: 1
+    column: 9
+- token: Break
+  start:
+    index: 20
+    line: 1
+    column: 9
+  end:
+    index: 22
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 22
+    line: 2
+    column: 0
+  end:
+    index: 22
+    line: 2
+    column: 0
+- token: Scalar
+  start:
+    index: 22
+    line: 2
+    column: 0
+  end:
+    index: 25
+    line: 2
+    column: 3
+- token: MappingValue
+  start:
+    index: 25
+    line: 2
+    column: 3
+  end:
+    index: 26
+    line: 2
+    column: 4
+- token: Separator
+  start:
+    index: 26
+    line: 2
+    column: 4
+  end:
+    index: 27
+    line: 2
+    column: 5
+- token: Scalar
+  start:
+    index: 27
+    line: 2
+    column: 5
+  end:
+    index: 31
+    line: 2
+    column: 9
+- token: Break
+  start:
+    index: 31
+    line: 2
+    column: 9
+  end:
+    index: 33
+    line: 3
+    column: 0
+

@@ -1,0 +1,716 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 0
+    line: 0
+    column: 0
+- token: Scalar
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 7
+    line: 0
+    column: 7
+- token: MappingValue
+  start:
+    index: 7
+    line: 0
+    column: 7
+  end:
+    index: 8
+    line: 0
+    column: 8
+- token: Separator
+  start:
+    index: 8
+    line: 0
+    column: 8
+  end:
+    index: 9
+    line: 0
+    column: 9
+- token: DoubleQuote
+  start:
+    index: 9
+    line: 0
+    column: 9
+  end:
+    index: 10
+    line: 0
+    column: 10
+- token: DoubleQuoted
+  start:
+    index: 10
+    line: 0
+    column: 10
+  end:
+    index: 24
+    line: 0
+    column: 24
+- token: Escape
+  start:
+    index: 24
+    line: 0
+    column: 24
+  end:
+    index: 25
+    line: 0
+    column: 25
+- token: EscapeCode
+  start:
+    index: 25
+    line: 0
+    column: 25
+  end:
+    index: 30
+    line: 0
+    column: 30
+- token: DoubleQuoted
+  start:
+    index: 30
+    line: 0
+    column: 30
+  end:
+    index: 30
+    line: 0
+    column: 30
+- token: DoubleQuote
+  start:
+    index: 30
+    line: 0
+    column: 30
+  end:
+    index: 31
+    line: 0
+    column: 31
+- token: Break
+  start:
+    index: 31
+    line: 0
+    column: 31
+  end:
+    index: 33
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 33
+    line: 1
+    column: 0
+  end:
+    index: 33
+    line: 1
+    column: 0
+- token: Scalar
+  start:
+    index: 33
+    line: 1
+    column: 0
+  end:
+    index: 40
+    line: 1
+    column: 7
+- token: MappingValue
+  start:
+    index: 40
+    line: 1
+    column: 7
+  end:
+    index: 41
+    line: 1
+    column: 8
+- token: Separator
+  start:
+    index: 41
+    line: 1
+    column: 8
+  end:
+    index: 42
+    line: 1
+    column: 9
+- token: DoubleQuote
+  start:
+    index: 42
+    line: 1
+    column: 9
+  end:
+    index: 43
+    line: 1
+    column: 10
+- token: DoubleQuoted
+  start:
+    index: 43
+    line: 1
+    column: 10
+  end:
+    index: 43
+    line: 1
+    column: 10
+- token: Escape
+  start:
+    index: 43
+    line: 1
+    column: 10
+  end:
+    index: 44
+    line: 1
+    column: 11
+- token: EscapeCode
+  start:
+    index: 44
+    line: 1
+    column: 11
+  end:
+    index: 45
+    line: 1
+    column: 12
+- token: DoubleQuoted
+  start:
+    index: 45
+    line: 1
+    column: 12
+  end:
+    index: 49
+    line: 1
+    column: 16
+- token: Escape
+  start:
+    index: 49
+    line: 1
+    column: 16
+  end:
+    index: 50
+    line: 1
+    column: 17
+- token: EscapeCode
+  start:
+    index: 50
+    line: 1
+    column: 17
+  end:
+    index: 51
+    line: 1
+    column: 18
+- token: DoubleQuoted
+  start:
+    index: 51
+    line: 1
+    column: 18
+  end:
+    index: 55
+    line: 1
+    column: 22
+- token: Escape
+  start:
+    index: 55
+    line: 1
+    column: 22
+  end:
+    index: 56
+    line: 1
+    column: 23
+- token: EscapeCode
+  start:
+    index: 56
+    line: 1
+    column: 23
+  end:
+    index: 57
+    line: 1
+    column: 24
+- token: DoubleQuoted
+  start:
+    index: 57
+    line: 1
+    column: 24
+  end:
+    index: 61
+    line: 1
+    column: 28
+- token: Escape
+  start:
+    index: 61
+    line: 1
+    column: 28
+  end:
+    index: 62
+    line: 1
+    column: 29
+- token: EscapeCode
+  start:
+    index: 62
+    line: 1
+    column: 29
+  end:
+    index: 63
+    line: 1
+    column: 30
+- token: DoubleQuoted
+  start:
+    index: 63
+    line: 1
+    column: 30
+  end:
+    index: 63
+    line: 1
+    column: 30
+- token: DoubleQuote
+  start:
+    index: 63
+    line: 1
+    column: 30
+  end:
+    index: 64
+    line: 1
+    column: 31
+- token: Break
+  start:
+    index: 64
+    line: 1
+    column: 31
+  end:
+    index: 66
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 66
+    line: 2
+    column: 0
+  end:
+    index: 66
+    line: 2
+    column: 0
+- token: Scalar
+  start:
+    index: 66
+    line: 2
+    column: 0
+  end:
+    index: 73
+    line: 2
+    column: 7
+- token: MappingValue
+  start:
+    index: 73
+    line: 2
+    column: 7
+  end:
+    index: 74
+    line: 2
+    column: 8
+- token: Separator
+  start:
+    index: 74
+    line: 2
+    column: 8
+  end:
+    index: 75
+    line: 2
+    column: 9
+- token: DoubleQuote
+  start:
+    index: 75
+    line: 2
+    column: 9
+  end:
+    index: 76
+    line: 2
+    column: 10
+- token: DoubleQuoted
+  start:
+    index: 76
+    line: 2
+    column: 10
+  end:
+    index: 76
+    line: 2
+    column: 10
+- token: Escape
+  start:
+    index: 76
+    line: 2
+    column: 10
+  end:
+    index: 77
+    line: 2
+    column: 11
+- token: EscapeCode
+  start:
+    index: 77
+    line: 2
+    column: 11
+  end:
+    index: 80
+    line: 2
+    column: 14
+- token: DoubleQuoted
+  start:
+    index: 80
+    line: 2
+    column: 14
+  end:
+    index: 80
+    line: 2
+    column: 14
+- token: Escape
+  start:
+    index: 80
+    line: 2
+    column: 14
+  end:
+    index: 81
+    line: 2
+    column: 15
+- token: EscapeCode
+  start:
+    index: 81
+    line: 2
+    column: 15
+  end:
+    index: 84
+    line: 2
+    column: 18
+- token: DoubleQuoted
+  start:
+    index: 84
+    line: 2
+    column: 18
+  end:
+    index: 88
+    line: 2
+    column: 22
+- token: Escape
+  start:
+    index: 88
+    line: 2
+    column: 22
+  end:
+    index: 89
+    line: 2
+    column: 23
+- token: EscapeCode
+  start:
+    index: 89
+    line: 2
+    column: 23
+  end:
+    index: 90
+    line: 2
+    column: 24
+- token: DoubleQuoted
+  start:
+    index: 90
+    line: 2
+    column: 24
+  end:
+    index: 90
+    line: 2
+    column: 24
+- token: Escape
+  start:
+    index: 90
+    line: 2
+    column: 24
+  end:
+    index: 91
+    line: 2
+    column: 25
+- token: EscapeCode
+  start:
+    index: 91
+    line: 2
+    column: 25
+  end:
+    index: 92
+    line: 2
+    column: 26
+- token: DoubleQuoted
+  start:
+    index: 92
+    line: 2
+    column: 26
+  end:
+    index: 92
+    line: 2
+    column: 26
+- token: DoubleQuote
+  start:
+    index: 92
+    line: 2
+    column: 26
+  end:
+    index: 93
+    line: 2
+    column: 27
+- token: Break
+  start:
+    index: 93
+    line: 2
+    column: 27
+  end:
+    index: 97
+    line: 4
+    column: 0
+- token: Indent
+  start:
+    index: 97
+    line: 4
+    column: 0
+  end:
+    index: 97
+    line: 4
+    column: 0
+- token: Scalar
+  start:
+    index: 97
+    line: 4
+    column: 0
+  end:
+    index: 103
+    line: 4
+    column: 6
+- token: MappingValue
+  start:
+    index: 103
+    line: 4
+    column: 6
+  end:
+    index: 104
+    line: 4
+    column: 7
+- token: Separator
+  start:
+    index: 104
+    line: 4
+    column: 7
+  end:
+    index: 105
+    line: 4
+    column: 8
+- token: SingleQuote
+  start:
+    index: 105
+    line: 4
+    column: 8
+  end:
+    index: 106
+    line: 4
+    column: 9
+- token: SingleQuoted
+  start:
+    index: 106
+    line: 4
+    column: 9
+  end:
+    index: 124
+    line: 4
+    column: 27
+- token: SingleQuote
+  start:
+    index: 124
+    line: 4
+    column: 27
+  end:
+    index: 125
+    line: 4
+    column: 28
+- token: Break
+  start:
+    index: 125
+    line: 4
+    column: 28
+  end:
+    index: 127
+    line: 5
+    column: 0
+- token: Indent
+  start:
+    index: 127
+    line: 5
+    column: 0
+  end:
+    index: 127
+    line: 5
+    column: 0
+- token: Scalar
+  start:
+    index: 127
+    line: 5
+    column: 0
+  end:
+    index: 133
+    line: 5
+    column: 6
+- token: MappingValue
+  start:
+    index: 133
+    line: 5
+    column: 6
+  end:
+    index: 134
+    line: 5
+    column: 7
+- token: Separator
+  start:
+    index: 134
+    line: 5
+    column: 7
+  end:
+    index: 135
+    line: 5
+    column: 8
+- token: SingleQuote
+  start:
+    index: 135
+    line: 5
+    column: 8
+  end:
+    index: 136
+    line: 5
+    column: 9
+- token: SingleQuoted
+  start:
+    index: 136
+    line: 5
+    column: 9
+  end:
+    index: 145
+    line: 5
+    column: 18
+- token: QuotedQuote
+  start:
+    index: 145
+    line: 5
+    column: 18
+  end:
+    index: 147
+    line: 5
+    column: 20
+- token: SingleQuoted
+  start:
+    index: 147
+    line: 5
+    column: 20
+  end:
+    index: 154
+    line: 5
+    column: 27
+- token: QuotedQuote
+  start:
+    index: 154
+    line: 5
+    column: 27
+  end:
+    index: 156
+    line: 5
+    column: 29
+- token: SingleQuoted
+  start:
+    index: 156
+    line: 5
+    column: 29
+  end:
+    index: 157
+    line: 5
+    column: 30
+- token: SingleQuote
+  start:
+    index: 157
+    line: 5
+    column: 30
+  end:
+    index: 158
+    line: 5
+    column: 31
+- token: Break
+  start:
+    index: 158
+    line: 5
+    column: 31
+  end:
+    index: 160
+    line: 6
+    column: 0
+- token: Indent
+  start:
+    index: 160
+    line: 6
+    column: 0
+  end:
+    index: 160
+    line: 6
+    column: 0
+- token: Scalar
+  start:
+    index: 160
+    line: 6
+    column: 0
+  end:
+    index: 171
+    line: 6
+    column: 11
+- token: MappingValue
+  start:
+    index: 171
+    line: 6
+    column: 11
+  end:
+    index: 172
+    line: 6
+    column: 12
+- token: Separator
+  start:
+    index: 172
+    line: 6
+    column: 12
+  end:
+    index: 173
+    line: 6
+    column: 13
+- token: SingleQuote
+  start:
+    index: 173
+    line: 6
+    column: 13
+  end:
+    index: 174
+    line: 6
+    column: 14
+- token: SingleQuoted
+  start:
+    index: 174
+    line: 6
+    column: 14
+  end:
+    index: 181
+    line: 6
+    column: 21
+- token: SingleQuote
+  start:
+    index: 181
+    line: 6
+    column: 21
+  end:
+    index: 182
+    line: 6
+    column: 22
+- token: Break
+  start:
+    index: 182
+    line: 6
+    column: 22
+  end:
+    index: 184
+    line: 7
+    column: 0
+

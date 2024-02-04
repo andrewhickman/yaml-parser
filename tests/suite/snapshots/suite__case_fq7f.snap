@@ -1,0 +1,140 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 0
+    line: 0
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 1
+    line: 0
+    column: 1
+- token: Separator
+  start:
+    index: 1
+    line: 0
+    column: 1
+  end:
+    index: 2
+    line: 0
+    column: 2
+- token: Scalar
+  start:
+    index: 2
+    line: 0
+    column: 2
+  end:
+    index: 14
+    line: 0
+    column: 14
+- token: Break
+  start:
+    index: 14
+    line: 0
+    column: 14
+  end:
+    index: 16
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 16
+    line: 1
+    column: 0
+  end:
+    index: 16
+    line: 1
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 16
+    line: 1
+    column: 0
+  end:
+    index: 17
+    line: 1
+    column: 1
+- token: Separator
+  start:
+    index: 17
+    line: 1
+    column: 1
+  end:
+    index: 18
+    line: 1
+    column: 2
+- token: Scalar
+  start:
+    index: 18
+    line: 1
+    column: 2
+  end:
+    index: 28
+    line: 1
+    column: 12
+- token: Break
+  start:
+    index: 28
+    line: 1
+    column: 12
+  end:
+    index: 30
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 30
+    line: 2
+    column: 0
+  end:
+    index: 30
+    line: 2
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 30
+    line: 2
+    column: 0
+  end:
+    index: 31
+    line: 2
+    column: 1
+- token: Separator
+  start:
+    index: 31
+    line: 2
+    column: 1
+  end:
+    index: 32
+    line: 2
+    column: 2
+- token: Scalar
+  start:
+    index: 32
+    line: 2
+    column: 2
+  end:
+    index: 43
+    line: 2
+    column: 13
+- token: Break
+  start:
+    index: 43
+    line: 2
+    column: 13
+  end:
+    index: 45
+    line: 3
+    column: 0
+

@@ -1,0 +1,302 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 0
+    line: 0
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 1
+    line: 0
+    column: 1
+- token: Break
+  start:
+    index: 1
+    line: 0
+    column: 1
+  end:
+    index: 3
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 3
+    line: 1
+    column: 0
+  end:
+    index: 4
+    line: 1
+    column: 1
+- token: Separator
+  start:
+    index: 4
+    line: 1
+    column: 1
+  end:
+    index: 5
+    line: 1
+    column: 2
+- token: DoubleQuote
+  start:
+    index: 5
+    line: 1
+    column: 2
+  end:
+    index: 6
+    line: 1
+    column: 3
+- token: DoubleQuoted
+  start:
+    index: 6
+    line: 1
+    column: 3
+  end:
+    index: 19
+    line: 1
+    column: 16
+- token: DoubleQuote
+  start:
+    index: 19
+    line: 1
+    column: 16
+  end:
+    index: 20
+    line: 1
+    column: 17
+- token: Break
+  start:
+    index: 20
+    line: 1
+    column: 17
+  end:
+    index: 22
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 22
+    line: 2
+    column: 0
+  end:
+    index: 22
+    line: 2
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 22
+    line: 2
+    column: 0
+  end:
+    index: 23
+    line: 2
+    column: 1
+- token: Separator
+  start:
+    index: 23
+    line: 2
+    column: 1
+  end:
+    index: 24
+    line: 2
+    column: 2
+- token: Folded
+  start:
+    index: 24
+    line: 2
+    column: 2
+  end:
+    index: 25
+    line: 2
+    column: 3
+- token: Break
+  start:
+    index: 25
+    line: 2
+    column: 3
+  end:
+    index: 27
+    line: 3
+    column: 0
+- token: Indent
+  start:
+    index: 27
+    line: 3
+    column: 0
+  end:
+    index: 28
+    line: 3
+    column: 1
+- token: Scalar
+  start:
+    index: 28
+    line: 3
+    column: 1
+  end:
+    index: 40
+    line: 3
+    column: 13
+- token: ScalarBreak
+  start:
+    index: 40
+    line: 3
+    column: 13
+  end:
+    index: 42
+    line: 4
+    column: 0
+- token: Indent
+  start:
+    index: 42
+    line: 4
+    column: 0
+  end:
+    index: 42
+    line: 4
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 42
+    line: 4
+    column: 0
+  end:
+    index: 43
+    line: 4
+    column: 1
+- token: Separator
+  start:
+    index: 43
+    line: 4
+    column: 1
+  end:
+    index: 44
+    line: 4
+    column: 2
+- token: TagHandle
+  start:
+    index: 44
+    line: 4
+    column: 2
+  end:
+    index: 46
+    line: 4
+    column: 4
+- token: TagSuffix
+  start:
+    index: 46
+    line: 4
+    column: 4
+  end:
+    index: 49
+    line: 4
+    column: 7
+- token: Separator
+  start:
+    index: 49
+    line: 4
+    column: 7
+  end:
+    index: 50
+    line: 4
+    column: 8
+- token: Comment
+  start:
+    index: 50
+    line: 4
+    column: 8
+  end:
+    index: 51
+    line: 4
+    column: 9
+- token: CommentText
+  start:
+    index: 51
+    line: 4
+    column: 9
+  end:
+    index: 68
+    line: 4
+    column: 26
+- token: Break
+  start:
+    index: 68
+    line: 4
+    column: 26
+  end:
+    index: 70
+    line: 5
+    column: 0
+- token: Indent
+  start:
+    index: 70
+    line: 5
+    column: 0
+  end:
+    index: 72
+    line: 5
+    column: 2
+- token: Scalar
+  start:
+    index: 72
+    line: 5
+    column: 2
+  end:
+    index: 75
+    line: 5
+    column: 5
+- token: Separator
+  start:
+    index: 75
+    line: 5
+    column: 5
+  end:
+    index: 76
+    line: 5
+    column: 6
+- token: MappingValue
+  start:
+    index: 76
+    line: 5
+    column: 6
+  end:
+    index: 77
+    line: 5
+    column: 7
+- token: Separator
+  start:
+    index: 77
+    line: 5
+    column: 7
+  end:
+    index: 78
+    line: 5
+    column: 8
+- token: Scalar
+  start:
+    index: 78
+    line: 5
+    column: 8
+  end:
+    index: 81
+    line: 5
+    column: 11
+- token: Break
+  start:
+    index: 81
+    line: 5
+    column: 11
+  end:
+    index: 83
+    line: 6
+    column: 0
+

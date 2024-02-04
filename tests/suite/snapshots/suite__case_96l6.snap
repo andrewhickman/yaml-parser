@@ -1,0 +1,122 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: DirectivesEnd
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 3
+    line: 0
+    column: 3
+- token: Separator
+  start:
+    index: 3
+    line: 0
+    column: 3
+  end:
+    index: 4
+    line: 0
+    column: 4
+- token: Folded
+  start:
+    index: 4
+    line: 0
+    column: 4
+  end:
+    index: 5
+    line: 0
+    column: 5
+- token: Break
+  start:
+    index: 5
+    line: 0
+    column: 5
+  end:
+    index: 7
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 7
+    line: 1
+    column: 0
+  end:
+    index: 9
+    line: 1
+    column: 2
+- token: Scalar
+  start:
+    index: 9
+    line: 1
+    column: 2
+  end:
+    index: 23
+    line: 1
+    column: 16
+- token: ScalarSpace
+  start:
+    index: 23
+    line: 1
+    column: 16
+  end:
+    index: 25
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 25
+    line: 2
+    column: 0
+  end:
+    index: 27
+    line: 2
+    column: 2
+- token: Scalar
+  start:
+    index: 27
+    line: 2
+    column: 2
+  end:
+    index: 44
+    line: 2
+    column: 19
+- token: ScalarSpace
+  start:
+    index: 44
+    line: 2
+    column: 19
+  end:
+    index: 46
+    line: 3
+    column: 0
+- token: Indent
+  start:
+    index: 46
+    line: 3
+    column: 0
+  end:
+    index: 48
+    line: 3
+    column: 2
+- token: Scalar
+  start:
+    index: 48
+    line: 3
+    column: 2
+  end:
+    index: 65
+    line: 3
+    column: 19
+- token: ScalarBreak
+  start:
+    index: 65
+    line: 3
+    column: 19
+  end:
+    index: 67
+    line: 4
+    column: 0
+
