@@ -1,0 +1,339 @@
+---
+source: tests/suite/cases.gen.rs
+assertion_line: 208
+expression: tokens
+---
+- token: Indent
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 0
+    line: 0
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 1
+    line: 0
+    column: 1
+- token: Separator
+  start:
+    index: 1
+    line: 0
+    column: 1
+  end:
+    index: 2
+    line: 0
+    column: 2
+- token: TagHandle
+  start:
+    index: 2
+    line: 0
+    column: 2
+  end:
+    index: 4
+    line: 0
+    column: 4
+- token: TagSuffix
+  start:
+    index: 4
+    line: 0
+    column: 4
+  end:
+    index: 7
+    line: 0
+    column: 7
+- token: Break
+  start:
+    index: 7
+    line: 0
+    column: 7
+  end:
+    index: 9
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 9
+    line: 1
+    column: 0
+  end:
+    index: 9
+    line: 1
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 9
+    line: 1
+    column: 0
+  end:
+    index: 10
+    line: 1
+    column: 1
+- token: Break
+  start:
+    index: 10
+    line: 1
+    column: 1
+  end:
+    index: 12
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 12
+    line: 2
+    column: 0
+  end:
+    index: 14
+    line: 2
+    column: 2
+- token: TagHandle
+  start:
+    index: 14
+    line: 2
+    column: 2
+  end:
+    index: 16
+    line: 2
+    column: 4
+- token: TagSuffix
+  start:
+    index: 16
+    line: 2
+    column: 4
+  end:
+    index: 20
+    line: 2
+    column: 8
+- token: Empty
+  start:
+    index: 20
+    line: 2
+    column: 8
+  end:
+    index: 20
+    line: 2
+    column: 8
+- token: Separator
+  start:
+    index: 20
+    line: 2
+    column: 8
+  end:
+    index: 21
+    line: 2
+    column: 9
+- token: MappingValue
+  start:
+    index: 21
+    line: 2
+    column: 9
+  end:
+    index: 22
+    line: 2
+    column: 10
+- token: Separator
+  start:
+    index: 22
+    line: 2
+    column: 10
+  end:
+    index: 23
+    line: 2
+    column: 11
+- token: Scalar
+  start:
+    index: 23
+    line: 2
+    column: 11
+  end:
+    index: 24
+    line: 2
+    column: 12
+- token: Break
+  start:
+    index: 24
+    line: 2
+    column: 12
+  end:
+    index: 26
+    line: 3
+    column: 0
+- token: Indent
+  start:
+    index: 26
+    line: 3
+    column: 0
+  end:
+    index: 28
+    line: 3
+    column: 2
+- token: Scalar
+  start:
+    index: 28
+    line: 3
+    column: 2
+  end:
+    index: 29
+    line: 3
+    column: 3
+- token: MappingValue
+  start:
+    index: 29
+    line: 3
+    column: 3
+  end:
+    index: 30
+    line: 3
+    column: 4
+- token: Separator
+  start:
+    index: 30
+    line: 3
+    column: 4
+  end:
+    index: 31
+    line: 3
+    column: 5
+- token: TagHandle
+  start:
+    index: 31
+    line: 3
+    column: 5
+  end:
+    index: 33
+    line: 3
+    column: 7
+- token: TagSuffix
+  start:
+    index: 33
+    line: 3
+    column: 7
+  end:
+    index: 36
+    line: 3
+    column: 10
+- token: Break
+  start:
+    index: 36
+    line: 3
+    column: 10
+  end:
+    index: 38
+    line: 4
+    column: 0
+- token: Indent
+  start:
+    index: 38
+    line: 4
+    column: 0
+  end:
+    index: 38
+    line: 4
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 38
+    line: 4
+    column: 0
+  end:
+    index: 39
+    line: 4
+    column: 1
+- token: Indent
+  start:
+    index: 39
+    line: 4
+    column: 1
+  end:
+    index: 40
+    line: 4
+    column: 2
+- token: TagHandle
+  start:
+    index: 40
+    line: 4
+    column: 2
+  end:
+    index: 42
+    line: 4
+    column: 4
+- token: TagSuffix
+  start:
+    index: 42
+    line: 4
+    column: 4
+  end:
+    index: 45
+    line: 4
+    column: 7
+- token: Empty
+  start:
+    index: 45
+    line: 4
+    column: 7
+  end:
+    index: 45
+    line: 4
+    column: 7
+- token: Separator
+  start:
+    index: 45
+    line: 4
+    column: 7
+  end:
+    index: 46
+    line: 4
+    column: 8
+- token: MappingValue
+  start:
+    index: 46
+    line: 4
+    column: 8
+  end:
+    index: 47
+    line: 4
+    column: 9
+- token: Separator
+  start:
+    index: 47
+    line: 4
+    column: 9
+  end:
+    index: 48
+    line: 4
+    column: 10
+- token: TagHandle
+  start:
+    index: 48
+    line: 4
+    column: 10
+  end:
+    index: 50
+    line: 4
+    column: 12
+- token: TagSuffix
+  start:
+    index: 50
+    line: 4
+    column: 12
+  end:
+    index: 54
+    line: 4
+    column: 16
+- token: Break
+  start:
+    index: 54
+    line: 4
+    column: 16
+  end:
+    index: 56
+    line: 5
+    column: 0
+

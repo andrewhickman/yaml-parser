@@ -2328,15 +2328,6 @@ fn l_document_suffix<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<Span, ()
     Ok(span)
 }
 
-fn l_bare_document<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-    parser.document(|parser| s_l_block_node(parser, -1, Context::BlockIn))
-}
-
-fn l_empty_document<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-    e_node(parser, (None, None))?;
-    s_l_comments(parser)
-}
-
 fn nb_document_prefix<R: Receiver>(
     parser: &mut Parser<'_, R>,
     terminated: bool,
@@ -2412,47 +2403,190 @@ fn lookahead_l_bare_document<R: Receiver>(parser: &mut Parser<'_, R>) -> bool {
 }
 
 pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Event<'t>, Span), ()> {
+    println!("state: {:?}", parser.state);
+    println!("remaining: {:?}", parser.iter.as_str());
+
     match parser.state() {
         State::Stream => {
-            parser.push_state(State::Document { terminated: true });
+            parser.replace_state(State::DocumentStart {
+                prev_terminated: true,
+            });
             Ok((Event::StreamStart, Span::empty(parser.location())))
         }
-        State::Document { terminated } => match find_next_document(parser, terminated)? {
-            Some((empty, span)) => {
-                parser.push_state(State::DocumentNode { empty });
-                Ok((
-                    Event::DocumentStart {
-                        version: parser.yaml_version.map(Cow::Borrowed),
-                    },
-                    span,
-                ))
+        State::DocumentStart { prev_terminated } => {
+            parser.in_document = true;
+            match find_next_document(parser, prev_terminated)? {
+                Some((empty, span)) => {
+                    parser.replace_state(State::DocumentEnd);
+                    parser.push_state(State::Node {
+                        empty,
+                        indent: -1,
+                        context: Context::BlockIn,
+                    });
+                    Ok((
+                        Event::DocumentStart {
+                            version: parser.yaml_version.map(Cow::Borrowed),
+                        },
+                        span,
+                    ))
+                }
+                None => {
+                    parser.pop_state();
+                    Ok((Event::StreamEnd, Span::empty(parser.location())))
+                }
             }
-            None => {
-                parser.pop_state();
-                parser.pop_state();
-                Ok((Event::StreamEnd, Span::empty(parser.location())))
-            }
-        },
-        State::DocumentNode { empty } => {
-            if empty {
-                l_empty_document(parser)?;
-            } else {
-                l_bare_document(parser)?;
-            }
-
+        }
+        State::DocumentEnd => {
+            parser.in_document = false;
+            parser.tags.clear();
+            parser.yaml_version = None;
             let suffix_span = question!(parser, l_document_suffix(parser));
-            parser.pop_state();
-            parser.replace_state(State::Document {
-                terminated: suffix_span.is_some(),
+            parser.replace_state(State::DocumentStart {
+                prev_terminated: suffix_span.is_some(),
             });
             Ok((
                 Event::DocumentEnd,
                 suffix_span.unwrap_or_else(|| Span::empty(parser.location())),
             ))
         }
-        State::Sequence => todo!(),
-        State::MappingKey => todo!(),
-        State::Mapping => todo!(),
-        State::DocumentEnd => todo!(),
+        State::Node {
+            empty,
+            indent,
+            context,
+        } => {
+            if empty {
+                let span = Span::empty(parser.location());
+                s_l_comments(parser)?;
+                parser.pop_state();
+                Ok((
+                    Event::Scalar {
+                        style: ScalarStyle::Plain,
+                        value: Cow::Borrowed(""),
+                        anchor: None,
+                        tag: None,
+                    },
+                    span,
+                ))
+            } else {
+                match peek_s_l_block_node(parser, indent, context)? {
+                    BlockNodeKind::Alias { value, span } => {
+                        parser.pop_state();
+                        Ok((Event::Alias { value }, span))
+                    }
+                    BlockNodeKind::Scalar {
+                        style,
+                        properties: (anchor, tag),
+                        value,
+                        span,
+                    } => {
+                        parser.pop_state();
+                        Ok((
+                            Event::Scalar {
+                                style,
+                                value,
+                                anchor,
+                                tag,
+                            },
+                            span,
+                        ))
+                    }
+                    BlockNodeKind::MappingStart {
+                        style,
+                        properties: (anchor, tag),
+                        span,
+                        indent,
+                        context,
+                    } => {
+                        parser.replace_state(State::MappingKey {
+                            style,
+                            indent,
+                            context,
+                        });
+                        Ok((Event::MappingStart { style, anchor, tag }, span))
+                    }
+                    BlockNodeKind::SequenceStart {
+                        style,
+                        properties: (anchor, tag),
+                        span,
+                        indent,
+                        context,
+                    } => {
+                        parser.replace_state(State::SequenceNode {
+                            style,
+                            indent,
+                            context,
+                        });
+                        Ok((Event::SequenceStart { style, anchor, tag }, span))
+                    }
+                }
+            }
+        }
+        State::SequenceNode {
+            style,
+            indent,
+            context,
+        } => {
+            let span = match style {
+                CollectionStyle::Block => {
+                    fn entry<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
+                        s_indent(parser, n)?;
+                        c_l_block_seq_entry(parser, n)
+                    }
+
+                    c_l_block_seq_entry(parser, indent)?;
+                    star!(parser, entry(parser, indent));
+                    Span::empty(parser.location())
+                }
+                CollectionStyle::Flow => {
+                    question!(parser, s_separate(parser, indent, context));
+                    question!(
+                        parser,
+                        ns_s_flow_seq_entries(parser, indent, context.in_flow())
+                    );
+                    let start = parser.location();
+                    c_sequence_end(parser)?;
+                    let span = parser.span(start);
+                    s_l_comments(parser)?;
+                    span
+                }
+            };
+
+            parser.pop_state();
+            Ok((Event::SequenceEnd, span))
+        }
+        State::MappingKey {
+            style,
+            indent,
+            context,
+        } => {
+            let span = match style {
+                CollectionStyle::Block => {
+                    fn entry<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
+                        s_indent(parser, n)?;
+                        ns_l_block_map_entry(parser, n)
+                    }
+
+                    ns_l_block_map_entry(parser, indent)?;
+                    star!(parser, entry(parser, indent));
+                    Span::empty(parser.location())
+                }
+                CollectionStyle::Flow => {
+                    question!(parser, s_separate(parser, indent, context));
+                    question!(
+                        parser,
+                        ns_s_flow_map_entries(parser, indent, context.in_flow())
+                    );
+                    let start = parser.location();
+                    c_mapping_end(parser)?;
+                    let span = parser.span(start);
+                    s_l_comments(parser)?;
+                    span
+                }
+            };
+
+            parser.pop_state();
+            Ok((Event::MappingEnd, span))
+        }
+        State::MappingValue => todo!(),
     }
 }

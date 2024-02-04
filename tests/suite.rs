@@ -34,22 +34,21 @@ struct DiagnosticSer {
 
 impl<'t> Receiver for TestReceiver<'t> {
     fn event(&mut self, event: Event, span: Span) {
-        match event {
-            Event::StreamStart => self.events.push("+STR".to_owned()),
-            Event::StreamEnd => self.events.push("-STR".to_owned()),
+        let event = match event {
+            Event::StreamStart => "+STR".to_owned(),
+            Event::StreamEnd => "-STR".to_owned(),
             Event::DocumentStart { .. } => {
                 if span.is_empty() {
-                    self.events.push("+DOC".to_owned())
+                    "+DOC".to_owned()
                 } else {
-                    self.events.push("+DOC ---".to_owned())
+                    "+DOC ---".to_owned()
                 }
             }
             Event::DocumentEnd => {
                 if span.is_empty() {
-                    self.events.push("-DOC".to_owned())
+                    "-DOC".to_owned()
                 } else {
-                    self.events
-                        .push(format!("-DOC {}", &self.text[span.range()]))
+                    format!("-DOC {}", &self.text[span.range()])
                 }
             }
             Event::MappingStart { style, anchor, tag } => {
@@ -65,9 +64,9 @@ impl<'t> Receiver for TestReceiver<'t> {
                     event.push(' ');
                     event.push_str(tag.as_ref());
                 }
-                self.events.push(event);
+                event
             }
-            Event::MappingEnd => self.events.push("-MAP".to_owned()),
+            Event::MappingEnd => "-MAP".to_owned(),
             Event::SequenceStart { style, anchor, tag } => {
                 let mut event = "+SEQ".to_owned();
                 if style == CollectionStyle::Flow {
@@ -81,11 +80,11 @@ impl<'t> Receiver for TestReceiver<'t> {
                     event.push(' ');
                     event.push_str(tag.as_ref());
                 }
-                self.events.push(event);
+                event
             }
-            Event::SequenceEnd => self.events.push("-SEQ".to_owned()),
+            Event::SequenceEnd => "-SEQ".to_owned(),
             Event::Alias { value } => {
-                self.events.push(format!("=ALI *{}", value));
+                format!("=ALI *{}", value)
             }
             Event::Scalar {
                 style,
@@ -124,9 +123,12 @@ impl<'t> Receiver for TestReceiver<'t> {
                         _ => event.push(ch),
                     }
                 }
-                self.events.push(event);
+                event
             }
-        }
+        };
+
+        println!("{} {}", span.len(), event);
+        self.events.push(event);
     }
 
     fn token(&mut self, token: Token, span: Span) {

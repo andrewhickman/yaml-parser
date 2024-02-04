@@ -5,7 +5,7 @@ mod grammar;
 use alloc::{borrow::Cow, collections::BTreeMap, string::String, vec::Vec};
 use core::{mem, ops::Range, str::Chars, unreachable};
 
-use crate::{Diagnostic, Event, Location, Receiver, Span, Token};
+use crate::{CollectionStyle, Diagnostic, Event, Location, Receiver, Span, Token};
 
 /// Parse a YAML stream, emitting events into the given receiver.
 pub fn parse<'t, R: Receiver>(receiver: &mut R, text: &'t str) -> Result<(), Vec<Diagnostic>>
@@ -27,22 +27,37 @@ where
 enum State {
     // Expecting a StreamStart event.
     Stream,
+    // Expecting a document.
+
     // Expecting a DocumentStart or StreamEnd event
-    Document {
-        terminated: bool,
+    DocumentStart {
+        prev_terminated: bool,
     },
-    /// Expecting a DocumentEnd
+    // Expecting a DocumentEnd event
     DocumentEnd,
+
     /// Expecting a SequenceStart, MappingStart, Alias or Scalar event
-    DocumentNode {
+    Node {
         empty: bool,
+        indent: i32,
+        context: Context,
     },
-    /// Expecting a Node event, or SequenceEnd
-    Sequence,
-    /// Expecting a Node event
-    MappingKey,
-    /// Expecting a Node event
-    Mapping,
+
+    /// Expecting a SequenceStart, MappingStart, Alias, Scalar or SequenceEnd event
+    SequenceNode {
+        style: CollectionStyle,
+        indent: i32,
+        context: Context,
+    },
+
+    /// Expecting a SequenceStart, MappingStart, Alias, Scalar or MappingEnd event
+    MappingKey {
+        style: CollectionStyle,
+        indent: i32,
+        context: Context,
+    },
+    /// Expecting a SequenceStart, MappingStart, Alias or Scalar event
+    MappingValue,
 }
 
 struct Parser<'t, R> {
@@ -143,15 +158,6 @@ where
 
     fn pop_state(&mut self) {
         self.state.pop().unwrap();
-    }
-
-    fn document(&mut self, f: impl Fn(&mut Self) -> Result<(), ()>) -> Result<(), ()> {
-        self.in_document = true;
-        let res = f(self);
-        self.in_document = false;
-        self.yaml_version = None;
-        self.tags.clear();
-        res
     }
 
     fn detect_scalar_indent(&self, n: i32) -> Result<i32, ()> {
