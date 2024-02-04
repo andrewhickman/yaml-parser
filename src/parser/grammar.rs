@@ -2456,6 +2456,7 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
         } => {
             if empty {
                 let span = Span::empty(parser.location());
+                parser.token(Token::Empty, |_| Ok(()))?;
                 s_l_comments(parser)?;
                 parser.pop_state();
                 Ok((
