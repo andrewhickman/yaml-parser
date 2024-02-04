@@ -2230,25 +2230,25 @@ fn peek_s_l_flow_in_block<'t, R: Receiver>(
             s_separate(parser, n, c)?;
         }
         c_sequence_start(parser)?;
-        return Ok(BlockNodeKind::SequenceStart {
+        Ok(BlockNodeKind::SequenceStart {
             style: CollectionStyle::Flow,
             properties,
             span: parser.span(start),
             indent: n,
             context: c,
-        });
+        })
     } else if lookahead_is_maybe_separated_char(parser, separated, n, c, '{') {
         if separated {
             s_separate(parser, n, c)?;
         }
         c_mapping_start(parser)?;
-        return Ok(BlockNodeKind::MappingStart {
+        Ok(BlockNodeKind::MappingStart {
             style: CollectionStyle::Flow,
             properties,
             span: parser.span(start),
             indent: n,
             context: c,
-        });
+        })
     } else if lookahead_is_maybe_separated_char(parser, separated, n, c, '\'') {
         if separated {
             s_separate(parser, n, c)?;
@@ -2258,12 +2258,12 @@ fn peek_s_l_flow_in_block<'t, R: Receiver>(
         c_single_quote(parser)?;
         let span = parser.span(start);
         s_l_comments(parser)?;
-        return Ok(BlockNodeKind::Scalar {
+        Ok(BlockNodeKind::Scalar {
             style: ScalarStyle::SingleQuoted,
             properties,
             value,
             span,
-        });
+        })
     } else if lookahead_is_maybe_separated_char(parser, separated, n, c, '"') {
         if separated {
             s_separate(parser, n, c)?;
@@ -2273,39 +2273,38 @@ fn peek_s_l_flow_in_block<'t, R: Receiver>(
         c_double_quote(parser)?;
         let span = parser.span(start);
         s_l_comments(parser)?;
-        return Ok(BlockNodeKind::Scalar {
+        Ok(BlockNodeKind::Scalar {
             style: ScalarStyle::DoubleQuoted,
             properties,
             value,
             span,
-        });
+        })
     } else if lookahead_is_maybe_separated_plain(parser, separated, n, c) {
         if separated {
             s_separate(parser, n, c)?;
         }
-        if let Some(value) = question!(parser, ns_plain(parser, n, c)) {
-            let span = parser.span(start);
-            s_l_comments(parser)?;
-            return Ok(BlockNodeKind::Scalar {
-                style: ScalarStyle::Plain,
-                properties,
-                value,
-                span,
-            });
-        }
+        let value = ns_plain(parser, n, c)?;
+        let span = parser.span(start);
+        s_l_comments(parser)?;
+        Ok(BlockNodeKind::Scalar {
+            style: ScalarStyle::Plain,
+            properties,
+            value,
+            span,
+        })
     } else if separated {
         let span = Span::empty(parser.location());
         e_node(parser)?;
         s_l_comments(parser)?;
-        return Ok(BlockNodeKind::Scalar {
+        Ok(BlockNodeKind::Scalar {
             style: ScalarStyle::Plain,
             properties,
             value: Cow::Borrowed(""),
             span,
-        });
+        })
+    } else {
+        Err(())
     }
-
-    Err(())
 }
 
 fn lookahead_is_maybe_separated_char<R: Receiver>(
@@ -2319,7 +2318,6 @@ fn lookahead_is_maybe_separated_char<R: Receiver>(
         parser.lookahead(|parser| {
             s_separate(parser, n, c)?;
             parser.token(Token::Empty, |parser| parser.eat_char(ch))
-            
         })
     } else {
         parser.is_char(ch)
