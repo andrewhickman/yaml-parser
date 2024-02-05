@@ -1792,7 +1792,7 @@ fn l_folded_content<'t, R: Receiver>(
     Ok(parser.end_value())
 }
 
-fn l_block_sequence<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
+fn ns_l_block_sequence<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
     fn entry<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
         s_indent(parser, n)?;
         c_l_block_seq_entry(parser, n)
@@ -1821,21 +1821,6 @@ fn s_l_block_indented<R: Receiver>(
     c: Context,
 ) -> Result<(), ()> {
     s_l_block_node(parser, true, n, c)
-}
-
-fn ns_l_compact_sequence<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
-    fn entry<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
-        s_indent(parser, n)?;
-        c_l_block_seq_entry(parser, n)
-    }
-
-    c_l_block_seq_entry(parser, n)?;
-    star!(parser, entry(parser, n));
-    parser.queue(
-        EventOrToken::Event(Event::SequenceEnd),
-        Span::empty(parser.location()),
-    );
-    Ok(())
 }
 
 fn ns_l_block_mapping<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
@@ -1966,7 +1951,6 @@ fn s_l_block_node<R: Receiver>(
         }
         BlockNodeKind::SequenceStart {
             style,
-            compact,
             properties: (anchor, tag),
             span,
             indent,
@@ -1978,8 +1962,7 @@ fn s_l_block_node<R: Receiver>(
             );
 
             match style {
-                CollectionStyle::Block if compact => ns_l_compact_sequence(parser, indent),
-                CollectionStyle::Block => l_block_sequence(parser, indent),
+                CollectionStyle::Block => ns_l_block_sequence(parser, indent),
                 CollectionStyle::Flow => {
                     c_flow_sequence_remainder(parser, indent, context)?;
                     s_l_comments(parser)
@@ -2010,7 +1993,6 @@ enum BlockNodeKind<'t> {
     },
     SequenceStart {
         style: CollectionStyle,
-        compact: bool,
         properties: Properties<'t>,
         span: Span,
         indent: i32,
@@ -2084,7 +2066,6 @@ fn peek_compact_collection<'t, R: Receiver>(
     if lookahead_is_block_sequence(parser) {
         Ok(BlockNodeKind::SequenceStart {
             style: CollectionStyle::Block,
-            compact: true,
             properties: (None, None),
             span,
             indent: n + 1 + m,
@@ -2181,7 +2162,6 @@ fn peek_s_l_block_collection<'t, R: Receiver>(
 
         Ok(BlockNodeKind::SequenceStart {
             style: CollectionStyle::Block,
-            compact: false,
             properties,
             span: parser.span(start),
             indent: n + m,
@@ -2242,7 +2222,6 @@ fn peek_s_l_flow_in_block<'t, R: Receiver>(
         c_sequence_start(parser)?;
         Ok(BlockNodeKind::SequenceStart {
             style: CollectionStyle::Flow,
-            compact: false,
             properties,
             span: parser.span(start),
             indent: n,
@@ -2542,7 +2521,6 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
             }
             BlockNodeKind::SequenceStart {
                 style,
-                compact,
                 properties: (anchor, tag),
                 span,
                 indent,
@@ -2550,7 +2528,6 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
             } => {
                 parser.replace_state(State::SequenceNode {
                     style,
-                    compact,
                     indent,
                     context,
                 });
@@ -2559,12 +2536,9 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
         },
         State::SequenceNode {
             style,
-            compact,
             indent,
             context,
         } => {
-            assert!(!compact);
-
             let span = match style {
                 CollectionStyle::Block => {
                     fn entry<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {

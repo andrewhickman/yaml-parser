@@ -47,7 +47,6 @@ enum State {
     /// Expecting a SequenceStart, MappingStart, Alias, Scalar or SequenceEnd event
     SequenceNode {
         style: CollectionStyle,
-        compact: bool,
         indent: i32,
         context: Context,
     },
