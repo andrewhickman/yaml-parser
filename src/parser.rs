@@ -37,8 +37,9 @@ enum State {
     DocumentEnd,
 
     /// Expecting a SequenceStart, MappingStart, Alias or Scalar event
-    Node {
-        empty: bool,
+    BlockNode {
+        allow_empty: bool,
+        allow_compact: bool,
         indent: i32,
         context: Context,
     },

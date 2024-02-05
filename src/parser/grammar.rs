@@ -1977,7 +1977,7 @@ fn ns_l_compact_mapping<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Resu
 }
 
 fn s_l_block_node<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -> Result<(), ()> {
-    match peek_s_l_block_node(parser, n, c)? {
+    match peek_block_node(parser, false, true, n, c)? {
         BlockNodeKind::Alias { value, span } => {
             parser.queue(EventOrToken::Event(Event::Alias { value }), span);
             Ok(())
@@ -2070,11 +2070,17 @@ enum BlockNodeKind<'t> {
     },
 }
 
-fn peek_s_l_block_node<'t, R: Receiver>(
+fn peek_block_node<'t, R: Receiver>(
     parser: &mut Parser<'t, R>,
+    allow_compact: bool,
+    allow_empty: bool,
     n: i32,
     c: Context,
 ) -> Result<BlockNodeKind<'t>, ()> {
+    if allow_compact {
+        todo!()
+    }
+
     if let Some((style, properties, value, span)) =
         question!(parser, s_l_block_scalar(parser, n, c))
     {
@@ -2097,6 +2103,18 @@ fn peek_s_l_block_node<'t, R: Receiver>(
         return Ok(kind);
     }
 
+    if allow_empty {
+        e_node(parser)?;
+        let span = Span::empty(parser.location());
+        s_l_comments(parser)?;
+
+        return Ok(BlockNodeKind::Scalar {
+            style: ScalarStyle::Plain,
+            properties: (None, None),
+            value: Cow::Borrowed(""),
+            span,
+        });
+    }
     Err(())
 }
 
@@ -2456,8 +2474,9 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
             match find_next_document(parser, prev_terminated)? {
                 Some((empty, span)) => {
                     parser.replace_state(State::DocumentEnd);
-                    parser.push_state(State::Node {
-                        empty,
+                    parser.push_state(State::BlockNode {
+                        allow_empty: empty,
+                        allow_compact: false,
                         indent: -1,
                         context: Context::BlockIn,
                     });
@@ -2487,79 +2506,62 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
                 suffix_span.unwrap_or_else(|| Span::empty(parser.location())),
             ))
         }
-        State::Node {
-            empty,
+        State::BlockNode {
+            allow_empty,
+            allow_compact,
             indent,
             context,
-        } => {
-            if empty {
-                let span = Span::empty(parser.location());
-                e_node(parser)?;
-                s_l_comments(parser)?;
+        } => match peek_block_node(parser, allow_compact, allow_empty, indent, context)? {
+            BlockNodeKind::Alias { value, span } => {
+                parser.pop_state();
+                Ok((Event::Alias { value }, span))
+            }
+            BlockNodeKind::Scalar {
+                style,
+                properties: (anchor, tag),
+                value,
+                span,
+            } => {
                 parser.pop_state();
                 Ok((
                     Event::Scalar {
-                        style: ScalarStyle::Plain,
-                        value: Cow::Borrowed(""),
-                        anchor: None,
-                        tag: None,
+                        style,
+                        value,
+                        anchor,
+                        tag,
                     },
                     span,
                 ))
-            } else {
-                match peek_s_l_block_node(parser, indent, context)? {
-                    BlockNodeKind::Alias { value, span } => {
-                        parser.pop_state();
-                        Ok((Event::Alias { value }, span))
-                    }
-                    BlockNodeKind::Scalar {
-                        style,
-                        properties: (anchor, tag),
-                        value,
-                        span,
-                    } => {
-                        parser.pop_state();
-                        Ok((
-                            Event::Scalar {
-                                style,
-                                value,
-                                anchor,
-                                tag,
-                            },
-                            span,
-                        ))
-                    }
-                    BlockNodeKind::MappingStart {
-                        style,
-                        properties: (anchor, tag),
-                        span,
-                        indent,
-                        context,
-                    } => {
-                        parser.replace_state(State::MappingKey {
-                            style,
-                            indent,
-                            context,
-                        });
-                        Ok((Event::MappingStart { style, anchor, tag }, span))
-                    }
-                    BlockNodeKind::SequenceStart {
-                        style,
-                        properties: (anchor, tag),
-                        span,
-                        indent,
-                        context,
-                    } => {
-                        parser.replace_state(State::SequenceNode {
-                            style,
-                            indent,
-                            context,
-                        });
-                        Ok((Event::SequenceStart { style, anchor, tag }, span))
-                    }
-                }
             }
-        }
+            BlockNodeKind::MappingStart {
+                style,
+                properties: (anchor, tag),
+                span,
+                indent,
+                context,
+            } => {
+                parser.replace_state(State::MappingKey {
+                    style,
+                    indent,
+                    context,
+                });
+                Ok((Event::MappingStart { style, anchor, tag }, span))
+            }
+            BlockNodeKind::SequenceStart {
+                style,
+                properties: (anchor, tag),
+                span,
+                indent,
+                context,
+            } => {
+                parser.replace_state(State::SequenceNode {
+                    style,
+                    indent,
+                    context,
+                });
+                Ok((Event::SequenceStart { style, anchor, tag }, span))
+            }
+        },
         State::SequenceNode {
             style,
             indent,
