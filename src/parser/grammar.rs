@@ -1830,16 +1830,10 @@ fn s_l_block_indented<R: Receiver>(
         )
     }
 
-    fn empty<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-        e_node2(parser, (None, None))?;
-        s_l_comments(parser)
-    }
-
     alt!(
         parser,
         collection(parser, n),
-        s_l_block_node(parser, n, c),
-        empty(parser)
+        s_l_block_node(parser, n, c)
     )
 }
 
@@ -1936,21 +1930,12 @@ fn ns_s_block_map_implicit_key<R: Receiver>(parser: &mut Parser<'_, R>) -> Resul
 }
 
 fn c_l_block_map_implicit_value<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
-    fn empty<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
-        e_node2(parser, (None, None))?;
-        s_l_comments(parser)
-    }
-
     c_mapping_value(parser)?;
     if parser.is(char::non_space) {
         return Err(());
     }
 
-    alt!(
-        parser,
-        s_l_block_node(parser, n, Context::BlockOut),
-        empty(parser)
-    )
+    s_l_block_node(parser, n, Context::BlockOut)
 }
 
 fn ns_l_compact_mapping<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
