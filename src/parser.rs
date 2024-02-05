@@ -47,6 +47,7 @@ enum State {
     /// Expecting a SequenceStart, MappingStart, Alias, Scalar or SequenceEnd event
     SequenceNode {
         style: CollectionStyle,
+        compact: bool,
         indent: i32,
         context: Context,
     },
@@ -54,6 +55,7 @@ enum State {
     /// Expecting a SequenceStart, MappingStart, Alias, Scalar or MappingEnd event
     MappingKey {
         style: CollectionStyle,
+        compact: bool,
         indent: i32,
         context: Context,
     },
@@ -200,7 +202,7 @@ where
         }
     }
 
-    fn detect_compact_indent(&self) -> i32 {
+    fn detect_compact_indent(&self) -> Result<i32, ()> {
         debug_assert!(matches!(self.peek_prev(), Some('-' | '?' | ':')));
 
         let mut iter = self.iter.clone();
@@ -209,7 +211,8 @@ where
         loop {
             match iter.next() {
                 Some(' ') => len += 1,
-                _ => break len,
+                // Some('\r' | '\n') => break Err(()),
+                _ => break Ok(len),
             }
         }
     }

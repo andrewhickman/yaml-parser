@@ -1821,7 +1821,7 @@ fn s_l_block_indented<R: Receiver>(
     c: Context,
 ) -> Result<(), ()> {
     fn collection<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
-        let m: i32 = parser.detect_compact_indent();
+        let m: i32 = parser.detect_compact_indent()?;
         s_indent(parser, m)?;
         alt!(
             parser,
@@ -1833,7 +1833,7 @@ fn s_l_block_indented<R: Receiver>(
     alt!(
         parser,
         collection(parser, n),
-        s_l_block_node(parser, n, c)
+        s_l_block_node(parser, false, n, c)
     )
 }
 
@@ -1935,7 +1935,7 @@ fn c_l_block_map_implicit_value<R: Receiver>(parser: &mut Parser<'_, R>, n: i32)
         return Err(());
     }
 
-    s_l_block_node(parser, n, Context::BlockOut)
+    s_l_block_node(parser, false, n, Context::BlockOut)
 }
 
 fn ns_l_compact_mapping<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
@@ -1961,8 +1961,13 @@ fn ns_l_compact_mapping<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Resu
     Ok(())
 }
 
-fn s_l_block_node<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -> Result<(), ()> {
-    match peek_block_node(parser, false, true, n, c)? {
+fn s_l_block_node<R: Receiver>(
+    parser: &mut Parser<'_, R>,
+    allow_compact: bool,
+    n: i32,
+    c: Context,
+) -> Result<(), ()> {
+    match peek_block_node(parser, allow_compact, true, n, c)? {
         BlockNodeKind::Alias { value, span } => {
             parser.queue(EventOrToken::Event(Event::Alias { value }), span);
             Ok(())
@@ -1986,6 +1991,7 @@ fn s_l_block_node<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -
         }
         BlockNodeKind::MappingStart {
             style,
+            compact,
             properties: (anchor, tag),
             span,
             indent,
@@ -1997,6 +2003,7 @@ fn s_l_block_node<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -
             );
 
             match style {
+                CollectionStyle::Block if compact => ns_l_compact_mapping(parser, indent),
                 CollectionStyle::Block => l_block_mapping(parser, indent),
                 CollectionStyle::Flow => {
                     c_flow_mapping_remainder(parser, indent, context)?;
@@ -2006,6 +2013,7 @@ fn s_l_block_node<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -
         }
         BlockNodeKind::SequenceStart {
             style,
+            compact,
             properties: (anchor, tag),
             span,
             indent,
@@ -2017,6 +2025,7 @@ fn s_l_block_node<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -
             );
 
             match style {
+                CollectionStyle::Block if compact => ns_l_compact_sequence(parser, indent),
                 CollectionStyle::Block => l_block_sequence(parser, indent),
                 CollectionStyle::Flow => {
                     c_flow_sequence_remainder(parser, indent, context)?;
@@ -2041,6 +2050,7 @@ enum BlockNodeKind<'t> {
     },
     MappingStart {
         style: CollectionStyle,
+        compact: bool,
         properties: Properties<'t>,
         span: Span,
         indent: i32,
@@ -2048,6 +2058,7 @@ enum BlockNodeKind<'t> {
     },
     SequenceStart {
         style: CollectionStyle,
+        compact: bool,
         properties: Properties<'t>,
         span: Span,
         indent: i32,
@@ -2063,7 +2074,9 @@ fn peek_block_node<'t, R: Receiver>(
     c: Context,
 ) -> Result<BlockNodeKind<'t>, ()> {
     if allow_compact {
-        todo!()
+        if let Some(kind) = question!(parser, peek_compact_collection(parser, n, c)) {
+            return Ok(kind);
+        }
     }
 
     if let Some((style, properties, value, span)) =
@@ -2101,6 +2114,38 @@ fn peek_block_node<'t, R: Receiver>(
         });
     }
     Err(())
+}
+
+fn peek_compact_collection<'t, R: Receiver>(
+    parser: &mut Parser<'t, R>,
+    n: i32,
+    c: Context,
+) -> Result<BlockNodeKind<'t>, ()> {
+    let m = parser.detect_compact_indent()?;
+    let span = Span::empty(parser.location());
+    s_indent(parser, m)?;
+    // if parser.is_char('-')
+    if parser.lookahead(|parser| ns_l_compact_sequence(parser, n)) {
+        Ok(BlockNodeKind::SequenceStart {
+            style: CollectionStyle::Block,
+            compact: true,
+            properties: (None, None),
+            span,
+            indent: n + 1 + m,
+            context: c,
+        })
+    } else if parser.lookahead(|parser| ns_l_compact_mapping(parser, n)) {
+        Ok(BlockNodeKind::MappingStart {
+            style: CollectionStyle::Block,
+            compact: true,
+            properties: (None, None),
+            span,
+            indent: n + 1 + m,
+            context: c,
+        })
+    } else {
+        Err(())
+    }
 }
 
 fn s_l_block_scalar<'t, R: Receiver>(
@@ -2181,6 +2226,7 @@ fn peek_s_l_block_collection<'t, R: Receiver>(
 
         Ok(BlockNodeKind::SequenceStart {
             style: CollectionStyle::Block,
+            compact: false,
             properties,
             span: parser.span(start),
             indent: n + m,
@@ -2196,6 +2242,7 @@ fn peek_s_l_block_collection<'t, R: Receiver>(
 
         return Ok(BlockNodeKind::MappingStart {
             style: CollectionStyle::Block,
+            compact: false,
             properties,
             span: parser.span(start),
             indent: n + m,
@@ -2235,6 +2282,7 @@ fn peek_s_l_flow_in_block<'t, R: Receiver>(
         c_sequence_start(parser)?;
         Ok(BlockNodeKind::SequenceStart {
             style: CollectionStyle::Flow,
+            compact: false,
             properties,
             span: parser.span(start),
             indent: n,
@@ -2247,6 +2295,7 @@ fn peek_s_l_flow_in_block<'t, R: Receiver>(
         c_mapping_start(parser)?;
         Ok(BlockNodeKind::MappingStart {
             style: CollectionStyle::Flow,
+            compact: false,
             properties,
             span: parser.span(start),
             indent: n,
@@ -2520,6 +2569,7 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
             }
             BlockNodeKind::MappingStart {
                 style,
+                compact,
                 properties: (anchor, tag),
                 span,
                 indent,
@@ -2527,6 +2577,7 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
             } => {
                 parser.replace_state(State::MappingKey {
                     style,
+                    compact,
                     indent,
                     context,
                 });
@@ -2534,6 +2585,7 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
             }
             BlockNodeKind::SequenceStart {
                 style,
+                compact,
                 properties: (anchor, tag),
                 span,
                 indent,
@@ -2541,6 +2593,7 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
             } => {
                 parser.replace_state(State::SequenceNode {
                     style,
+                    compact,
                     indent,
                     context,
                 });
@@ -2549,9 +2602,12 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
         },
         State::SequenceNode {
             style,
+            compact,
             indent,
             context,
         } => {
+            assert!(!compact);
+
             let span = match style {
                 CollectionStyle::Block => {
                     fn entry<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
@@ -2582,9 +2638,12 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
         }
         State::MappingKey {
             style,
+            compact,
             indent,
             context,
         } => {
+            assert!(!compact);
+
             let span = match style {
                 CollectionStyle::Block => {
                     fn entry<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
