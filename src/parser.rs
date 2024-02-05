@@ -211,7 +211,7 @@ where
         loop {
             match iter.next() {
                 Some(' ') => len += 1,
-                // Some('\r' | '\n') => break Err(()),
+                Some('\r' | '\n') => break Err(()),
                 _ => break Ok(len),
             }
         }
