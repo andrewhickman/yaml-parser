@@ -2099,7 +2099,7 @@ fn peek_compact_collection<'t, R: Receiver>(
     let m = parser.detect_compact_indent()?;
     let span = Span::empty(parser.location());
     s_indent(parser, m)?;
-    if parser.is_char('-') && !parser.next_is(char::non_space) {
+    if lookahead_is_block_sequence(parser) {
         Ok(BlockNodeKind::SequenceStart {
             style: CollectionStyle::Block,
             compact: true,
@@ -2108,7 +2108,7 @@ fn peek_compact_collection<'t, R: Receiver>(
             indent: n + 1 + m,
             context: c,
         })
-    } else if parser.lookahead(|parser| ns_l_compact_mapping(parser, n + 1 + m)) {
+    } else if lookahead_is_block_mapping(parser) {
         Ok(BlockNodeKind::MappingStart {
             style: CollectionStyle::Block,
             compact: true,
@@ -2193,7 +2193,7 @@ fn peek_s_l_block_collection<'t, R: Receiver>(
 
     s_indent(parser, n + m)?;
     let start = start.unwrap_or_else(|| parser.location());
-    if parser.is_char('-') && !parser.next_is(|ch| char::plain_safe(ch, Context::FlowIn)) {
+    if lookahead_is_block_sequence(parser) {
         if m <= 0 && c != Context::BlockOut {
             return Err(());
         }
@@ -2206,10 +2206,7 @@ fn peek_s_l_block_collection<'t, R: Receiver>(
             indent: n + m,
             context: c,
         })
-    } else if ((parser.is_char('?') || parser.is_char(':'))
-        && !parser.next_is(|ch| char::plain_safe(ch, Context::FlowOut)))
-        || parser.lookahead(ns_s_block_map_implicit_key)
-    {
+    } else if lookahead_is_block_mapping(parser) {
         if m <= 0 {
             return Err(());
         }
@@ -2225,6 +2222,15 @@ fn peek_s_l_block_collection<'t, R: Receiver>(
     } else {
         Err(())
     }
+}
+
+fn lookahead_is_block_sequence<R: Receiver>(parser: &mut Parser<R>) -> bool {
+    parser.is_char('-') && !parser.next_is(char::non_space)
+}
+
+fn lookahead_is_block_mapping<R: Receiver>(parser: &mut Parser<R>) -> bool {
+    ((parser.is_char('?') || parser.is_char(':')) && !parser.next_is(char::non_space))
+        || parser.lookahead(ns_s_block_map_implicit_key)
 }
 
 fn peek_s_l_flow_in_block<'t, R: Receiver>(
