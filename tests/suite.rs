@@ -198,7 +198,16 @@ fn parse(text: &str) -> Result<(Vec<String>, Vec<TokenSer>), Vec<DiagnosticSer>>
         text,
     };
     match yaml_parser::parse(&mut receiver, text) {
-        Ok(()) => Ok((receiver.events, receiver.tokens)),
+        Ok(()) => {
+            if !receiver.tokens.is_empty() {
+                assert_eq!(receiver.tokens.first().unwrap().start.index, 0);
+                for window in receiver.tokens.windows(2) {
+                    assert_eq!(window[0].end, window[1].start);
+                }
+                assert_eq!(receiver.tokens.last().unwrap().end.index, text.len());
+            }
+            Ok((receiver.events, receiver.tokens))
+        }
         Err(errors) => Err(errors
             .into_iter()
             .map(|diag| DiagnosticSer {

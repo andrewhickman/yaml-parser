@@ -76,7 +76,6 @@ struct Parser<'t, R> {
     line_number: usize,
     line_offset: usize,
 
-    in_token: bool,
     in_document: bool,
     length_limit: Option<usize>,
 
@@ -132,12 +131,12 @@ where
             yaml_version: None,
             tags: BTreeMap::new(),
             receiver,
-            in_token: false,
             in_document: false,
             length_limit: None,
             alt_depth: 0,
             line_number: 0,
             line_offset: 0,
+            #[cfg(debug_assertions)]
             peek_count: 0,
             state,
         }
@@ -288,10 +287,7 @@ where
     ) -> Result<T, ()> {
         let start = self.location();
 
-        debug_assert!(!self.in_token, "nested tokens");
-        self.in_token = true;
         let res = f(self);
-        self.in_token = false;
 
         match res {
             Ok(value) => {
@@ -446,11 +442,6 @@ where
         {
             self.peek_count = 0;
         }
-        debug_assert!(
-            self.in_token,
-            "character {:?} not covered by token",
-            self.peek()
-        );
 
         if let Some(limit) = &mut self.length_limit {
             debug_assert!(*limit != 0);

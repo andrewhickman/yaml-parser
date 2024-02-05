@@ -2317,7 +2317,7 @@ fn lookahead_is_maybe_separated_char<R: Receiver>(
     if separated {
         parser.lookahead(|parser| {
             s_separate(parser, n, c)?;
-            parser.token(Token::Empty, |parser| parser.eat_char(ch))
+            parser.eat_char(ch)
         })
     } else {
         parser.is_char(ch)
@@ -2334,7 +2334,7 @@ fn lookahead_is_maybe_separated_plain<R: Receiver>(
         if separated {
             s_separate(parser, n, c)?;
         }
-        parser.token(Token::Scalar, |parser| ns_plain_first(parser, c))
+        ns_plain_first(parser, c)
     })
 }
 
@@ -2441,8 +2441,8 @@ fn lookahead_l_bare_document<R: Receiver>(parser: &mut Parser<'_, R>) -> bool {
 }
 
 pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Event<'t>, Span), ()> {
-    println!("state: {:?}", parser.state);
-    println!("remaining: {:?}", parser.iter.as_str());
+    // println!("state: {:?}", parser.state);
+    // println!("remaining: {:?}", parser.iter.as_str());
 
     match parser.state() {
         State::Stream => {
