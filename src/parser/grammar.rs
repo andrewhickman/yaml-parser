@@ -1838,7 +1838,7 @@ fn ns_l_compact_sequence<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Res
     Ok(())
 }
 
-fn l_block_mapping<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
+fn ns_l_block_mapping<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
     fn entry<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
         s_indent(parser, n)?;
         ns_l_block_map_entry(parser, n)
@@ -1916,21 +1916,6 @@ fn c_l_block_map_implicit_value<R: Receiver>(parser: &mut Parser<'_, R>, n: i32)
     s_l_block_node(parser, false, n, Context::BlockOut)
 }
 
-fn ns_l_compact_mapping<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
-    fn entry<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
-        s_indent(parser, n)?;
-        ns_l_block_map_entry(parser, n)
-    }
-
-    ns_l_block_map_entry(parser, n)?;
-    star!(parser, entry(parser, n));
-    parser.queue(
-        EventOrToken::Event(Event::MappingEnd),
-        Span::empty(parser.location()),
-    );
-    Ok(())
-}
-
 fn s_l_block_node<R: Receiver>(
     parser: &mut Parser<'_, R>,
     allow_compact: bool,
@@ -1961,7 +1946,6 @@ fn s_l_block_node<R: Receiver>(
         }
         BlockNodeKind::MappingStart {
             style,
-            compact,
             properties: (anchor, tag),
             span,
             indent,
@@ -1973,8 +1957,7 @@ fn s_l_block_node<R: Receiver>(
             );
 
             match style {
-                CollectionStyle::Block if compact => ns_l_compact_mapping(parser, indent),
-                CollectionStyle::Block => l_block_mapping(parser, indent),
+                CollectionStyle::Block => ns_l_block_mapping(parser, indent),
                 CollectionStyle::Flow => {
                     c_flow_mapping_remainder(parser, indent, context)?;
                     s_l_comments(parser)
@@ -2020,7 +2003,6 @@ enum BlockNodeKind<'t> {
     },
     MappingStart {
         style: CollectionStyle,
-        compact: bool,
         properties: Properties<'t>,
         span: Span,
         indent: i32,
@@ -2111,7 +2093,6 @@ fn peek_compact_collection<'t, R: Receiver>(
     } else if lookahead_is_block_mapping(parser) {
         Ok(BlockNodeKind::MappingStart {
             style: CollectionStyle::Block,
-            compact: true,
             properties: (None, None),
             span,
             indent: n + 1 + m,
@@ -2213,7 +2194,6 @@ fn peek_s_l_block_collection<'t, R: Receiver>(
 
         return Ok(BlockNodeKind::MappingStart {
             style: CollectionStyle::Block,
-            compact: false,
             properties,
             span: parser.span(start),
             indent: n + m,
@@ -2275,7 +2255,6 @@ fn peek_s_l_flow_in_block<'t, R: Receiver>(
         c_mapping_start(parser)?;
         Ok(BlockNodeKind::MappingStart {
             style: CollectionStyle::Flow,
-            compact: false,
             properties,
             span: parser.span(start),
             indent: n,
@@ -2549,7 +2528,6 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
             }
             BlockNodeKind::MappingStart {
                 style,
-                compact,
                 properties: (anchor, tag),
                 span,
                 indent,
@@ -2557,7 +2535,6 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
             } => {
                 parser.replace_state(State::MappingKey {
                     style,
-                    compact,
                     indent,
                     context,
                 });
@@ -2618,12 +2595,9 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
         }
         State::MappingKey {
             style,
-            compact,
             indent,
             context,
         } => {
-            assert!(!compact);
-
             let span = match style {
                 CollectionStyle::Block => {
                     fn entry<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
