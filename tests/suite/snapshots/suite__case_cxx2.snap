@@ -2,5 +2,13 @@
 source: tests/suite/cases.gen.rs
 expression: diagnostics
 ---
-[]
+- message: "invalid block node at  &anchor a: b\r\n"
+  start:
+    index: 3
+    line: 0
+    column: 3
+  end:
+    index: 3
+    line: 0
+    column: 3
 

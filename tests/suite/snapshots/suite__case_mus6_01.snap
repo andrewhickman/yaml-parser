@@ -2,5 +2,13 @@
 source: tests/suite/cases.gen.rs
 expression: diagnostics
 ---
-[]
+- message: "invalid block node at \r\n%YAML 1.2\r\n---\r\n"
+  start:
+    index: 14
+    line: 1
+    column: 3
+  end:
+    index: 14
+    line: 1
+    column: 3
 

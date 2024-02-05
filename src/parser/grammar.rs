@@ -1820,21 +1820,7 @@ fn s_l_block_indented<R: Receiver>(
     n: i32,
     c: Context,
 ) -> Result<(), ()> {
-    fn collection<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
-        let m: i32 = parser.detect_compact_indent()?;
-        s_indent(parser, m)?;
-        alt!(
-            parser,
-            ns_l_compact_sequence(parser, n + 1 + m),
-            ns_l_compact_mapping(parser, n + 1 + m)
-        )
-    }
-
-    alt!(
-        parser,
-        collection(parser, n),
-        s_l_block_node(parser, false, n, c)
-    )
+    s_l_block_node(parser, true, n, c)
 }
 
 fn ns_l_compact_sequence<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
@@ -1843,14 +1829,6 @@ fn ns_l_compact_sequence<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Res
         c_l_block_seq_entry(parser, n)
     }
 
-    parser.queue(
-        EventOrToken::Event(Event::SequenceStart {
-            style: CollectionStyle::Block,
-            anchor: None,
-            tag: None,
-        }),
-        Span::empty(parser.location()),
-    );
     c_l_block_seq_entry(parser, n)?;
     star!(parser, entry(parser, n));
     parser.queue(
@@ -1944,14 +1922,6 @@ fn ns_l_compact_mapping<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Resu
         ns_l_block_map_entry(parser, n)
     }
 
-    parser.queue(
-        EventOrToken::Event(Event::MappingStart {
-            style: CollectionStyle::Block,
-            anchor: None,
-            tag: None,
-        }),
-        Span::empty(parser.location()),
-    );
     ns_l_block_map_entry(parser, n)?;
     star!(parser, entry(parser, n));
     parser.queue(
@@ -2113,6 +2083,11 @@ fn peek_block_node<'t, R: Receiver>(
             span,
         });
     }
+
+    parser.diagnostics.push(Diagnostic {
+        message: format!("invalid block node at {}", parser.iter.as_str()),
+        span: Span::empty(parser.location()),
+    });
     Err(())
 }
 
@@ -2125,7 +2100,7 @@ fn peek_compact_collection<'t, R: Receiver>(
     let span = Span::empty(parser.location());
     s_indent(parser, m)?;
     // if parser.is_char('-')
-    if parser.lookahead(|parser| ns_l_compact_sequence(parser, n)) {
+    if parser.lookahead(|parser| ns_l_compact_sequence(parser, n + 1 + m)) {
         Ok(BlockNodeKind::SequenceStart {
             style: CollectionStyle::Block,
             compact: true,
@@ -2134,7 +2109,7 @@ fn peek_compact_collection<'t, R: Receiver>(
             indent: n + 1 + m,
             context: c,
         })
-    } else if parser.lookahead(|parser| ns_l_compact_mapping(parser, n)) {
+    } else if parser.lookahead(|parser| ns_l_compact_mapping(parser, n + 1 + m)) {
         Ok(BlockNodeKind::MappingStart {
             style: CollectionStyle::Block,
             compact: true,
