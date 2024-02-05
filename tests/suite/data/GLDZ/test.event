@@ -1,0 +1,10 @@
++STR
++DOC
++SEQ
+=VAL "Fun with \\
+=VAL "" \a \b \e \f
+=VAL "\n \r \t \v \0
+=VAL "  \_ \N \L \P A A A
+-SEQ
+-DOC
+-STR

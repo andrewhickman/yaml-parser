@@ -120,6 +120,10 @@ impl<'t> Receiver for TestReceiver<'t> {
                         '\x0d' => event.push_str("\\r"),
                         '\x1b' => event.push_str("\\e"),
                         '\\' => event.push_str("\\\\"),
+                        '\u{a0}' => event.push_str("\\_"),
+                        '\u{85}' => event.push_str("\\N"),
+                        '\u{2028}' => event.push_str("\\L"),
+                        '\u{2029}' => event.push_str("\\P"),
                         _ => event.push(ch),
                     }
                 }
@@ -177,9 +181,7 @@ macro_rules! case {
 }
 
 fn load(name: &str) -> (String, Vec<String>) {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("yaml-test-suite")
-        .join(name);
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(name);
     let yaml = fs::read_to_string(path.join("in.yaml")).unwrap();
 
     let expected_events: Vec<_> = fs::read_to_string(path.join("test.event"))

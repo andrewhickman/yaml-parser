@@ -1,0 +1,797 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 0
+    line: 0
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 0
+    line: 0
+    column: 0
+  end:
+    index: 1
+    line: 0
+    column: 1
+- token: Separator
+  start:
+    index: 1
+    line: 0
+    column: 1
+  end:
+    index: 2
+    line: 0
+    column: 2
+- token: DoubleQuote
+  start:
+    index: 2
+    line: 0
+    column: 2
+  end:
+    index: 3
+    line: 0
+    column: 3
+- token: DoubleQuoted
+  start:
+    index: 3
+    line: 0
+    column: 3
+  end:
+    index: 12
+    line: 0
+    column: 12
+- token: Escape
+  start:
+    index: 12
+    line: 0
+    column: 12
+  end:
+    index: 13
+    line: 0
+    column: 13
+- token: EscapeCode
+  start:
+    index: 13
+    line: 0
+    column: 13
+  end:
+    index: 14
+    line: 0
+    column: 14
+- token: DoubleQuoted
+  start:
+    index: 14
+    line: 0
+    column: 14
+  end:
+    index: 14
+    line: 0
+    column: 14
+- token: DoubleQuote
+  start:
+    index: 14
+    line: 0
+    column: 14
+  end:
+    index: 15
+    line: 0
+    column: 15
+- token: Break
+  start:
+    index: 15
+    line: 0
+    column: 15
+  end:
+    index: 17
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    index: 17
+    line: 1
+    column: 0
+  end:
+    index: 17
+    line: 1
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 17
+    line: 1
+    column: 0
+  end:
+    index: 18
+    line: 1
+    column: 1
+- token: Separator
+  start:
+    index: 18
+    line: 1
+    column: 1
+  end:
+    index: 19
+    line: 1
+    column: 2
+- token: DoubleQuote
+  start:
+    index: 19
+    line: 1
+    column: 2
+  end:
+    index: 20
+    line: 1
+    column: 3
+- token: DoubleQuoted
+  start:
+    index: 20
+    line: 1
+    column: 3
+  end:
+    index: 20
+    line: 1
+    column: 3
+- token: Escape
+  start:
+    index: 20
+    line: 1
+    column: 3
+  end:
+    index: 21
+    line: 1
+    column: 4
+- token: EscapeCode
+  start:
+    index: 21
+    line: 1
+    column: 4
+  end:
+    index: 22
+    line: 1
+    column: 5
+- token: DoubleQuoted
+  start:
+    index: 22
+    line: 1
+    column: 5
+  end:
+    index: 23
+    line: 1
+    column: 6
+- token: Escape
+  start:
+    index: 23
+    line: 1
+    column: 6
+  end:
+    index: 24
+    line: 1
+    column: 7
+- token: EscapeCode
+  start:
+    index: 24
+    line: 1
+    column: 7
+  end:
+    index: 25
+    line: 1
+    column: 8
+- token: DoubleQuoted
+  start:
+    index: 25
+    line: 1
+    column: 8
+  end:
+    index: 26
+    line: 1
+    column: 9
+- token: Escape
+  start:
+    index: 26
+    line: 1
+    column: 9
+  end:
+    index: 27
+    line: 1
+    column: 10
+- token: EscapeCode
+  start:
+    index: 27
+    line: 1
+    column: 10
+  end:
+    index: 28
+    line: 1
+    column: 11
+- token: DoubleQuoted
+  start:
+    index: 28
+    line: 1
+    column: 11
+  end:
+    index: 29
+    line: 1
+    column: 12
+- token: Escape
+  start:
+    index: 29
+    line: 1
+    column: 12
+  end:
+    index: 30
+    line: 1
+    column: 13
+- token: EscapeCode
+  start:
+    index: 30
+    line: 1
+    column: 13
+  end:
+    index: 31
+    line: 1
+    column: 14
+- token: DoubleQuoted
+  start:
+    index: 31
+    line: 1
+    column: 14
+  end:
+    index: 32
+    line: 1
+    column: 15
+- token: Escape
+  start:
+    index: 32
+    line: 1
+    column: 15
+  end:
+    index: 33
+    line: 1
+    column: 16
+- token: EscapeCode
+  start:
+    index: 33
+    line: 1
+    column: 16
+  end:
+    index: 34
+    line: 1
+    column: 17
+- token: DoubleQuoted
+  start:
+    index: 34
+    line: 1
+    column: 17
+  end:
+    index: 34
+    line: 1
+    column: 17
+- token: DoubleQuote
+  start:
+    index: 34
+    line: 1
+    column: 17
+  end:
+    index: 35
+    line: 1
+    column: 18
+- token: Break
+  start:
+    index: 35
+    line: 1
+    column: 18
+  end:
+    index: 37
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    index: 37
+    line: 2
+    column: 0
+  end:
+    index: 37
+    line: 2
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 37
+    line: 2
+    column: 0
+  end:
+    index: 38
+    line: 2
+    column: 1
+- token: Separator
+  start:
+    index: 38
+    line: 2
+    column: 1
+  end:
+    index: 39
+    line: 2
+    column: 2
+- token: DoubleQuote
+  start:
+    index: 39
+    line: 2
+    column: 2
+  end:
+    index: 40
+    line: 2
+    column: 3
+- token: DoubleQuoted
+  start:
+    index: 40
+    line: 2
+    column: 3
+  end:
+    index: 40
+    line: 2
+    column: 3
+- token: Escape
+  start:
+    index: 40
+    line: 2
+    column: 3
+  end:
+    index: 41
+    line: 2
+    column: 4
+- token: EscapeCode
+  start:
+    index: 41
+    line: 2
+    column: 4
+  end:
+    index: 42
+    line: 2
+    column: 5
+- token: DoubleQuoted
+  start:
+    index: 42
+    line: 2
+    column: 5
+  end:
+    index: 43
+    line: 2
+    column: 6
+- token: Escape
+  start:
+    index: 43
+    line: 2
+    column: 6
+  end:
+    index: 44
+    line: 2
+    column: 7
+- token: EscapeCode
+  start:
+    index: 44
+    line: 2
+    column: 7
+  end:
+    index: 45
+    line: 2
+    column: 8
+- token: DoubleQuoted
+  start:
+    index: 45
+    line: 2
+    column: 8
+  end:
+    index: 46
+    line: 2
+    column: 9
+- token: Escape
+  start:
+    index: 46
+    line: 2
+    column: 9
+  end:
+    index: 47
+    line: 2
+    column: 10
+- token: EscapeCode
+  start:
+    index: 47
+    line: 2
+    column: 10
+  end:
+    index: 48
+    line: 2
+    column: 11
+- token: DoubleQuoted
+  start:
+    index: 48
+    line: 2
+    column: 11
+  end:
+    index: 49
+    line: 2
+    column: 12
+- token: Escape
+  start:
+    index: 49
+    line: 2
+    column: 12
+  end:
+    index: 50
+    line: 2
+    column: 13
+- token: EscapeCode
+  start:
+    index: 50
+    line: 2
+    column: 13
+  end:
+    index: 51
+    line: 2
+    column: 14
+- token: DoubleQuoted
+  start:
+    index: 51
+    line: 2
+    column: 14
+  end:
+    index: 52
+    line: 2
+    column: 15
+- token: Escape
+  start:
+    index: 52
+    line: 2
+    column: 15
+  end:
+    index: 53
+    line: 2
+    column: 16
+- token: EscapeCode
+  start:
+    index: 53
+    line: 2
+    column: 16
+  end:
+    index: 54
+    line: 2
+    column: 17
+- token: DoubleQuoted
+  start:
+    index: 54
+    line: 2
+    column: 17
+  end:
+    index: 54
+    line: 2
+    column: 17
+- token: DoubleQuote
+  start:
+    index: 54
+    line: 2
+    column: 17
+  end:
+    index: 55
+    line: 2
+    column: 18
+- token: Break
+  start:
+    index: 55
+    line: 2
+    column: 18
+  end:
+    index: 57
+    line: 3
+    column: 0
+- token: Indent
+  start:
+    index: 57
+    line: 3
+    column: 0
+  end:
+    index: 57
+    line: 3
+    column: 0
+- token: SequenceEntry
+  start:
+    index: 57
+    line: 3
+    column: 0
+  end:
+    index: 58
+    line: 3
+    column: 1
+- token: Separator
+  start:
+    index: 58
+    line: 3
+    column: 1
+  end:
+    index: 59
+    line: 3
+    column: 2
+- token: DoubleQuote
+  start:
+    index: 59
+    line: 3
+    column: 2
+  end:
+    index: 60
+    line: 3
+    column: 3
+- token: DoubleQuoted
+  start:
+    index: 60
+    line: 3
+    column: 3
+  end:
+    index: 60
+    line: 3
+    column: 3
+- token: Escape
+  start:
+    index: 60
+    line: 3
+    column: 3
+  end:
+    index: 61
+    line: 3
+    column: 4
+- token: EscapeCode
+  start:
+    index: 61
+    line: 3
+    column: 4
+  end:
+    index: 62
+    line: 3
+    column: 5
+- token: DoubleQuoted
+  start:
+    index: 62
+    line: 3
+    column: 5
+  end:
+    index: 63
+    line: 3
+    column: 6
+- token: Escape
+  start:
+    index: 63
+    line: 3
+    column: 6
+  end:
+    index: 64
+    line: 3
+    column: 7
+- token: EscapeCode
+  start:
+    index: 64
+    line: 3
+    column: 7
+  end:
+    index: 65
+    line: 3
+    column: 8
+- token: DoubleQuoted
+  start:
+    index: 65
+    line: 3
+    column: 8
+  end:
+    index: 66
+    line: 3
+    column: 9
+- token: Escape
+  start:
+    index: 66
+    line: 3
+    column: 9
+  end:
+    index: 67
+    line: 3
+    column: 10
+- token: EscapeCode
+  start:
+    index: 67
+    line: 3
+    column: 10
+  end:
+    index: 68
+    line: 3
+    column: 11
+- token: DoubleQuoted
+  start:
+    index: 68
+    line: 3
+    column: 11
+  end:
+    index: 69
+    line: 3
+    column: 12
+- token: Escape
+  start:
+    index: 69
+    line: 3
+    column: 12
+  end:
+    index: 70
+    line: 3
+    column: 13
+- token: EscapeCode
+  start:
+    index: 70
+    line: 3
+    column: 13
+  end:
+    index: 71
+    line: 3
+    column: 14
+- token: DoubleQuoted
+  start:
+    index: 71
+    line: 3
+    column: 14
+  end:
+    index: 72
+    line: 3
+    column: 15
+- token: Escape
+  start:
+    index: 72
+    line: 3
+    column: 15
+  end:
+    index: 73
+    line: 3
+    column: 16
+- token: EscapeCode
+  start:
+    index: 73
+    line: 3
+    column: 16
+  end:
+    index: 74
+    line: 3
+    column: 17
+- token: DoubleQuoted
+  start:
+    index: 74
+    line: 3
+    column: 17
+  end:
+    index: 75
+    line: 3
+    column: 18
+- token: Escape
+  start:
+    index: 75
+    line: 3
+    column: 18
+  end:
+    index: 76
+    line: 3
+    column: 19
+- token: Break
+  start:
+    index: 76
+    line: 3
+    column: 19
+  end:
+    index: 78
+    line: 4
+    column: 0
+- token: Indent
+  start:
+    index: 78
+    line: 4
+    column: 0
+  end:
+    index: 79
+    line: 4
+    column: 1
+- token: Separator
+  start:
+    index: 79
+    line: 4
+    column: 1
+  end:
+    index: 80
+    line: 4
+    column: 2
+- token: Escape
+  start:
+    index: 80
+    line: 4
+    column: 2
+  end:
+    index: 81
+    line: 4
+    column: 3
+- token: EscapeCode
+  start:
+    index: 81
+    line: 4
+    column: 3
+  end:
+    index: 84
+    line: 4
+    column: 6
+- token: DoubleQuoted
+  start:
+    index: 84
+    line: 4
+    column: 6
+  end:
+    index: 85
+    line: 4
+    column: 7
+- token: Escape
+  start:
+    index: 85
+    line: 4
+    column: 7
+  end:
+    index: 86
+    line: 4
+    column: 8
+- token: EscapeCode
+  start:
+    index: 86
+    line: 4
+    column: 8
+  end:
+    index: 91
+    line: 4
+    column: 13
+- token: DoubleQuoted
+  start:
+    index: 91
+    line: 4
+    column: 13
+  end:
+    index: 92
+    line: 4
+    column: 14
+- token: Escape
+  start:
+    index: 92
+    line: 4
+    column: 14
+  end:
+    index: 93
+    line: 4
+    column: 15
+- token: EscapeCode
+  start:
+    index: 93
+    line: 4
+    column: 15
+  end:
+    index: 102
+    line: 4
+    column: 24
+- token: DoubleQuoted
+  start:
+    index: 102
+    line: 4
+    column: 24
+  end:
+    index: 102
+    line: 4
+    column: 24
+- token: DoubleQuote
+  start:
+    index: 102
+    line: 4
+    column: 24
+  end:
+    index: 103
+    line: 4
+    column: 25
+

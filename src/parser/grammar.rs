@@ -328,8 +328,8 @@ fn ns_esc_char<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
         Some('\\') => '\x5c',
         Some('N') => '\u{85}',
         Some('_') => '\u{a0}',
-        Some('L') => '\u{2208}',
-        Some('P') => '\u{2209}',
+        Some('L') => '\u{2028}',
+        Some('P') => '\u{2029}',
         _ => return Err(()),
     };
 
@@ -2099,8 +2099,7 @@ fn peek_compact_collection<'t, R: Receiver>(
     let m = parser.detect_compact_indent()?;
     let span = Span::empty(parser.location());
     s_indent(parser, m)?;
-    // if parser.is_char('-')
-    if parser.lookahead(|parser| ns_l_compact_sequence(parser, n + 1 + m)) {
+    if parser.is_char('-') && !parser.next_is(char::non_space) {
         Ok(BlockNodeKind::SequenceStart {
             style: CollectionStyle::Block,
             compact: true,
