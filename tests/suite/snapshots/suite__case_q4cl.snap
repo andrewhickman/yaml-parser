@@ -2,7 +2,7 @@
 source: tests/suite/cases.gen.rs
 expression: diagnostics
 ---
-- message: "remaining tokens: key2: \"quoted2\" trailing content\r\nkey3: \"quoted3\"\r\n"
+- message: invalid document
   start:
     line: 1
     column: 0

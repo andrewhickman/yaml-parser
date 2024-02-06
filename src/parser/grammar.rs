@@ -2093,7 +2093,7 @@ fn peek_block_node<'t, R: Receiver>(
     }
 
     parser.diagnostics.push(Diagnostic {
-        message: format!("invalid block node at {}", parser.iter.as_str()),
+        message: "invalid block node".to_owned(),
         span: Span::empty(parser.location()),
     });
     Err(())
@@ -2458,7 +2458,7 @@ fn find_next_document<R: Receiver>(
                         return Ok(None);
                     } else {
                         parser.diagnostics.push(Diagnostic {
-                            message: format!("remaining tokens: {}", parser.iter.as_str()),
+                            message: "invalid document".to_owned(),
                             span: Span::empty(parser.location()),
                         });
                         return Err(());

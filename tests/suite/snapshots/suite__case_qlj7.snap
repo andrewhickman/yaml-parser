@@ -2,7 +2,7 @@
 source: tests/suite/cases.gen.rs
 expression: diagnostics
 ---
-- message: "invalid block node at  !prefix!B\r\nc: d\r\n--- !prefix!C\r\ne: f\r\n"
+- message: invalid block node
   start:
     line: 3
     column: 3

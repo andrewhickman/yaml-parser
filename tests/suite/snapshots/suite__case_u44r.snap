@@ -2,7 +2,7 @@
 source: tests/suite/cases.gen.rs
 expression: diagnostics
 ---
-- message: "remaining tokens:    key2: \"bad indentation\"\r\n"
+- message: invalid document
   start:
     line: 2
     column: 0

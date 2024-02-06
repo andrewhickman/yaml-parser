@@ -2,7 +2,7 @@
 source: tests/suite/cases.gen.rs
 expression: diagnostics
 ---
-- message: "remaining tokens:   \"\\c\""
+- message: invalid document
   start:
     line: 1
     column: 0

@@ -2,7 +2,7 @@
 source: tests/suite/cases.gen.rs
 expression: diagnostics
 ---
-- message: "remaining tokens: invalid item\r\n"
+- message: invalid document
   start:
     line: 4
     column: 0
