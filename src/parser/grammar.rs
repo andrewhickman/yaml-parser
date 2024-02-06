@@ -2567,15 +2567,16 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
             {
                 if !first {
                     s_indent(parser, indent)?;
+                } else {
+                    parser.replace_state(State::SequenceNode {
+                        style,
+                        indent,
+                        context,
+                        first: false,
+                    });
                 }
-                c_sequence_entry(parser)?;
 
-                parser.replace_state(State::SequenceNode {
-                    style,
-                    indent,
-                    context,
-                    first: false,
-                });
+                c_sequence_entry(parser)?;
                 event_block_node(parser, true, true, indent, Context::BlockIn)
             }
             CollectionStyle::Flow => {
