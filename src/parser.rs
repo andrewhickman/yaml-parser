@@ -25,11 +25,8 @@ where
 #[derive(Debug, Clone, Copy)]
 #[allow(dead_code)]
 enum State {
-    // Expecting a StreamStart event.
     Stream,
-    // Expecting a document.
 
-    // Expecting a DocumentStart or StreamEnd event
     DocumentStart {
         prev_terminated: bool,
     },
@@ -43,8 +40,13 @@ enum State {
         indent: i32,
         context: Context,
     },
+    FlowNode {
+        allow_empty: bool,
+        allow_compact: bool,
+        indent: i32,
+        context: Context,
+    },
 
-    /// Expecting a SequenceStart, MappingStart, Alias, Scalar or SequenceEnd event
     SequenceNode {
         style: CollectionStyle,
         indent: i32,
@@ -52,14 +54,17 @@ enum State {
         first: bool,
     },
 
-    /// Expecting a SequenceStart, MappingStart, Alias, Scalar or MappingEnd event
     MappingKey {
         style: CollectionStyle,
         indent: i32,
         context: Context,
     },
-    /// Expecting a SequenceStart, MappingStart, Alias or Scalar event
     MappingValue,
+
+    FlowPair {
+        indent: i32,
+        context: Context,
+    },
 }
 
 struct Parser<'t, R> {

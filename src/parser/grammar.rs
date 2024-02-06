@@ -419,13 +419,13 @@ fn s_separate_in_line<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()>
 
 fn s_flow_line_prefix<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
     s_indent(parser, n)?;
-    question!(parser, s_separate_in_line(parser));
+    question_fast!(parser, s_separate_in_line(parser));
     Ok(())
 }
 
 fn l_empty<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -> Result<(), ()> {
     if s_indent_less_or_equal(parser, n)? == n && matches!(c, Context::FlowIn | Context::FlowOut) {
-        question!(parser, s_separate_in_line(parser));
+        question_fast!(parser, s_separate_in_line(parser));
     }
     b_as_line_feed(parser)
 }
@@ -1134,6 +1134,7 @@ fn c_flow_sequence<'t, R: Receiver>(
         }),
         parser.span(start),
     );
+    question_fast!(parser, s_separate(parser, n, c));
     c_flow_sequence_remainder(parser, n, c)
 }
 
@@ -1142,7 +1143,6 @@ fn c_flow_sequence_remainder<R: Receiver>(
     n: i32,
     c: Context,
 ) -> Result<(), ()> {
-    question!(parser, s_separate(parser, n, c));
     question!(parser, ns_s_flow_seq_entries(parser, n, c.in_flow()));
     let end_start = parser.location();
     c_sequence_end(parser)?;
@@ -1159,16 +1159,19 @@ fn ns_s_flow_seq_entries<R: Receiver>(
     c: Context,
 ) -> Result<(), ()> {
     ns_flow_seq_entry(parser, n, c)?;
-    question!(parser, s_separate(parser, n, c));
-    while parser.is_char(',') {
-        c_collect_entry(parser)?;
-        question!(parser, s_separate(parser, n, c));
-        if question!(parser, ns_flow_seq_entry(parser, n, c)).is_some() {
-            question!(parser, s_separate(parser, n, c));
-        } else {
-            break;
-        }
+    question_fast!(parser, s_separate(parser, n, c));
+    while question_fast!(parser, c_flow_seq_separator(parser, n, c)).is_some()
+        && !parser.is_char(']')
+    {
+        ns_flow_seq_entry(parser, n, c)?;
+        question_fast!(parser, s_separate(parser, n, c));
     }
+    Ok(())
+}
+
+fn c_flow_seq_separator<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    c_collect_entry(parser)?;
+    question_fast!(parser, s_separate(parser, n, c));
     Ok(())
 }
 
@@ -1177,10 +1180,20 @@ fn ns_flow_seq_entry<R: Receiver>(
     n: i32,
     c: Context,
 ) -> Result<(), ()> {
+    if ((parser.is_char('?') || parser.is_char(':')) && !parser.next_is(char::non_space))
+        || parser.lookahead(ns_s_flow_map_implicit_key)
+    {
+        ns_flow_pair2(parser, n, c)
+    } else {
+        ns_flow_node(parser, n, c)
+    }
+}
+
+fn ns_s_flow_map_implicit_key<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
     alt!(
         parser,
-        ns_flow_pair(parser, n, c),
-        ns_flow_node(parser, n, c)
+        c_s_implicit_json_key(parser, Context::FlowKey),
+        ns_s_implicit_yaml_key(parser, Context::FlowKey)
     )
 }
 
@@ -1208,7 +1221,7 @@ fn c_flow_mapping_remainder<R: Receiver>(
     n: i32,
     c: Context,
 ) -> Result<(), ()> {
-    question!(parser, s_separate(parser, n, c));
+    question_fast!(parser, s_separate(parser, n, c));
     question!(parser, ns_s_flow_map_entries(parser, n, c.in_flow()));
     let end_start = parser.location();
     c_mapping_end(parser)?;
@@ -1225,12 +1238,12 @@ fn ns_s_flow_map_entries<R: Receiver>(
     c: Context,
 ) -> Result<(), ()> {
     ns_flow_map_entry(parser, n, c)?;
-    question!(parser, s_separate(parser, n, c));
+    question_fast!(parser, s_separate(parser, n, c));
     while parser.is_char(',') {
         c_collect_entry(parser)?;
-        question!(parser, s_separate(parser, n, c));
+        question_fast!(parser, s_separate(parser, n, c));
         if question!(parser, ns_flow_map_entry(parser, n, c)).is_some() {
-            question!(parser, s_separate(parser, n, c));
+            question_fast!(parser, s_separate(parser, n, c));
         } else {
             break;
         }
@@ -1288,7 +1301,7 @@ fn ns_flow_map_yaml_key_entry<R: Receiver>(
     c: Context,
 ) -> Result<(), ()> {
     fn value<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -> Result<(), ()> {
-        question!(parser, s_separate(parser, n, c));
+        question_fast!(parser, s_separate(parser, n, c));
         c_ns_flow_map_separate_value(parser, n, c)
     }
 
@@ -1328,7 +1341,7 @@ fn c_ns_flow_map_json_key_entry<R: Receiver>(
     c: Context,
 ) -> Result<(), ()> {
     fn value<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -> Result<(), ()> {
-        question!(parser, s_separate(parser, n, c));
+        question_fast!(parser, s_separate(parser, n, c));
         c_ns_flow_map_adjacent_value(parser, n, c)
     }
 
@@ -1342,7 +1355,7 @@ fn c_ns_flow_map_adjacent_value<R: Receiver>(
     c: Context,
 ) -> Result<(), ()> {
     fn node<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -> Result<(), ()> {
-        question!(parser, s_separate(parser, n, c));
+        question_fast!(parser, s_separate(parser, n, c));
         ns_flow_node(parser, n, c)
     }
 
@@ -1350,7 +1363,7 @@ fn c_ns_flow_map_adjacent_value<R: Receiver>(
     alt!(parser, node(parser, n, c), e_node2(parser, (None, None)))
 }
 
-fn ns_flow_pair<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -> Result<(), ()> {
+fn ns_flow_pair2<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -> Result<(), ()> {
     parser.queue(
         EventOrToken::Event(Event::MappingStart {
             style: CollectionStyle::Flow,
@@ -1359,6 +1372,15 @@ fn ns_flow_pair<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -> 
         }),
         Span::empty(parser.location()),
     );
+    ns_flow_pair(parser, n, c)?;
+    parser.queue(
+        EventOrToken::Event(Event::MappingEnd),
+        Span::empty(parser.location()),
+    );
+    Ok(())
+}
+
+fn ns_flow_pair<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -> Result<(), ()> {
     if parser.is_char('?') && !parser.next_is(char::non_space) {
         c_mapping_key(parser)?;
         s_separate(parser, n, c)?;
@@ -1366,10 +1388,6 @@ fn ns_flow_pair<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -> 
     } else {
         ns_flow_pair_entry(parser, n, c)?;
     }
-    parser.queue(
-        EventOrToken::Event(Event::MappingEnd),
-        Span::empty(parser.location()),
-    );
     Ok(())
 }
 
@@ -1407,7 +1425,7 @@ fn c_ns_flow_pair_json_key_entry<R: Receiver>(
 fn ns_s_implicit_yaml_key<R: Receiver>(parser: &mut Parser<'_, R>, c: Context) -> Result<(), ()> {
     parser.with_length_limit(1024, |parser| {
         ns_flow_yaml_node(parser, 0, c)?;
-        question!(parser, s_separate_in_line(parser));
+        question_fast!(parser, s_separate_in_line(parser));
         if !parser.is_char(':') {
             return Err(());
         }
@@ -1418,7 +1436,7 @@ fn ns_s_implicit_yaml_key<R: Receiver>(parser: &mut Parser<'_, R>, c: Context) -
 fn c_s_implicit_json_key<R: Receiver>(parser: &mut Parser<'_, R>, c: Context) -> Result<(), ()> {
     parser.with_length_limit(1024, |parser| {
         c_flow_json_node(parser, 0, c)?;
-        question!(parser, s_separate_in_line(parser));
+        question_fast!(parser, s_separate_in_line(parser));
         if !parser.is_char(':') {
             return Err(());
         }
@@ -1528,38 +1546,67 @@ fn c_flow_json_node<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context)
 }
 
 fn ns_flow_node<R: Receiver>(parser: &mut Parser<'_, R>, n: i32, c: Context) -> Result<(), ()> {
-    fn content<'t, R: Receiver>(
-        parser: &mut Parser<'t, R>,
-        start: Location,
-        props: Properties<'t>,
-        n: i32,
-        c: Context,
-    ) -> Result<(), ()> {
-        s_separate(parser, n, c)?;
-        ns_flow_content(parser, start, props, n, c)
-    }
+    match peek_flow_node(parser, n, c)? {
+        NodeKind::Alias { value, span } => {
+            parser.queue(EventOrToken::Event(Event::Alias { value }), span);
+            Ok(())
+        }
+        NodeKind::Scalar {
+            style,
+            properties: (anchor, tag),
+            value,
+            span,
+        } => {
+            parser.queue(
+                EventOrToken::Event(Event::Scalar {
+                    style,
+                    value,
+                    anchor,
+                    tag,
+                }),
+                span,
+            );
+            Ok(())
+        }
+        NodeKind::MappingStart {
+            style,
+            properties: (anchor, tag),
+            span,
+            indent,
+            context,
+        } => {
+            parser.queue(
+                EventOrToken::Event(Event::MappingStart { style, anchor, tag }),
+                span,
+            );
 
-    fn props<R: Receiver>(
-        parser: &mut Parser<'_, R>,
-        start: Location,
-        n: i32,
-        c: Context,
-    ) -> Result<(), ()> {
-        let props = c_ns_properties(parser, n, c)?;
-        alt!(
-            parser,
-            content(parser, start, props.clone(), n, c),
-            e_scalar(parser, props.clone())
-        )
-    }
+            match style {
+                CollectionStyle::Block => unreachable!(),
+                CollectionStyle::Flow => {
+                    c_flow_mapping_remainder(parser, indent, context.in_flow())
+                }
+            }
+        }
+        NodeKind::SequenceStart {
+            style,
+            properties: (anchor, tag),
+            span,
+            indent,
+            context,
+        } => {
+            parser.queue(
+                EventOrToken::Event(Event::SequenceStart { style, anchor, tag }),
+                span,
+            );
 
-    let start = parser.location();
-    alt!(
-        parser,
-        c_ns_alias_node2(parser),
-        ns_flow_content(parser, start, (None, None), n, c),
-        props(parser, start, n, c)
-    )
+            match style {
+                CollectionStyle::Block => unreachable!(),
+                CollectionStyle::Flow => {
+                    c_flow_sequence_remainder(parser, indent, context.in_flow())
+                }
+            }
+        }
+    }
 }
 
 fn c_b_block_header<R: Receiver>(
@@ -1908,11 +1955,11 @@ fn s_l_block_node<R: Receiver>(
     c: Context,
 ) -> Result<(), ()> {
     match peek_block_node(parser, allow_compact, true, n, c)? {
-        BlockNodeKind::Alias { value, span } => {
+        NodeKind::Alias { value, span } => {
             parser.queue(EventOrToken::Event(Event::Alias { value }), span);
             Ok(())
         }
-        BlockNodeKind::Scalar {
+        NodeKind::Scalar {
             style,
             properties: (anchor, tag),
             value,
@@ -1929,7 +1976,7 @@ fn s_l_block_node<R: Receiver>(
             );
             Ok(())
         }
-        BlockNodeKind::MappingStart {
+        NodeKind::MappingStart {
             style,
             properties: (anchor, tag),
             span,
@@ -1944,12 +1991,12 @@ fn s_l_block_node<R: Receiver>(
             match style {
                 CollectionStyle::Block => ns_l_block_mapping(parser, indent),
                 CollectionStyle::Flow => {
-                    c_flow_mapping_remainder(parser, indent, context)?;
+                    c_flow_mapping_remainder(parser, indent, context.in_flow())?;
                     s_l_comments(parser)
                 }
             }
         }
-        BlockNodeKind::SequenceStart {
+        NodeKind::SequenceStart {
             style,
             properties: (anchor, tag),
             span,
@@ -1964,7 +2011,7 @@ fn s_l_block_node<R: Receiver>(
             match style {
                 CollectionStyle::Block => ns_l_block_sequence(parser, indent),
                 CollectionStyle::Flow => {
-                    c_flow_sequence_remainder(parser, indent, context)?;
+                    c_flow_sequence_remainder(parser, indent, context.in_flow())?;
                     s_l_comments(parser)
                 }
             }
@@ -1973,7 +2020,7 @@ fn s_l_block_node<R: Receiver>(
 }
 
 #[derive(Debug)]
-enum BlockNodeKind<'t> {
+enum NodeKind<'t> {
     Alias {
         value: Cow<'t, str>,
         span: Span,
@@ -2006,13 +2053,7 @@ fn peek_block_node<'t, R: Receiver>(
     allow_empty: bool,
     n: i32,
     c: Context,
-) -> Result<BlockNodeKind<'t>, ()> {
-    println!(
-        "allow_compact={allow_compact} allow_empty={allow_empty} n={n} c={c:?} {:?} {:?}",
-        parser.peek_prev(),
-        parser.iter.as_str()
-    );
-
+) -> Result<NodeKind<'t>, ()> {
     if allow_compact {
         if let Some(kind) = question!(parser, peek_compact_collection(parser, n, c)) {
             return Ok(kind);
@@ -2022,7 +2063,7 @@ fn peek_block_node<'t, R: Receiver>(
     if let Some((style, properties, value, span)) =
         question!(parser, s_l_block_scalar(parser, n, c))
     {
-        return Ok(BlockNodeKind::Scalar {
+        return Ok(NodeKind::Scalar {
             style,
             properties,
             value,
@@ -2034,10 +2075,7 @@ fn peek_block_node<'t, R: Receiver>(
         return Ok(kind);
     }
 
-    if let Some(kind) = question!(
-        parser,
-        peek_s_l_flow_in_block(parser, n + 1, Context::FlowOut)
-    ) {
+    if let Some(kind) = question!(parser, peek_flow_in_block(parser, n + 1, Context::FlowOut)) {
         return Ok(kind);
     }
 
@@ -2046,7 +2084,7 @@ fn peek_block_node<'t, R: Receiver>(
         let span = Span::empty(parser.location());
         s_l_comments(parser)?;
 
-        return Ok(BlockNodeKind::Scalar {
+        return Ok(NodeKind::Scalar {
             style: ScalarStyle::Plain,
             properties: (None, None),
             value: Cow::Borrowed(""),
@@ -2065,12 +2103,12 @@ fn peek_compact_collection<'t, R: Receiver>(
     parser: &mut Parser<'t, R>,
     n: i32,
     c: Context,
-) -> Result<BlockNodeKind<'t>, ()> {
+) -> Result<NodeKind<'t>, ()> {
     let m = parser.detect_compact_indent()?;
     let span = Span::empty(parser.location());
     s_indent(parser, m)?;
     if lookahead_is_block_sequence(parser) {
-        Ok(BlockNodeKind::SequenceStart {
+        Ok(NodeKind::SequenceStart {
             style: CollectionStyle::Block,
             properties: (None, None),
             span,
@@ -2078,7 +2116,7 @@ fn peek_compact_collection<'t, R: Receiver>(
             context: c,
         })
     } else if lookahead_is_block_mapping(parser) {
-        Ok(BlockNodeKind::MappingStart {
+        Ok(NodeKind::MappingStart {
             style: CollectionStyle::Block,
             properties: (None, None),
             span,
@@ -2119,7 +2157,7 @@ fn peek_s_l_block_collection<'t, R: Receiver>(
     parser: &mut Parser<'t, R>,
     n: i32,
     c: Context,
-) -> Result<BlockNodeKind<'t>, ()> {
+) -> Result<NodeKind<'t>, ()> {
     fn props<'t, R: Receiver>(
         parser: &mut Parser<'t, R>,
         n: i32,
@@ -2166,7 +2204,7 @@ fn peek_s_l_block_collection<'t, R: Receiver>(
             return Err(());
         }
 
-        Ok(BlockNodeKind::SequenceStart {
+        Ok(NodeKind::SequenceStart {
             style: CollectionStyle::Block,
             properties,
             span: parser.span(start),
@@ -2178,7 +2216,7 @@ fn peek_s_l_block_collection<'t, R: Receiver>(
             return Err(());
         }
 
-        return Ok(BlockNodeKind::MappingStart {
+        return Ok(NodeKind::MappingStart {
             style: CollectionStyle::Block,
             properties,
             span: parser.span(start),
@@ -2199,17 +2237,27 @@ fn lookahead_is_block_mapping<R: Receiver>(parser: &mut Parser<R>) -> bool {
         || parser.lookahead(ns_s_block_map_implicit_key)
 }
 
-fn peek_s_l_flow_in_block<'t, R: Receiver>(
+fn peek_flow_in_block<'t, R: Receiver>(
     parser: &mut Parser<'t, R>,
     n: i32,
     c: Context,
-) -> Result<BlockNodeKind<'t>, ()> {
+) -> Result<NodeKind<'t>, ()> {
     s_separate(parser, n, c)?;
+    let kind = peek_flow_node(parser, n, c)?;
+    if matches!(kind, NodeKind::Scalar { .. } | NodeKind::Alias { .. }) {
+        s_l_comments(parser)?;
+    }
+    Ok(kind)
+}
 
+fn peek_flow_node<'t, R: Receiver>(
+    parser: &mut Parser<'t, R>,
+    n: i32,
+    c: Context,
+) -> Result<NodeKind<'t>, ()> {
     if parser.is_char('*') {
         let (value, span) = c_ns_alias_node(parser)?;
-        s_l_comments(parser)?;
-        return Ok(BlockNodeKind::Alias { value, span });
+        return Ok(NodeKind::Alias { value, span });
     }
 
     let start = parser.location();
@@ -2226,7 +2274,8 @@ fn peek_s_l_flow_in_block<'t, R: Receiver>(
             s_separate(parser, n, c)?;
         }
         c_sequence_start(parser)?;
-        Ok(BlockNodeKind::SequenceStart {
+        question_fast!(parser, s_separate(parser, n, c));
+        Ok(NodeKind::SequenceStart {
             style: CollectionStyle::Flow,
             properties,
             span: parser.span(start),
@@ -2238,7 +2287,8 @@ fn peek_s_l_flow_in_block<'t, R: Receiver>(
             s_separate(parser, n, c)?;
         }
         c_mapping_start(parser)?;
-        Ok(BlockNodeKind::MappingStart {
+        question_fast!(parser, s_separate(parser, n, c));
+        Ok(NodeKind::MappingStart {
             style: CollectionStyle::Flow,
             properties,
             span: parser.span(start),
@@ -2253,8 +2303,7 @@ fn peek_s_l_flow_in_block<'t, R: Receiver>(
         let value = nb_single_text(parser, n, c)?;
         c_single_quote(parser)?;
         let span = parser.span(start);
-        s_l_comments(parser)?;
-        Ok(BlockNodeKind::Scalar {
+        Ok(NodeKind::Scalar {
             style: ScalarStyle::SingleQuoted,
             properties,
             value,
@@ -2268,8 +2317,7 @@ fn peek_s_l_flow_in_block<'t, R: Receiver>(
         let value = nb_double_text(parser, n, c)?;
         c_double_quote(parser)?;
         let span = parser.span(start);
-        s_l_comments(parser)?;
-        Ok(BlockNodeKind::Scalar {
+        Ok(NodeKind::Scalar {
             style: ScalarStyle::DoubleQuoted,
             properties,
             value,
@@ -2281,8 +2329,7 @@ fn peek_s_l_flow_in_block<'t, R: Receiver>(
         }
         let value = ns_plain(parser, n, c)?;
         let span = parser.span(start);
-        s_l_comments(parser)?;
-        Ok(BlockNodeKind::Scalar {
+        Ok(NodeKind::Scalar {
             style: ScalarStyle::Plain,
             properties,
             value,
@@ -2291,8 +2338,7 @@ fn peek_s_l_flow_in_block<'t, R: Receiver>(
     } else if separated {
         let span = Span::empty(parser.location());
         e_node(parser)?;
-        s_l_comments(parser)?;
-        Ok(BlockNodeKind::Scalar {
+        Ok(NodeKind::Scalar {
             style: ScalarStyle::Plain,
             properties,
             value: Cow::Borrowed(""),
@@ -2436,16 +2482,14 @@ fn lookahead_l_bare_document<R: Receiver>(parser: &mut Parser<'_, R>) -> bool {
     })
 }
 
-pub(super) fn event_block_node<'t, R: Receiver>(
+pub(super) fn event_flow_node<'t, R: Receiver>(
     parser: &mut Parser<'t, R>,
-    allow_compact: bool,
-    allow_empty: bool,
     n: i32,
     c: Context,
 ) -> Result<(Event<'t>, Span), ()> {
-    match peek_block_node(parser, allow_compact, allow_empty, n, c)? {
-        BlockNodeKind::Alias { value, span } => Ok((Event::Alias { value }, span)),
-        BlockNodeKind::Scalar {
+    match peek_flow_node(parser, n, c)? {
+        NodeKind::Alias { value, span } => Ok((Event::Alias { value }, span)),
+        NodeKind::Scalar {
             style,
             properties: (anchor, tag),
             value,
@@ -2459,7 +2503,7 @@ pub(super) fn event_block_node<'t, R: Receiver>(
             },
             span,
         )),
-        BlockNodeKind::MappingStart {
+        NodeKind::MappingStart {
             style,
             properties: (anchor, tag),
             span,
@@ -2473,7 +2517,62 @@ pub(super) fn event_block_node<'t, R: Receiver>(
             });
             Ok((Event::MappingStart { style, anchor, tag }, span))
         }
-        BlockNodeKind::SequenceStart {
+        NodeKind::SequenceStart {
+            style,
+            properties: (anchor, tag),
+            span,
+            indent,
+            context,
+        } => {
+            parser.push_state(State::SequenceNode {
+                style,
+                indent,
+                context,
+                first: true,
+            });
+            Ok((Event::SequenceStart { style, anchor, tag }, span))
+        }
+    }
+}
+
+pub(super) fn event_block_node<'t, R: Receiver>(
+    parser: &mut Parser<'t, R>,
+    allow_compact: bool,
+    allow_empty: bool,
+    n: i32,
+    c: Context,
+) -> Result<(Event<'t>, Span), ()> {
+    match peek_block_node(parser, allow_compact, allow_empty, n, c)? {
+        NodeKind::Alias { value, span } => Ok((Event::Alias { value }, span)),
+        NodeKind::Scalar {
+            style,
+            properties: (anchor, tag),
+            value,
+            span,
+        } => Ok((
+            Event::Scalar {
+                style,
+                value,
+                anchor,
+                tag,
+            },
+            span,
+        )),
+        NodeKind::MappingStart {
+            style,
+            properties: (anchor, tag),
+            span,
+            indent,
+            context,
+        } => {
+            parser.push_state(State::MappingKey {
+                style,
+                indent,
+                context,
+            });
+            Ok((Event::MappingStart { style, anchor, tag }, span))
+        }
+        NodeKind::SequenceStart {
             style,
             properties: (anchor, tag),
             span,
@@ -2545,6 +2644,11 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
             indent,
             context,
         } => {
+            assert!(
+                matches!(context, Context::BlockIn),
+                "unexpected context {:?}",
+                context
+            );
             parser.pop_state();
             event_block_node(parser, allow_compact, allow_empty, indent, context)
         }
@@ -2554,7 +2658,7 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
             context,
             first,
         } => match style {
-            CollectionStyle::Block
+            CollectionStyle::Block => {
                 if first
                     || parser.lookahead(|parser| {
                         s_indent(parser, indent)?;
@@ -2563,40 +2667,89 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
                         } else {
                             Err(())
                         }
-                    }) =>
-            {
-                if !first {
-                    s_indent(parser, indent)?;
+                    })
+                {
+                    assert!(
+                        matches!(context, Context::BlockIn),
+                        "unexpected context {:?}",
+                        context
+                    );
+
+                    if !first {
+                        s_indent(parser, indent)?;
+                    } else {
+                        parser.replace_state(State::SequenceNode {
+                            style,
+                            indent,
+                            context,
+                            first: false,
+                        });
+                    }
+
+                    c_sequence_entry(parser)?;
+                    event_block_node(parser, true, true, indent, Context::BlockIn)
                 } else {
+                    let span = Span::empty(parser.location());
+                    parser.pop_state();
+                    Ok((Event::SequenceEnd, span))
+                }
+            }
+            CollectionStyle::Flow => {
+                question_fast!(parser, s_separate(parser, indent, context));
+
+                if (first
+                    || question_fast!(
+                        parser,
+                        c_flow_seq_separator(parser, indent, context.in_flow())
+                    )
+                    .is_some())
+                    && !parser.is_char(']')
+                {
+                    assert!(
+                        matches!(context, Context::FlowIn | Context::FlowOut),
+                        "unexpected context {:?}",
+                        context
+                    );
+
                     parser.replace_state(State::SequenceNode {
                         style,
                         indent,
                         context,
                         first: false,
                     });
+
+                    if ((parser.is_char('?') || parser.is_char(':'))
+                        && !parser.next_is(char::non_space))
+                        || parser.lookahead(ns_s_flow_map_implicit_key)
+                    {
+                        parser.push_state(State::FlowPair { indent, context });
+                        // parser.push_state(State::MappingKey {
+                        //     style: CollectionStyle::Flow,
+                        //     indent,
+                        //     context,
+                        // });
+                        Ok((
+                            Event::MappingStart {
+                                style: CollectionStyle::Flow,
+                                anchor: None,
+                                tag: None,
+                            },
+                            Span::empty(parser.location()),
+                        ))
+                    } else {
+                        event_flow_node(parser, indent, context.in_flow())
+                    }
+                } else {
+                    let start = parser.location();
+                    c_sequence_end(parser)?;
+                    let span = parser.span(start);
+                    if context == Context::FlowOut {
+                        s_l_comments(parser)?;
+                    }
+
+                    parser.pop_state();
+                    Ok((Event::SequenceEnd, span))
                 }
-
-                c_sequence_entry(parser)?;
-                event_block_node(parser, true, true, indent, Context::BlockIn)
-            }
-            CollectionStyle::Flow => {
-                question!(parser, s_separate(parser, indent, context));
-                question!(
-                    parser,
-                    ns_s_flow_seq_entries(parser, indent, context.in_flow())
-                );
-                let start = parser.location();
-                c_sequence_end(parser)?;
-                let span = parser.span(start);
-                s_l_comments(parser)?;
-
-                parser.pop_state();
-                Ok((Event::SequenceEnd, span))
-            }
-            _ => {
-                parser.pop_state();
-                let span = Span::empty(parser.location());
-                Ok((Event::SequenceEnd, span))
             }
         },
         State::MappingKey {
@@ -2606,6 +2759,12 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
         } => {
             let span = match style {
                 CollectionStyle::Block => {
+                    assert!(
+                        matches!(context, Context::BlockIn),
+                        "unexpected context {:?}",
+                        context
+                    );
+
                     fn entry<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
                         s_indent(parser, n)?;
                         ns_l_block_map_entry(parser, n)
@@ -2616,7 +2775,13 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
                     Span::empty(parser.location())
                 }
                 CollectionStyle::Flow => {
-                    question!(parser, s_separate(parser, indent, context));
+                    assert!(
+                        matches!(context, Context::FlowIn | Context::FlowOut),
+                        "unexpected context {:?}",
+                        context
+                    );
+
+                    question!(parser, s_separate(parser, indent, context.in_flow()));
                     question!(
                         parser,
                         ns_s_flow_map_entries(parser, indent, context.in_flow())
@@ -2624,7 +2789,9 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
                     let start = parser.location();
                     c_mapping_end(parser)?;
                     let span = parser.span(start);
-                    s_l_comments(parser)?;
+                    if context == Context::FlowOut {
+                        s_l_comments(parser)?;
+                    }
                     span
                 }
             };
@@ -2633,5 +2800,26 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
             Ok((Event::MappingEnd, span))
         }
         State::MappingValue => todo!(),
+        State::FlowNode { .. } => todo!(),
+        State::FlowPair { indent, context } => {
+            assert!(
+                matches!(context, Context::FlowIn | Context::FlowOut),
+                "unexpected context {:?}",
+                context
+            );
+
+            if parser.is_char('?') && !parser.next_is(char::non_space) {
+                c_mapping_key(parser)?;
+                s_separate(parser, indent, context.in_flow())?;
+                ns_flow_map_explicit_entry(parser, indent, context.in_flow())?;
+            } else {
+                ns_flow_pair_entry(parser, indent, context.in_flow())?;
+            }
+
+            let span = Span::empty(parser.location());
+            question!(parser, s_separate(parser, indent, context));
+            parser.pop_state();
+            Ok((Event::MappingEnd, span))
+        }
     }
 }
