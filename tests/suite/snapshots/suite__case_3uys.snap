@@ -4,101 +4,79 @@ expression: tokens
 ---
 - token: Indent
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 0
     line: 0
     column: 0
 - token: Scalar
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 13
     line: 0
     column: 13
 - token: MappingValue
   start:
-    index: 13
     line: 0
     column: 13
   end:
-    index: 14
     line: 0
     column: 14
 - token: Separator
   start:
-    index: 14
     line: 0
     column: 14
   end:
-    index: 15
     line: 0
     column: 15
 - token: DoubleQuote
   start:
-    index: 15
     line: 0
     column: 15
   end:
-    index: 16
     line: 0
     column: 16
 - token: DoubleQuoted
   start:
-    index: 16
     line: 0
     column: 16
   end:
-    index: 17
     line: 0
     column: 17
 - token: Escape
   start:
-    index: 17
     line: 0
     column: 17
   end:
-    index: 18
     line: 0
     column: 18
 - token: EscapeCode
   start:
-    index: 18
     line: 0
     column: 18
   end:
-    index: 19
     line: 0
     column: 19
 - token: DoubleQuoted
   start:
-    index: 19
     line: 0
     column: 19
   end:
-    index: 20
     line: 0
     column: 20
 - token: DoubleQuote
   start:
-    index: 20
     line: 0
     column: 20
   end:
-    index: 21
     line: 0
     column: 21
 - token: Break
   start:
-    index: 21
     line: 0
     column: 21
   end:
-    index: 23
     line: 1
     column: 0
 

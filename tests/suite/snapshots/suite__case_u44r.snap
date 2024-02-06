@@ -4,11 +4,9 @@ expression: diagnostics
 ---
 - message: "remaining tokens:    key2: \"bad indentation\"\r\n"
   start:
-    index: 25
     line: 2
     column: 0
   end:
-    index: 25
     line: 2
     column: 0
 

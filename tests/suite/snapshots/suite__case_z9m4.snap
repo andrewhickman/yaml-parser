@@ -4,173 +4,135 @@ expression: tokens
 ---
 - token: Directive
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 1
     line: 0
     column: 1
 - token: DirectiveName
   start:
-    index: 1
     line: 0
     column: 1
   end:
-    index: 4
     line: 0
     column: 4
 - token: Separator
   start:
-    index: 4
     line: 0
     column: 4
   end:
-    index: 5
     line: 0
     column: 5
 - token: TagHandle
   start:
-    index: 5
     line: 0
     column: 5
   end:
-    index: 8
     line: 0
     column: 8
 - token: Separator
   start:
-    index: 8
     line: 0
     column: 8
   end:
-    index: 9
     line: 0
     column: 9
 - token: TagPrefix
   start:
-    index: 9
     line: 0
     column: 9
   end:
-    index: 34
     line: 0
     column: 34
 - token: Break
   start:
-    index: 34
     line: 0
     column: 34
   end:
-    index: 36
     line: 1
     column: 0
 - token: DirectivesEnd
   start:
-    index: 36
     line: 1
     column: 0
   end:
-    index: 39
     line: 1
     column: 3
 - token: Break
   start:
-    index: 39
     line: 1
     column: 3
   end:
-    index: 41
     line: 2
     column: 0
 - token: Indent
   start:
-    index: 41
     line: 2
     column: 0
   end:
-    index: 41
     line: 2
     column: 0
 - token: SequenceEntry
   start:
-    index: 41
     line: 2
     column: 0
   end:
-    index: 42
     line: 2
     column: 1
 - token: Separator
   start:
-    index: 42
     line: 2
     column: 1
   end:
-    index: 43
     line: 2
     column: 2
 - token: TagHandle
   start:
-    index: 43
     line: 2
     column: 2
   end:
-    index: 46
     line: 2
     column: 5
 - token: TagSuffix
   start:
-    index: 46
     line: 2
     column: 5
   end:
-    index: 49
     line: 2
     column: 8
 - token: Separator
   start:
-    index: 49
     line: 2
     column: 8
   end:
-    index: 50
     line: 2
     column: 9
 - token: DoubleQuote
   start:
-    index: 50
     line: 2
     column: 9
   end:
-    index: 51
     line: 2
     column: 10
 - token: DoubleQuoted
   start:
-    index: 51
     line: 2
     column: 10
   end:
-    index: 54
     line: 2
     column: 13
 - token: DoubleQuote
   start:
-    index: 54
     line: 2
     column: 13
   end:
-    index: 55
     line: 2
     column: 14
 - token: Break
   start:
-    index: 55
     line: 2
     column: 14
   end:
-    index: 57
     line: 3
     column: 0
 

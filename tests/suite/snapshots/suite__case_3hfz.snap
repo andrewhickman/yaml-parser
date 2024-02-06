@@ -4,11 +4,9 @@ expression: diagnostics
 ---
 - message: "remaining tokens: ... invalid\r\n"
   start:
-    index: 17
     line: 2
     column: 0
   end:
-    index: 17
     line: 2
     column: 0
 

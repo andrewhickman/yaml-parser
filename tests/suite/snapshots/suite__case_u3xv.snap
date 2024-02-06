@@ -4,920 +4,716 @@ expression: tokens
 ---
 - token: DirectivesEnd
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 3
     line: 0
     column: 3
 - token: Break
   start:
-    index: 3
     line: 0
     column: 3
   end:
-    index: 5
     line: 1
     column: 0
 - token: Indent
   start:
-    index: 5
     line: 1
     column: 0
   end:
-    index: 5
     line: 1
     column: 0
 - token: Scalar
   start:
-    index: 5
     line: 1
     column: 0
   end:
-    index: 9
     line: 1
     column: 4
 - token: MappingValue
   start:
-    index: 9
     line: 1
     column: 4
   end:
-    index: 10
     line: 1
     column: 5
 - token: Separator
   start:
-    index: 10
     line: 1
     column: 5
   end:
-    index: 11
     line: 1
     column: 6
 - token: Anchor
   start:
-    index: 11
     line: 1
     column: 6
   end:
-    index: 12
     line: 1
     column: 7
 - token: AnchorName
   start:
-    index: 12
     line: 1
     column: 7
   end:
-    index: 17
     line: 1
     column: 12
 - token: Break
   start:
-    index: 17
     line: 1
     column: 12
   end:
-    index: 19
     line: 2
     column: 0
 - token: Indent
   start:
-    index: 19
     line: 2
     column: 0
   end:
-    index: 21
     line: 2
     column: 2
 - token: Anchor
   start:
-    index: 21
     line: 2
     column: 2
   end:
-    index: 22
     line: 2
     column: 3
 - token: AnchorName
   start:
-    index: 22
     line: 2
     column: 3
   end:
-    index: 24
     line: 2
     column: 5
 - token: Separator
   start:
-    index: 24
     line: 2
     column: 5
   end:
-    index: 25
     line: 2
     column: 6
 - token: Scalar
   start:
-    index: 25
     line: 2
     column: 6
   end:
-    index: 29
     line: 2
     column: 10
 - token: MappingValue
   start:
-    index: 29
     line: 2
     column: 10
   end:
-    index: 30
     line: 2
     column: 11
 - token: Separator
   start:
-    index: 30
     line: 2
     column: 11
   end:
-    index: 31
     line: 2
     column: 12
 - token: Scalar
   start:
-    index: 31
     line: 2
     column: 12
   end:
-    index: 34
     line: 2
     column: 15
 - token: Break
   start:
-    index: 34
     line: 2
     column: 15
   end:
-    index: 36
     line: 3
     column: 0
 - token: Indent
   start:
-    index: 36
     line: 3
     column: 0
   end:
-    index: 36
     line: 3
     column: 0
 - token: Scalar
   start:
-    index: 36
     line: 3
     column: 0
   end:
-    index: 40
     line: 3
     column: 4
 - token: MappingValue
   start:
-    index: 40
     line: 3
     column: 4
   end:
-    index: 41
     line: 3
     column: 5
 - token: Separator
   start:
-    index: 41
     line: 3
     column: 5
   end:
-    index: 42
     line: 3
     column: 6
 - token: Anchor
   start:
-    index: 42
     line: 3
     column: 6
   end:
-    index: 43
     line: 3
     column: 7
 - token: AnchorName
   start:
-    index: 43
     line: 3
     column: 7
   end:
-    index: 48
     line: 3
     column: 12
 - token: Separator
   start:
-    index: 48
     line: 3
     column: 12
   end:
-    index: 49
     line: 3
     column: 13
 - token: Comment
   start:
-    index: 49
     line: 3
     column: 13
   end:
-    index: 50
     line: 3
     column: 14
 - token: CommentText
   start:
-    index: 50
     line: 3
     column: 14
   end:
-    index: 58
     line: 3
     column: 22
 - token: Break
   start:
-    index: 58
     line: 3
     column: 22
   end:
-    index: 60
     line: 4
     column: 0
 - token: Indent
   start:
-    index: 60
     line: 4
     column: 0
   end:
-    index: 62
     line: 4
     column: 2
 - token: Scalar
   start:
-    index: 62
     line: 4
     column: 2
   end:
-    index: 66
     line: 4
     column: 6
 - token: MappingValue
   start:
-    index: 66
     line: 4
     column: 6
   end:
-    index: 67
     line: 4
     column: 7
 - token: Separator
   start:
-    index: 67
     line: 4
     column: 7
   end:
-    index: 68
     line: 4
     column: 8
 - token: Scalar
   start:
-    index: 68
     line: 4
     column: 8
   end:
-    index: 71
     line: 4
     column: 11
 - token: Break
   start:
-    index: 71
     line: 4
     column: 11
   end:
-    index: 73
     line: 5
     column: 0
 - token: Indent
   start:
-    index: 73
     line: 5
     column: 0
   end:
-    index: 73
     line: 5
     column: 0
 - token: Scalar
   start:
-    index: 73
     line: 5
     column: 0
   end:
-    index: 77
     line: 5
     column: 4
 - token: MappingValue
   start:
-    index: 77
     line: 5
     column: 4
   end:
-    index: 78
     line: 5
     column: 5
 - token: Break
   start:
-    index: 78
     line: 5
     column: 5
   end:
-    index: 80
     line: 6
     column: 0
 - token: Indent
   start:
-    index: 80
     line: 6
     column: 0
   end:
-    index: 82
     line: 6
     column: 2
 - token: Anchor
   start:
-    index: 82
     line: 6
     column: 2
   end:
-    index: 83
     line: 6
     column: 3
 - token: AnchorName
   start:
-    index: 83
     line: 6
     column: 3
   end:
-    index: 85
     line: 6
     column: 5
 - token: Separator
   start:
-    index: 85
     line: 6
     column: 5
   end:
-    index: 86
     line: 6
     column: 6
 - token: Scalar
   start:
-    index: 86
     line: 6
     column: 6
   end:
-    index: 90
     line: 6
     column: 10
 - token: MappingValue
   start:
-    index: 90
     line: 6
     column: 10
   end:
-    index: 91
     line: 6
     column: 11
 - token: Separator
   start:
-    index: 91
     line: 6
     column: 11
   end:
-    index: 92
     line: 6
     column: 12
 - token: Scalar
   start:
-    index: 92
     line: 6
     column: 12
   end:
-    index: 97
     line: 6
     column: 17
 - token: Break
   start:
-    index: 97
     line: 6
     column: 17
   end:
-    index: 99
     line: 7
     column: 0
 - token: Indent
   start:
-    index: 99
     line: 7
     column: 0
   end:
-    index: 99
     line: 7
     column: 0
 - token: Scalar
   start:
-    index: 99
     line: 7
     column: 0
   end:
-    index: 103
     line: 7
     column: 4
 - token: MappingValue
   start:
-    index: 103
     line: 7
     column: 4
   end:
-    index: 104
     line: 7
     column: 5
 - token: Break
   start:
-    index: 104
     line: 7
     column: 5
   end:
-    index: 106
     line: 8
     column: 0
 - token: Indent
   start:
-    index: 106
     line: 8
     column: 0
   end:
-    index: 107
     line: 8
     column: 1
 - token: Separator
   start:
-    index: 107
     line: 8
     column: 1
   end:
-    index: 108
     line: 8
     column: 2
 - token: Anchor
   start:
-    index: 108
     line: 8
     column: 2
   end:
-    index: 109
     line: 8
     column: 3
 - token: AnchorName
   start:
-    index: 109
     line: 8
     column: 3
   end:
-    index: 114
     line: 8
     column: 8
 - token: Break
   start:
-    index: 114
     line: 8
     column: 8
   end:
-    index: 116
     line: 9
     column: 0
 - token: Indent
   start:
-    index: 116
     line: 9
     column: 0
   end:
-    index: 118
     line: 9
     column: 2
 - token: Anchor
   start:
-    index: 118
     line: 9
     column: 2
   end:
-    index: 119
     line: 9
     column: 3
 - token: AnchorName
   start:
-    index: 119
     line: 9
     column: 3
   end:
-    index: 121
     line: 9
     column: 5
 - token: Separator
   start:
-    index: 121
     line: 9
     column: 5
   end:
-    index: 122
     line: 9
     column: 6
 - token: Scalar
   start:
-    index: 122
     line: 9
     column: 6
   end:
-    index: 126
     line: 9
     column: 10
 - token: MappingValue
   start:
-    index: 126
     line: 9
     column: 10
   end:
-    index: 127
     line: 9
     column: 11
 - token: Separator
   start:
-    index: 127
     line: 9
     column: 11
   end:
-    index: 128
     line: 9
     column: 12
 - token: Scalar
   start:
-    index: 128
     line: 9
     column: 12
   end:
-    index: 132
     line: 9
     column: 16
 - token: Break
   start:
-    index: 132
     line: 9
     column: 16
   end:
-    index: 134
     line: 10
     column: 0
 - token: Indent
   start:
-    index: 134
     line: 10
     column: 0
   end:
-    index: 134
     line: 10
     column: 0
 - token: Scalar
   start:
-    index: 134
     line: 10
     column: 0
   end:
-    index: 138
     line: 10
     column: 4
 - token: MappingValue
   start:
-    index: 138
     line: 10
     column: 4
   end:
-    index: 139
     line: 10
     column: 5
 - token: Break
   start:
-    index: 139
     line: 10
     column: 5
   end:
-    index: 141
     line: 11
     column: 0
 - token: Indent
   start:
-    index: 141
     line: 11
     column: 0
   end:
-    index: 142
     line: 11
     column: 1
 - token: Separator
   start:
-    index: 142
     line: 11
     column: 1
   end:
-    index: 143
     line: 11
     column: 2
 - token: Anchor
   start:
-    index: 143
     line: 11
     column: 2
   end:
-    index: 144
     line: 11
     column: 3
 - token: AnchorName
   start:
-    index: 144
     line: 11
     column: 3
   end:
-    index: 149
     line: 11
     column: 8
 - token: Break
   start:
-    index: 149
     line: 11
     column: 8
   end:
-    index: 151
     line: 12
     column: 0
 - token: Indent
   start:
-    index: 151
     line: 12
     column: 0
   end:
-    index: 153
     line: 12
     column: 2
 - token: Scalar
   start:
-    index: 153
     line: 12
     column: 2
   end:
-    index: 157
     line: 12
     column: 6
 - token: MappingValue
   start:
-    index: 157
     line: 12
     column: 6
   end:
-    index: 158
     line: 12
     column: 7
 - token: Separator
   start:
-    index: 158
     line: 12
     column: 7
   end:
-    index: 159
     line: 12
     column: 8
 - token: Scalar
   start:
-    index: 159
     line: 12
     column: 8
   end:
-    index: 163
     line: 12
     column: 12
 - token: Break
   start:
-    index: 163
     line: 12
     column: 12
   end:
-    index: 165
     line: 13
     column: 0
 - token: Indent
   start:
-    index: 165
     line: 13
     column: 0
   end:
-    index: 165
     line: 13
     column: 0
 - token: Scalar
   start:
-    index: 165
     line: 13
     column: 0
   end:
-    index: 169
     line: 13
     column: 4
 - token: MappingValue
   start:
-    index: 169
     line: 13
     column: 4
   end:
-    index: 170
     line: 13
     column: 5
 - token: Separator
   start:
-    index: 170
     line: 13
     column: 5
   end:
-    index: 171
     line: 13
     column: 6
 - token: Anchor
   start:
-    index: 171
     line: 13
     column: 6
   end:
-    index: 172
     line: 13
     column: 7
 - token: AnchorName
   start:
-    index: 172
     line: 13
     column: 7
   end:
-    index: 176
     line: 13
     column: 11
 - token: Break
   start:
-    index: 176
     line: 13
     column: 11
   end:
-    index: 178
     line: 14
     column: 0
 - token: Indent
   start:
-    index: 178
     line: 14
     column: 0
   end:
-    index: 179
     line: 14
     column: 1
 - token: Separator
   start:
-    index: 179
     line: 14
     column: 1
   end:
-    index: 180
     line: 14
     column: 2
 - token: Scalar
   start:
-    index: 180
     line: 14
     column: 2
   end:
-    index: 183
     line: 14
     column: 5
 - token: Break
   start:
-    index: 183
     line: 14
     column: 5
   end:
-    index: 185
     line: 15
     column: 0
 - token: Indent
   start:
-    index: 185
     line: 15
     column: 0
   end:
-    index: 185
     line: 15
     column: 0
 - token: Scalar
   start:
-    index: 185
     line: 15
     column: 0
   end:
-    index: 189
     line: 15
     column: 4
 - token: MappingValue
   start:
-    index: 189
     line: 15
     column: 4
   end:
-    index: 190
     line: 15
     column: 5
 - token: Break
   start:
-    index: 190
     line: 15
     column: 5
   end:
-    index: 192
     line: 16
     column: 0
 - token: Indent
   start:
-    index: 192
     line: 16
     column: 0
   end:
-    index: 193
     line: 16
     column: 1
 - token: Separator
   start:
-    index: 193
     line: 16
     column: 1
   end:
-    index: 194
     line: 16
     column: 2
 - token: Anchor
   start:
-    index: 194
     line: 16
     column: 2
   end:
-    index: 195
     line: 16
     column: 3
 - token: AnchorName
   start:
-    index: 195
     line: 16
     column: 3
   end:
-    index: 199
     line: 16
     column: 7
 - token: Separator
   start:
-    index: 199
     line: 16
     column: 7
   end:
-    index: 200
     line: 16
     column: 8
 - token: Scalar
   start:
-    index: 200
     line: 16
     column: 8
   end:
-    index: 205
     line: 16
     column: 13
 - token: Break
   start:
-    index: 205
     line: 16
     column: 13
   end:
-    index: 207
     line: 17
     column: 0
 

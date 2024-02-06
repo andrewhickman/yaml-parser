@@ -4,74 +4,58 @@ expression: tokens
 ---
 - token: Directive
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 1
     line: 0
     column: 1
 - token: DirectiveName
   start:
-    index: 1
     line: 0
     column: 1
   end:
-    index: 5
     line: 0
     column: 5
 - token: Separator
   start:
-    index: 5
     line: 0
     column: 5
   end:
-    index: 8
     line: 0
     column: 8
 - token: YamlVersion
   start:
-    index: 8
     line: 0
     column: 8
   end:
-    index: 11
     line: 0
     column: 11
 - token: Break
   start:
-    index: 11
     line: 0
     column: 11
   end:
-    index: 13
     line: 1
     column: 0
 - token: DirectivesEnd
   start:
-    index: 13
     line: 1
     column: 0
   end:
-    index: 16
     line: 1
     column: 3
 - token: Empty
   start:
-    index: 16
     line: 1
     column: 3
   end:
-    index: 16
     line: 1
     column: 3
 - token: Break
   start:
-    index: 16
     line: 1
     column: 3
   end:
-    index: 18
     line: 2
     column: 0
 

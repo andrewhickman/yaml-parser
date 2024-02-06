@@ -4,20 +4,16 @@ expression: tokens
 ---
 - token: DocumentEnd
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 3
     line: 0
     column: 3
 - token: Break
   start:
-    index: 3
     line: 0
     column: 3
   end:
-    index: 5
     line: 1
     column: 0
 

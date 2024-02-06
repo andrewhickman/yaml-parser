@@ -4,407 +4,317 @@ expression: tokens
 ---
 - token: Indent
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 0
     line: 0
     column: 0
 - token: TagHandle
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 2
     line: 0
     column: 2
 - token: TagSuffix
   start:
-    index: 2
     line: 0
     column: 2
   end:
-    index: 5
     line: 0
     column: 5
 - token: Separator
   start:
-    index: 5
     line: 0
     column: 5
   end:
-    index: 6
     line: 0
     column: 6
 - token: Scalar
   start:
-    index: 6
     line: 0
     column: 6
   end:
-    index: 7
     line: 0
     column: 7
 - token: MappingValue
   start:
-    index: 7
     line: 0
     column: 7
   end:
-    index: 8
     line: 0
     column: 8
 - token: Separator
   start:
-    index: 8
     line: 0
     column: 8
   end:
-    index: 9
     line: 0
     column: 9
 - token: Scalar
   start:
-    index: 9
     line: 0
     column: 9
   end:
-    index: 10
     line: 0
     column: 10
 - token: Break
   start:
-    index: 10
     line: 0
     column: 10
   end:
-    index: 12
     line: 1
     column: 0
 - token: Indent
   start:
-    index: 12
     line: 1
     column: 0
   end:
-    index: 12
     line: 1
     column: 0
 - token: Scalar
   start:
-    index: 12
     line: 1
     column: 0
   end:
-    index: 13
     line: 1
     column: 1
 - token: MappingValue
   start:
-    index: 13
     line: 1
     column: 1
   end:
-    index: 14
     line: 1
     column: 2
 - token: Separator
   start:
-    index: 14
     line: 1
     column: 2
   end:
-    index: 15
     line: 1
     column: 3
 - token: TagHandle
   start:
-    index: 15
     line: 1
     column: 3
   end:
-    index: 17
     line: 1
     column: 5
 - token: TagSuffix
   start:
-    index: 17
     line: 1
     column: 5
   end:
-    index: 20
     line: 1
     column: 8
 - token: Separator
   start:
-    index: 20
     line: 1
     column: 8
   end:
-    index: 21
     line: 1
     column: 9
 - token: Scalar
   start:
-    index: 21
     line: 1
     column: 9
   end:
-    index: 23
     line: 1
     column: 11
 - token: Break
   start:
-    index: 23
     line: 1
     column: 11
   end:
-    index: 25
     line: 2
     column: 0
 - token: Indent
   start:
-    index: 25
     line: 2
     column: 0
   end:
-    index: 25
     line: 2
     column: 0
 - token: Scalar
   start:
-    index: 25
     line: 2
     column: 0
   end:
-    index: 26
     line: 2
     column: 1
 - token: MappingValue
   start:
-    index: 26
     line: 2
     column: 1
   end:
-    index: 27
     line: 2
     column: 2
 - token: Separator
   start:
-    index: 27
     line: 2
     column: 2
   end:
-    index: 28
     line: 2
     column: 3
 - token: TagHandle
   start:
-    index: 28
     line: 2
     column: 3
   end:
-    index: 30
     line: 2
     column: 5
 - token: TagSuffix
   start:
-    index: 30
     line: 2
     column: 5
   end:
-    index: 33
     line: 2
     column: 8
 - token: Separator
   start:
-    index: 33
     line: 2
     column: 8
   end:
-    index: 34
     line: 2
     column: 9
 - token: Scalar
   start:
-    index: 34
     line: 2
     column: 9
   end:
-    index: 35
     line: 2
     column: 10
 - token: Break
   start:
-    index: 35
     line: 2
     column: 10
   end:
-    index: 37
     line: 3
     column: 0
 - token: Indent
   start:
-    index: 37
     line: 3
     column: 0
   end:
-    index: 37
     line: 3
     column: 0
 - token: Scalar
   start:
-    index: 37
     line: 3
     column: 0
   end:
-    index: 38
     line: 3
     column: 1
 - token: MappingValue
   start:
-    index: 38
     line: 3
     column: 1
   end:
-    index: 39
     line: 3
     column: 2
 - token: Separator
   start:
-    index: 39
     line: 3
     column: 2
   end:
-    index: 40
     line: 3
     column: 3
 - token: Scalar
   start:
-    index: 40
     line: 3
     column: 3
   end:
-    index: 41
     line: 3
     column: 4
 - token: Break
   start:
-    index: 41
     line: 3
     column: 4
   end:
-    index: 43
     line: 4
     column: 0
 - token: Indent
   start:
-    index: 43
     line: 4
     column: 0
   end:
-    index: 43
     line: 4
     column: 0
 - token: TagHandle
   start:
-    index: 43
     line: 4
     column: 0
   end:
-    index: 45
     line: 4
     column: 2
 - token: TagSuffix
   start:
-    index: 45
     line: 4
     column: 2
   end:
-    index: 48
     line: 4
     column: 5
 - token: Separator
   start:
-    index: 48
     line: 4
     column: 5
   end:
-    index: 49
     line: 4
     column: 6
 - token: Scalar
   start:
-    index: 49
     line: 4
     column: 6
   end:
-    index: 51
     line: 4
     column: 8
 - token: MappingValue
   start:
-    index: 51
     line: 4
     column: 8
   end:
-    index: 52
     line: 4
     column: 9
 - token: Separator
   start:
-    index: 52
     line: 4
     column: 9
   end:
-    index: 53
     line: 4
     column: 10
 - token: TagHandle
   start:
-    index: 53
     line: 4
     column: 10
   end:
-    index: 55
     line: 4
     column: 12
 - token: TagSuffix
   start:
-    index: 55
     line: 4
     column: 12
   end:
-    index: 59
     line: 4
     column: 16
 - token: Separator
   start:
-    index: 59
     line: 4
     column: 16
   end:
-    index: 60
     line: 4
     column: 17
 - token: Scalar
   start:
-    index: 60
     line: 4
     column: 17
   end:
-    index: 65
     line: 4
     column: 22
 - token: Break
   start:
-    index: 65
     line: 4
     column: 22
   end:
-    index: 67
     line: 5
     column: 0
 

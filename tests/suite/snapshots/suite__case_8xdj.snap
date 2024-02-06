@@ -4,11 +4,9 @@ expression: diagnostics
 ---
 - message: "remaining tokens:   word2\r\n"
   start:
-    index: 20
     line: 2
     column: 0
   end:
-    index: 20
     line: 2
     column: 0
 

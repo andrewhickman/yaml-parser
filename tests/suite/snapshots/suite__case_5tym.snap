@@ -4,344 +4,268 @@ expression: tokens
 ---
 - token: Directive
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 1
     line: 0
     column: 1
 - token: DirectiveName
   start:
-    index: 1
     line: 0
     column: 1
   end:
-    index: 4
     line: 0
     column: 4
 - token: Separator
   start:
-    index: 4
     line: 0
     column: 4
   end:
-    index: 5
     line: 0
     column: 5
 - token: TagHandle
   start:
-    index: 5
     line: 0
     column: 5
   end:
-    index: 8
     line: 0
     column: 8
 - token: Separator
   start:
-    index: 8
     line: 0
     column: 8
   end:
-    index: 9
     line: 0
     column: 9
 - token: TagPrefix
   start:
-    index: 9
     line: 0
     column: 9
   end:
-    index: 13
     line: 0
     column: 13
 - token: Break
   start:
-    index: 13
     line: 0
     column: 13
   end:
-    index: 15
     line: 1
     column: 0
 - token: DirectivesEnd
   start:
-    index: 15
     line: 1
     column: 0
   end:
-    index: 18
     line: 1
     column: 3
 - token: Separator
   start:
-    index: 18
     line: 1
     column: 3
   end:
-    index: 19
     line: 1
     column: 4
 - token: Comment
   start:
-    index: 19
     line: 1
     column: 4
   end:
-    index: 20
     line: 1
     column: 5
 - token: CommentText
   start:
-    index: 20
     line: 1
     column: 5
   end:
-    index: 30
     line: 1
     column: 15
 - token: Break
   start:
-    index: 30
     line: 1
     column: 15
   end:
-    index: 32
     line: 2
     column: 0
 - token: Indent
   start:
-    index: 32
     line: 2
     column: 0
   end:
-    index: 32
     line: 2
     column: 0
 - token: TagHandle
   start:
-    index: 32
     line: 2
     column: 0
   end:
-    index: 35
     line: 2
     column: 3
 - token: TagSuffix
   start:
-    index: 35
     line: 2
     column: 3
   end:
-    index: 40
     line: 2
     column: 8
 - token: Separator
   start:
-    index: 40
     line: 2
     column: 8
   end:
-    index: 41
     line: 2
     column: 9
 - token: Scalar
   start:
-    index: 41
     line: 2
     column: 9
   end:
-    index: 52
     line: 2
     column: 20
 - token: Break
   start:
-    index: 52
     line: 2
     column: 20
   end:
-    index: 54
     line: 3
     column: 0
 - token: DocumentEnd
   start:
-    index: 54
     line: 3
     column: 0
   end:
-    index: 57
     line: 3
     column: 3
 - token: Break
   start:
-    index: 57
     line: 3
     column: 3
   end:
-    index: 59
     line: 4
     column: 0
 - token: Directive
   start:
-    index: 59
     line: 4
     column: 0
   end:
-    index: 60
     line: 4
     column: 1
 - token: DirectiveName
   start:
-    index: 60
     line: 4
     column: 1
   end:
-    index: 63
     line: 4
     column: 4
 - token: Separator
   start:
-    index: 63
     line: 4
     column: 4
   end:
-    index: 64
     line: 4
     column: 5
 - token: TagHandle
   start:
-    index: 64
     line: 4
     column: 5
   end:
-    index: 67
     line: 4
     column: 8
 - token: Separator
   start:
-    index: 67
     line: 4
     column: 8
   end:
-    index: 68
     line: 4
     column: 9
 - token: TagPrefix
   start:
-    index: 68
     line: 4
     column: 9
   end:
-    index: 72
     line: 4
     column: 13
 - token: Break
   start:
-    index: 72
     line: 4
     column: 13
   end:
-    index: 74
     line: 5
     column: 0
 - token: DirectivesEnd
   start:
-    index: 74
     line: 5
     column: 0
   end:
-    index: 77
     line: 5
     column: 3
 - token: Separator
   start:
-    index: 77
     line: 5
     column: 3
   end:
-    index: 78
     line: 5
     column: 4
 - token: Comment
   start:
-    index: 78
     line: 5
     column: 4
   end:
-    index: 79
     line: 5
     column: 5
 - token: CommentText
   start:
-    index: 79
     line: 5
     column: 5
   end:
-    index: 90
     line: 5
     column: 16
 - token: Break
   start:
-    index: 90
     line: 5
     column: 16
   end:
-    index: 92
     line: 6
     column: 0
 - token: Indent
   start:
-    index: 92
     line: 6
     column: 0
   end:
-    index: 92
     line: 6
     column: 0
 - token: TagHandle
   start:
-    index: 92
     line: 6
     column: 0
   end:
-    index: 95
     line: 6
     column: 3
 - token: TagSuffix
   start:
-    index: 95
     line: 6
     column: 3
   end:
-    index: 100
     line: 6
     column: 8
 - token: Separator
   start:
-    index: 100
     line: 6
     column: 8
   end:
-    index: 101
     line: 6
     column: 9
 - token: Scalar
   start:
-    index: 101
     line: 6
     column: 9
   end:
-    index: 106
     line: 6
     column: 14
 - token: Break
   start:
-    index: 106
     line: 6
     column: 14
   end:
-    index: 108
     line: 7
     column: 0
 

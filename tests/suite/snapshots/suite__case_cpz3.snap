@@ -4,119 +4,93 @@ expression: tokens
 ---
 - token: DirectivesEnd
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 3
     line: 0
     column: 3
 - token: Break
   start:
-    index: 3
     line: 0
     column: 3
   end:
-    index: 5
     line: 1
     column: 0
 - token: Indent
   start:
-    index: 5
     line: 1
     column: 0
   end:
-    index: 5
     line: 1
     column: 0
 - token: Scalar
   start:
-    index: 5
     line: 1
     column: 0
   end:
-    index: 8
     line: 1
     column: 3
 - token: MappingValue
   start:
-    index: 8
     line: 1
     column: 3
   end:
-    index: 9
     line: 1
     column: 4
 - token: Separator
   start:
-    index: 9
     line: 1
     column: 4
   end:
-    index: 10
     line: 1
     column: 5
 - token: DoubleQuote
   start:
-    index: 10
     line: 1
     column: 5
   end:
-    index: 11
     line: 1
     column: 6
 - token: DoubleQuoted
   start:
-    index: 11
     line: 1
     column: 6
   end:
-    index: 11
     line: 1
     column: 6
 - token: Escape
   start:
-    index: 11
     line: 1
     column: 6
   end:
-    index: 12
     line: 1
     column: 7
 - token: EscapeCode
   start:
-    index: 12
     line: 1
     column: 7
   end:
-    index: 13
     line: 1
     column: 8
 - token: DoubleQuoted
   start:
-    index: 13
     line: 1
     column: 8
   end:
-    index: 19
     line: 1
     column: 14
 - token: DoubleQuote
   start:
-    index: 19
     line: 1
     column: 14
   end:
-    index: 20
     line: 1
     column: 15
 - token: Break
   start:
-    index: 20
     line: 1
     column: 15
   end:
-    index: 22
     line: 2
     column: 0
 

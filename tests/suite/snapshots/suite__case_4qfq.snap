@@ -4,335 +4,261 @@ expression: tokens
 ---
 - token: Indent
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 0
     line: 0
     column: 0
 - token: SequenceEntry
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 1
     line: 0
     column: 1
 - token: Separator
   start:
-    index: 1
     line: 0
     column: 1
   end:
-    index: 2
     line: 0
     column: 2
 - token: Literal
   start:
-    index: 2
     line: 0
     column: 2
   end:
-    index: 3
     line: 0
     column: 3
 - token: Break
   start:
-    index: 3
     line: 0
     column: 3
   end:
-    index: 5
     line: 1
     column: 0
 - token: Indent
   start:
-    index: 5
     line: 1
     column: 0
   end:
-    index: 6
     line: 1
     column: 1
 - token: Scalar
   start:
-    index: 6
     line: 1
     column: 1
   end:
-    index: 14
     line: 1
     column: 9
 - token: ScalarBreak
   start:
-    index: 14
     line: 1
     column: 9
   end:
-    index: 16
     line: 2
     column: 0
 - token: Indent
   start:
-    index: 16
     line: 2
     column: 0
   end:
-    index: 16
     line: 2
     column: 0
 - token: SequenceEntry
   start:
-    index: 16
     line: 2
     column: 0
   end:
-    index: 17
     line: 2
     column: 1
 - token: Separator
   start:
-    index: 17
     line: 2
     column: 1
   end:
-    index: 18
     line: 2
     column: 2
 - token: Folded
   start:
-    index: 18
     line: 2
     column: 2
   end:
-    index: 19
     line: 2
     column: 3
 - token: Break
   start:
-    index: 19
     line: 2
     column: 3
   end:
-    index: 21
     line: 3
     column: 0
 - token: Indent
   start:
-    index: 21
     line: 3
     column: 0
   end:
-    index: 22
     line: 3
     column: 1
 - token: ScalarBreak
   start:
-    index: 22
     line: 3
     column: 1
   end:
-    index: 24
     line: 4
     column: 0
 - token: Indent
   start:
-    index: 24
     line: 4
     column: 0
   end:
-    index: 26
     line: 4
     column: 2
 - token: ScalarBreak
   start:
-    index: 26
     line: 4
     column: 2
   end:
-    index: 28
     line: 5
     column: 0
 - token: Indent
   start:
-    index: 28
     line: 5
     column: 0
   end:
-    index: 30
     line: 5
     column: 2
 - token: Scalar
   start:
-    index: 30
     line: 5
     column: 2
   end:
-    index: 40
     line: 5
     column: 12
 - token: ScalarBreak
   start:
-    index: 40
     line: 5
     column: 12
   end:
-    index: 42
     line: 6
     column: 0
 - token: Indent
   start:
-    index: 42
     line: 6
     column: 0
   end:
-    index: 42
     line: 6
     column: 0
 - token: SequenceEntry
   start:
-    index: 42
     line: 6
     column: 0
   end:
-    index: 43
     line: 6
     column: 1
 - token: Separator
   start:
-    index: 43
     line: 6
     column: 1
   end:
-    index: 44
     line: 6
     column: 2
 - token: Literal
   start:
-    index: 44
     line: 6
     column: 2
   end:
-    index: 45
     line: 6
     column: 3
 - token: IndentationIndicator
   start:
-    index: 45
     line: 6
     column: 3
   end:
-    index: 46
     line: 6
     column: 4
 - token: Break
   start:
-    index: 46
     line: 6
     column: 4
   end:
-    index: 48
     line: 7
     column: 0
 - token: Indent
   start:
-    index: 48
     line: 7
     column: 0
   end:
-    index: 49
     line: 7
     column: 1
 - token: Scalar
   start:
-    index: 49
     line: 7
     column: 1
   end:
-    index: 58
     line: 7
     column: 10
 - token: ScalarBreak
   start:
-    index: 58
     line: 7
     column: 10
   end:
-    index: 60
     line: 8
     column: 0
 - token: Indent
   start:
-    index: 60
     line: 8
     column: 0
   end:
-    index: 60
     line: 8
     column: 0
 - token: SequenceEntry
   start:
-    index: 60
     line: 8
     column: 0
   end:
-    index: 61
     line: 8
     column: 1
 - token: Separator
   start:
-    index: 61
     line: 8
     column: 1
   end:
-    index: 62
     line: 8
     column: 2
 - token: Folded
   start:
-    index: 62
     line: 8
     column: 2
   end:
-    index: 63
     line: 8
     column: 3
 - token: Break
   start:
-    index: 63
     line: 8
     column: 3
   end:
-    index: 65
     line: 9
     column: 0
 - token: Indent
   start:
-    index: 65
     line: 9
     column: 0
   end:
-    index: 66
     line: 9
     column: 1
 - token: Scalar
   start:
-    index: 66
     line: 9
     column: 1
   end:
-    index: 74
     line: 9
     column: 9
 - token: ScalarBreak
   start:
-    index: 74
     line: 9
     column: 9
   end:
-    index: 76
     line: 10
     column: 0
 

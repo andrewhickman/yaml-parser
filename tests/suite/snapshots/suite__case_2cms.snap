@@ -4,11 +4,9 @@ expression: diagnostics
 ---
 - message: "invalid block node at this\r\n is\r\n  invalid: x\r\n"
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 0
     line: 0
     column: 0
 

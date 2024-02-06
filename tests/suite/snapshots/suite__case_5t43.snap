@@ -4,236 +4,184 @@ expression: tokens
 ---
 - token: Indent
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 0
     line: 0
     column: 0
 - token: SequenceEntry
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 1
     line: 0
     column: 1
 - token: Separator
   start:
-    index: 1
     line: 0
     column: 1
   end:
-    index: 2
     line: 0
     column: 2
 - token: MappingStart
   start:
-    index: 2
     line: 0
     column: 2
   end:
-    index: 3
     line: 0
     column: 3
 - token: Separator
   start:
-    index: 3
     line: 0
     column: 3
   end:
-    index: 4
     line: 0
     column: 4
 - token: DoubleQuote
   start:
-    index: 4
     line: 0
     column: 4
   end:
-    index: 5
     line: 0
     column: 5
 - token: DoubleQuoted
   start:
-    index: 5
     line: 0
     column: 5
   end:
-    index: 8
     line: 0
     column: 8
 - token: DoubleQuote
   start:
-    index: 8
     line: 0
     column: 8
   end:
-    index: 9
     line: 0
     column: 9
 - token: MappingValue
   start:
-    index: 9
     line: 0
     column: 9
   end:
-    index: 10
     line: 0
     column: 10
 - token: Scalar
   start:
-    index: 10
     line: 0
     column: 10
   end:
-    index: 15
     line: 0
     column: 15
 - token: Separator
   start:
-    index: 15
     line: 0
     column: 15
   end:
-    index: 16
     line: 0
     column: 16
 - token: MappingEnd
   start:
-    index: 16
     line: 0
     column: 16
   end:
-    index: 17
     line: 0
     column: 17
 - token: Break
   start:
-    index: 17
     line: 0
     column: 17
   end:
-    index: 19
     line: 1
     column: 0
 - token: Indent
   start:
-    index: 19
     line: 1
     column: 0
   end:
-    index: 19
     line: 1
     column: 0
 - token: SequenceEntry
   start:
-    index: 19
     line: 1
     column: 0
   end:
-    index: 20
     line: 1
     column: 1
 - token: Separator
   start:
-    index: 20
     line: 1
     column: 1
   end:
-    index: 21
     line: 1
     column: 2
 - token: MappingStart
   start:
-    index: 21
     line: 1
     column: 2
   end:
-    index: 22
     line: 1
     column: 3
 - token: Separator
   start:
-    index: 22
     line: 1
     column: 3
   end:
-    index: 23
     line: 1
     column: 4
 - token: DoubleQuote
   start:
-    index: 23
     line: 1
     column: 4
   end:
-    index: 24
     line: 1
     column: 5
 - token: DoubleQuoted
   start:
-    index: 24
     line: 1
     column: 5
   end:
-    index: 27
     line: 1
     column: 8
 - token: DoubleQuote
   start:
-    index: 27
     line: 1
     column: 8
   end:
-    index: 28
     line: 1
     column: 9
 - token: MappingValue
   start:
-    index: 28
     line: 1
     column: 9
   end:
-    index: 29
     line: 1
     column: 10
 - token: Scalar
   start:
-    index: 29
     line: 1
     column: 10
   end:
-    index: 35
     line: 1
     column: 16
 - token: Separator
   start:
-    index: 35
     line: 1
     column: 16
   end:
-    index: 36
     line: 1
     column: 17
 - token: MappingEnd
   start:
-    index: 36
     line: 1
     column: 17
   end:
-    index: 37
     line: 1
     column: 18
 - token: Break
   start:
-    index: 37
     line: 1
     column: 18
   end:
-    index: 39
     line: 2
     column: 0
 

@@ -4,218 +4,170 @@ expression: tokens
 ---
 - token: DirectivesEnd
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 3
     line: 0
     column: 3
 - token: Break
   start:
-    index: 3
     line: 0
     column: 3
   end:
-    index: 5
     line: 1
     column: 0
 - token: Indent
   start:
-    index: 5
     line: 1
     column: 0
   end:
-    index: 5
     line: 1
     column: 0
 - token: DoubleQuote
   start:
-    index: 5
     line: 1
     column: 0
   end:
-    index: 6
     line: 1
     column: 1
 - token: DoubleQuoted
   start:
-    index: 6
     line: 1
     column: 1
   end:
-    index: 12
     line: 1
     column: 7
 - token: Separator
   start:
-    index: 12
     line: 1
     column: 7
   end:
-    index: 13
     line: 1
     column: 8
 - token: ScalarSpace
   start:
-    index: 13
     line: 1
     column: 8
   end:
-    index: 15
     line: 2
     column: 0
 - token: Indent
   start:
-    index: 15
     line: 2
     column: 0
   end:
-    index: 15
     line: 2
     column: 0
 - token: DoubleQuoted
   start:
-    index: 15
     line: 2
     column: 0
   end:
-    index: 26
     line: 2
     column: 11
 - token: Break
   start:
-    index: 26
     line: 2
     column: 11
   end:
-    index: 28
     line: 3
     column: 0
 - token: Indent
   start:
-    index: 28
     line: 3
     column: 0
   end:
-    index: 28
     line: 3
     column: 0
 - token: Separator
   start:
-    index: 28
     line: 3
     column: 0
   end:
-    index: 29
     line: 3
     column: 1
 - token: ScalarBreak
   start:
-    index: 29
     line: 3
     column: 1
   end:
-    index: 31
     line: 4
     column: 0
 - token: Indent
   start:
-    index: 31
     line: 4
     column: 0
   end:
-    index: 31
     line: 4
     column: 0
 - token: DoubleQuoted
   start:
-    index: 31
     line: 4
     column: 0
   end:
-    index: 51
     line: 4
     column: 20
 - token: Escape
   start:
-    index: 51
     line: 4
     column: 20
   end:
-    index: 52
     line: 4
     column: 21
 - token: Break
   start:
-    index: 52
     line: 4
     column: 21
   end:
-    index: 54
     line: 5
     column: 0
 - token: Indent
   start:
-    index: 54
     line: 5
     column: 0
   end:
-    index: 54
     line: 5
     column: 0
 - token: Separator
   start:
-    index: 54
     line: 5
     column: 0
   end:
-    index: 55
     line: 5
     column: 1
 - token: Escape
   start:
-    index: 55
     line: 5
     column: 1
   end:
-    index: 56
     line: 5
     column: 2
 - token: EscapeCode
   start:
-    index: 56
     line: 5
     column: 2
   end:
-    index: 57
     line: 5
     column: 3
 - token: DoubleQuoted
   start:
-    index: 57
     line: 5
     column: 3
   end:
-    index: 69
     line: 5
     column: 15
 - token: DoubleQuote
   start:
-    index: 69
     line: 5
     column: 15
   end:
-    index: 70
     line: 5
     column: 16
 - token: Break
   start:
-    index: 70
     line: 5
     column: 16
   end:
-    index: 72
     line: 6
     column: 0
 

@@ -4,173 +4,135 @@ expression: tokens
 ---
 - token: Indent
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 0
     line: 0
     column: 0
 - token: MappingStart
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 1
     line: 0
     column: 1
 - token: Separator
   start:
-    index: 1
     line: 0
     column: 1
   end:
-    index: 2
     line: 0
     column: 2
 - token: Scalar
   start:
-    index: 2
     line: 0
     column: 2
   end:
-    index: 5
     line: 0
     column: 5
 - token: MappingValue
   start:
-    index: 5
     line: 0
     column: 5
   end:
-    index: 6
     line: 0
     column: 6
 - token: Separator
   start:
-    index: 6
     line: 0
     column: 6
   end:
-    index: 7
     line: 0
     column: 7
 - token: SequenceStart
   start:
-    index: 7
     line: 0
     column: 7
   end:
-    index: 10
     line: 0
     column: 10
 - token: Break
   start:
-    index: 10
     line: 0
     column: 10
   end:
-    index: 12
     line: 1
     column: 0
 - token: Indent
   start:
-    index: 12
     line: 1
     column: 0
   end:
-    index: 12
     line: 1
     column: 0
 - token: Separator
   start:
-    index: 12
     line: 1
     column: 0
   end:
-    index: 14
     line: 1
     column: 2
 - token: Scalar
   start:
-    index: 14
     line: 1
     column: 2
   end:
-    index: 19
     line: 1
     column: 7
 - token: Break
   start:
-    index: 19
     line: 1
     column: 7
   end:
-    index: 21
     line: 2
     column: 0
 - token: Indent
   start:
-    index: 21
     line: 2
     column: 0
   end:
-    index: 21
     line: 2
     column: 0
 - token: Separator
   start:
-    index: 21
     line: 2
     column: 0
   end:
-    index: 22
     line: 2
     column: 1
 - token: SequenceEnd
   start:
-    index: 22
     line: 2
     column: 1
   end:
-    index: 25
     line: 2
     column: 4
 - token: Break
   start:
-    index: 25
     line: 2
     column: 4
   end:
-    index: 27
     line: 3
     column: 0
 - token: Indent
   start:
-    index: 27
     line: 3
     column: 0
   end:
-    index: 27
     line: 3
     column: 0
 - token: MappingEnd
   start:
-    index: 27
     line: 3
     column: 0
   end:
-    index: 28
     line: 3
     column: 1
 - token: Break
   start:
-    index: 28
     line: 3
     column: 1
   end:
-    index: 30
     line: 4
     column: 0
 

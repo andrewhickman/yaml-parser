@@ -4,92 +4,72 @@ expression: tokens
 ---
 - token: DirectivesEnd
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 3
     line: 0
     column: 3
 - token: Break
   start:
-    index: 3
     line: 0
     column: 3
   end:
-    index: 5
     line: 1
     column: 0
 - token: Indent
   start:
-    index: 5
     line: 1
     column: 0
   end:
-    index: 5
     line: 1
     column: 0
 - token: SequenceEntry
   start:
-    index: 5
     line: 1
     column: 0
   end:
-    index: 6
     line: 1
     column: 1
 - token: Separator
   start:
-    index: 6
     line: 1
     column: 1
   end:
-    index: 7
     line: 1
     column: 2
 - token: Anchor
   start:
-    index: 7
     line: 1
     column: 2
   end:
-    index: 8
     line: 1
     column: 3
 - token: AnchorName
   start:
-    index: 8
     line: 1
     column: 3
   end:
-    index: 12
     line: 1
     column: 7
 - token: Separator
   start:
-    index: 12
     line: 1
     column: 7
   end:
-    index: 13
     line: 1
     column: 8
 - token: Scalar
   start:
-    index: 13
     line: 1
     column: 8
   end:
-    index: 27
     line: 1
     column: 22
 - token: Break
   start:
-    index: 27
     line: 1
     column: 22
   end:
-    index: 29
     line: 2
     column: 0
 

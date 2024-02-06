@@ -4,11 +4,9 @@ expression: diagnostics
 ---
 - message: "remaining tokens: :\tkey:\r\n"
   start:
-    index: 8
     line: 1
     column: 0
   end:
-    index: 8
     line: 1
     column: 0
 

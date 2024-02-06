@@ -4,74 +4,58 @@ expression: tokens
 ---
 - token: DirectivesEnd
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 3
     line: 0
     column: 3
 - token: Break
   start:
-    index: 3
     line: 0
     column: 3
   end:
-    index: 5
     line: 1
     column: 0
 - token: Indent
   start:
-    index: 5
     line: 1
     column: 0
   end:
-    index: 5
     line: 1
     column: 0
 - token: Scalar
   start:
-    index: 5
     line: 1
     column: 0
   end:
-    index: 11
     line: 1
     column: 6
 - token: ScalarSpace
   start:
-    index: 11
     line: 1
     column: 6
   end:
-    index: 13
     line: 2
     column: 0
 - token: Indent
   start:
-    index: 13
     line: 2
     column: 0
   end:
-    index: 13
     line: 2
     column: 0
 - token: Scalar
   start:
-    index: 13
     line: 2
     column: 0
   end:
-    index: 22
     line: 2
     column: 9
 - token: Break
   start:
-    index: 22
     line: 2
     column: 9
   end:
-    index: 24
     line: 3
     column: 0
 

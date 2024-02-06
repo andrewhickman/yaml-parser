@@ -4,452 +4,352 @@ expression: tokens
 ---
 - token: Comment
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 1
     line: 0
     column: 1
 - token: CommentText
   start:
-    index: 1
     line: 0
     column: 1
   end:
-    index: 45
     line: 0
     column: 45
 - token: Break
   start:
-    index: 45
     line: 0
     column: 45
   end:
-    index: 47
     line: 1
     column: 0
 - token: Comment
   start:
-    index: 47
     line: 1
     column: 0
   end:
-    index: 48
     line: 1
     column: 1
 - token: CommentText
   start:
-    index: 48
     line: 1
     column: 1
   end:
-    index: 91
     line: 1
     column: 44
 - token: Break
   start:
-    index: 91
     line: 1
     column: 44
   end:
-    index: 93
     line: 2
     column: 0
 - token: Comment
   start:
-    index: 93
     line: 2
     column: 0
   end:
-    index: 94
     line: 2
     column: 1
 - token: CommentText
   start:
-    index: 94
     line: 2
     column: 1
   end:
-    index: 138
     line: 2
     column: 45
 - token: Break
   start:
-    index: 138
     line: 2
     column: 45
   end:
-    index: 140
     line: 3
     column: 0
 - token: Comment
   start:
-    index: 140
     line: 3
     column: 0
   end:
-    index: 141
     line: 3
     column: 1
 - token: CommentText
   start:
-    index: 141
     line: 3
     column: 1
   end:
-    index: 161
     line: 3
     column: 21
 - token: Break
   start:
-    index: 161
     line: 3
     column: 21
   end:
-    index: 163
     line: 4
     column: 0
 - token: Comment
   start:
-    index: 163
     line: 4
     column: 0
   end:
-    index: 164
     line: 4
     column: 1
 - token: CommentText
   start:
-    index: 164
     line: 4
     column: 1
   end:
-    index: 196
     line: 4
     column: 33
 - token: Break
   start:
-    index: 196
     line: 4
     column: 33
   end:
-    index: 198
     line: 5
     column: 0
 - token: Comment
   start:
-    index: 198
     line: 5
     column: 0
   end:
-    index: 199
     line: 5
     column: 1
 - token: CommentText
   start:
-    index: 199
     line: 5
     column: 1
   end:
-    index: 228
     line: 5
     column: 30
 - token: Break
   start:
-    index: 228
     line: 5
     column: 30
   end:
-    index: 230
     line: 6
     column: 0
 - token: Comment
   start:
-    index: 230
     line: 6
     column: 0
   end:
-    index: 231
     line: 6
     column: 1
 - token: CommentText
   start:
-    index: 231
     line: 6
     column: 1
   end:
-    index: 259
     line: 6
     column: 29
 - token: Break
   start:
-    index: 259
     line: 6
     column: 29
   end:
-    index: 261
     line: 7
     column: 0
 - token: DirectivesEnd
   start:
-    index: 261
     line: 7
     column: 0
   end:
-    index: 264
     line: 7
     column: 3
 - token: Separator
   start:
-    index: 264
     line: 7
     column: 3
   end:
-    index: 265
     line: 7
     column: 4
 - token: TagHandle
   start:
-    index: 265
     line: 7
     column: 4
   end:
-    index: 267
     line: 7
     column: 6
 - token: TagSuffix
   start:
-    index: 267
     line: 7
     column: 6
   end:
-    index: 271
     line: 7
     column: 10
 - token: Break
   start:
-    index: 271
     line: 7
     column: 10
   end:
-    index: 273
     line: 8
     column: 0
 - token: Indent
   start:
-    index: 273
     line: 8
     column: 0
   end:
-    index: 273
     line: 8
     column: 0
 - token: SequenceEntry
   start:
-    index: 273
     line: 8
     column: 0
   end:
-    index: 274
     line: 8
     column: 1
 - token: Indent
   start:
-    index: 274
     line: 8
     column: 1
   end:
-    index: 275
     line: 8
     column: 2
 - token: Scalar
   start:
-    index: 275
     line: 8
     column: 2
   end:
-    index: 287
     line: 8
     column: 14
 - token: MappingValue
   start:
-    index: 287
     line: 8
     column: 14
   end:
-    index: 288
     line: 8
     column: 15
 - token: Separator
   start:
-    index: 288
     line: 8
     column: 15
   end:
-    index: 289
     line: 8
     column: 16
 - token: Scalar
   start:
-    index: 289
     line: 8
     column: 16
   end:
-    index: 291
     line: 8
     column: 18
 - token: Break
   start:
-    index: 291
     line: 8
     column: 18
   end:
-    index: 293
     line: 9
     column: 0
 - token: Indent
   start:
-    index: 293
     line: 9
     column: 0
   end:
-    index: 293
     line: 9
     column: 0
 - token: SequenceEntry
   start:
-    index: 293
     line: 9
     column: 0
   end:
-    index: 294
     line: 9
     column: 1
 - token: Indent
   start:
-    index: 294
     line: 9
     column: 1
   end:
-    index: 295
     line: 9
     column: 2
 - token: Scalar
   start:
-    index: 295
     line: 9
     column: 2
   end:
-    index: 305
     line: 9
     column: 12
 - token: MappingValue
   start:
-    index: 305
     line: 9
     column: 12
   end:
-    index: 306
     line: 9
     column: 13
 - token: Separator
   start:
-    index: 306
     line: 9
     column: 13
   end:
-    index: 307
     line: 9
     column: 14
 - token: Scalar
   start:
-    index: 307
     line: 9
     column: 14
   end:
-    index: 309
     line: 9
     column: 16
 - token: Break
   start:
-    index: 309
     line: 9
     column: 16
   end:
-    index: 311
     line: 10
     column: 0
 - token: Indent
   start:
-    index: 311
     line: 10
     column: 0
   end:
-    index: 311
     line: 10
     column: 0
 - token: SequenceEntry
   start:
-    index: 311
     line: 10
     column: 0
   end:
-    index: 312
     line: 10
     column: 1
 - token: Indent
   start:
-    index: 312
     line: 10
     column: 1
   end:
-    index: 313
     line: 10
     column: 2
 - token: Scalar
   start:
-    index: 313
     line: 10
     column: 2
   end:
-    index: 323
     line: 10
     column: 12
 - token: MappingValue
   start:
-    index: 323
     line: 10
     column: 12
   end:
-    index: 324
     line: 10
     column: 13
 - token: Separator
   start:
-    index: 324
     line: 10
     column: 13
   end:
-    index: 325
     line: 10
     column: 14
 - token: Scalar
   start:
-    index: 325
     line: 10
     column: 14
   end:
-    index: 327
     line: 10
     column: 16
 - token: Break
   start:
-    index: 327
     line: 10
     column: 16
   end:
-    index: 329
     line: 11
     column: 0
 

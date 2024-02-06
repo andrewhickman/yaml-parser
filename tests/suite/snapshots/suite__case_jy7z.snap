@@ -4,11 +4,9 @@ expression: diagnostics
 ---
 - message: "remaining tokens: key2: \"quoted2\" no key: nor value\r\nkey3: \"quoted3\"\r\n"
   start:
-    index: 17
     line: 1
     column: 0
   end:
-    index: 17
     line: 1
     column: 0
 

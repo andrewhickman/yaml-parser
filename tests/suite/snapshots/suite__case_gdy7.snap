@@ -4,11 +4,9 @@ expression: diagnostics
 ---
 - message: "remaining tokens: this is #not a: key\r\n"
   start:
-    index: 12
     line: 1
     column: 0
   end:
-    index: 12
     line: 1
     column: 0
 

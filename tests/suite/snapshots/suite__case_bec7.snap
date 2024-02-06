@@ -4,173 +4,135 @@ expression: tokens
 ---
 - token: Directive
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 1
     line: 0
     column: 1
 - token: DirectiveName
   start:
-    index: 1
     line: 0
     column: 1
   end:
-    index: 5
     line: 0
     column: 5
 - token: Separator
   start:
-    index: 5
     line: 0
     column: 5
   end:
-    index: 6
     line: 0
     column: 6
 - token: YamlVersion
   start:
-    index: 6
     line: 0
     column: 6
   end:
-    index: 9
     line: 0
     column: 9
 - token: Separator
   start:
-    index: 9
     line: 0
     column: 9
   end:
-    index: 10
     line: 0
     column: 10
 - token: Comment
   start:
-    index: 10
     line: 0
     column: 10
   end:
-    index: 11
     line: 0
     column: 11
 - token: CommentText
   start:
-    index: 11
     line: 0
     column: 11
   end:
-    index: 27
     line: 0
     column: 27
 - token: Break
   start:
-    index: 27
     line: 0
     column: 27
   end:
-    index: 29
     line: 1
     column: 0
 - token: Separator
   start:
-    index: 29
     line: 1
     column: 0
   end:
-    index: 39
     line: 1
     column: 10
 - token: Comment
   start:
-    index: 39
     line: 1
     column: 10
   end:
-    index: 40
     line: 1
     column: 11
 - token: CommentText
   start:
-    index: 40
     line: 1
     column: 11
   end:
-    index: 55
     line: 1
     column: 26
 - token: Break
   start:
-    index: 55
     line: 1
     column: 26
   end:
-    index: 57
     line: 2
     column: 0
 - token: DirectivesEnd
   start:
-    index: 57
     line: 2
     column: 0
   end:
-    index: 60
     line: 2
     column: 3
 - token: Break
   start:
-    index: 60
     line: 2
     column: 3
   end:
-    index: 62
     line: 3
     column: 0
 - token: Indent
   start:
-    index: 62
     line: 3
     column: 0
   end:
-    index: 62
     line: 3
     column: 0
 - token: DoubleQuote
   start:
-    index: 62
     line: 3
     column: 0
   end:
-    index: 63
     line: 3
     column: 1
 - token: DoubleQuoted
   start:
-    index: 63
     line: 3
     column: 1
   end:
-    index: 66
     line: 3
     column: 4
 - token: DoubleQuote
   start:
-    index: 66
     line: 3
     column: 4
   end:
-    index: 67
     line: 3
     column: 5
 - token: Break
   start:
-    index: 67
     line: 3
     column: 5
   end:
-    index: 69
     line: 4
     column: 0
 

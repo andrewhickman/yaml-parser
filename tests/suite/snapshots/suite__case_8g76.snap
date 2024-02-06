@@ -4,56 +4,44 @@ expression: tokens
 ---
 - token: Separator
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 2
     line: 0
     column: 2
 - token: Comment
   start:
-    index: 2
     line: 0
     column: 2
   end:
-    index: 3
     line: 0
     column: 3
 - token: CommentText
   start:
-    index: 3
     line: 0
     column: 3
   end:
-    index: 11
     line: 0
     column: 11
 - token: Break
   start:
-    index: 11
     line: 0
     column: 11
   end:
-    index: 13
     line: 1
     column: 0
 - token: Separator
   start:
-    index: 13
     line: 1
     column: 0
   end:
-    index: 16
     line: 1
     column: 3
 - token: Break
   start:
-    index: 16
     line: 1
     column: 3
   end:
-    index: 22
     line: 4
     column: 0
 

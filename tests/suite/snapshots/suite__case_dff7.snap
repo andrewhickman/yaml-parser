@@ -4,245 +4,191 @@ expression: tokens
 ---
 - token: Indent
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 0
     line: 0
     column: 0
 - token: MappingStart
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 1
     line: 0
     column: 1
 - token: Break
   start:
-    index: 1
     line: 0
     column: 1
   end:
-    index: 3
     line: 1
     column: 0
 - token: Indent
   start:
-    index: 3
     line: 1
     column: 0
   end:
-    index: 3
     line: 1
     column: 0
 - token: MappingKey
   start:
-    index: 3
     line: 1
     column: 0
   end:
-    index: 4
     line: 1
     column: 1
 - token: Separator
   start:
-    index: 4
     line: 1
     column: 1
   end:
-    index: 5
     line: 1
     column: 2
 - token: Scalar
   start:
-    index: 5
     line: 1
     column: 2
   end:
-    index: 13
     line: 1
     column: 10
 - token: MappingValue
   start:
-    index: 13
     line: 1
     column: 10
   end:
-    index: 14
     line: 1
     column: 11
 - token: Separator
   start:
-    index: 14
     line: 1
     column: 11
   end:
-    index: 15
     line: 1
     column: 12
 - token: Scalar
   start:
-    index: 15
     line: 1
     column: 12
   end:
-    index: 20
     line: 1
     column: 17
 - token: CollectionEntry
   start:
-    index: 20
     line: 1
     column: 17
   end:
-    index: 21
     line: 1
     column: 18
 - token: Break
   start:
-    index: 21
     line: 1
     column: 18
   end:
-    index: 23
     line: 2
     column: 0
 - token: Indent
   start:
-    index: 23
     line: 2
     column: 0
   end:
-    index: 23
     line: 2
     column: 0
 - token: Scalar
   start:
-    index: 23
     line: 2
     column: 0
   end:
-    index: 31
     line: 2
     column: 8
 - token: MappingValue
   start:
-    index: 31
     line: 2
     column: 8
   end:
-    index: 32
     line: 2
     column: 9
 - token: Separator
   start:
-    index: 32
     line: 2
     column: 9
   end:
-    index: 33
     line: 2
     column: 10
 - token: Scalar
   start:
-    index: 33
     line: 2
     column: 10
   end:
-    index: 38
     line: 2
     column: 15
 - token: CollectionEntry
   start:
-    index: 38
     line: 2
     column: 15
   end:
-    index: 39
     line: 2
     column: 16
 - token: Break
   start:
-    index: 39
     line: 2
     column: 16
   end:
-    index: 41
     line: 3
     column: 0
 - token: Indent
   start:
-    index: 41
     line: 3
     column: 0
   end:
-    index: 41
     line: 3
     column: 0
 - token: MappingKey
   start:
-    index: 41
     line: 3
     column: 0
   end:
-    index: 42
     line: 3
     column: 1
 - token: Break
   start:
-    index: 42
     line: 3
     column: 1
   end:
-    index: 44
     line: 4
     column: 0
 - token: Indent
   start:
-    index: 44
     line: 4
     column: 0
   end:
-    index: 44
     line: 4
     column: 0
 - token: Empty
   start:
-    index: 44
     line: 4
     column: 0
   end:
-    index: 44
     line: 4
     column: 0
 - token: Indent
   start:
-    index: 44
     line: 4
     column: 0
   end:
-    index: 44
     line: 4
     column: 0
 - token: MappingEnd
   start:
-    index: 44
     line: 4
     column: 0
   end:
-    index: 45
     line: 4
     column: 1
 - token: Break
   start:
-    index: 45
     line: 4
     column: 1
   end:
-    index: 47
     line: 5
     column: 0
 

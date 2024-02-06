@@ -4,11 +4,9 @@ expression: diagnostics
 ---
 - message: "remaining tokens: !!map\r\n  a: b\r\n"
   start:
-    index: 9
     line: 1
     column: 0
   end:
-    index: 9
     line: 1
     column: 0
 

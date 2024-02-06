@@ -4,11 +4,9 @@ expression: diagnostics
 ---
 - message: "remaining tokens:   \"\\xq-\""
   start:
-    index: 14
     line: 1
     column: 0
   end:
-    index: 14
     line: 1
     column: 0
 

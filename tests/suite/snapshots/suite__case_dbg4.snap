@@ -4,596 +4,464 @@ expression: tokens
 ---
 - token: Comment
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 1
     line: 0
     column: 1
 - token: CommentText
   start:
-    index: 1
     line: 0
     column: 1
   end:
-    index: 26
     line: 0
     column: 26
 - token: Break
   start:
-    index: 26
     line: 0
     column: 26
   end:
-    index: 28
     line: 1
     column: 0
 - token: Indent
   start:
-    index: 28
     line: 1
     column: 0
   end:
-    index: 28
     line: 1
     column: 0
 - token: SequenceEntry
   start:
-    index: 28
     line: 1
     column: 0
   end:
-    index: 29
     line: 1
     column: 1
 - token: Separator
   start:
-    index: 29
     line: 1
     column: 1
   end:
-    index: 30
     line: 1
     column: 2
 - token: Scalar
   start:
-    index: 30
     line: 1
     column: 2
   end:
-    index: 38
     line: 1
     column: 10
 - token: Break
   start:
-    index: 38
     line: 1
     column: 10
   end:
-    index: 40
     line: 2
     column: 0
 - token: Indent
   start:
-    index: 40
     line: 2
     column: 0
   end:
-    index: 40
     line: 2
     column: 0
 - token: SequenceEntry
   start:
-    index: 40
     line: 2
     column: 0
   end:
-    index: 41
     line: 2
     column: 1
 - token: Separator
   start:
-    index: 41
     line: 2
     column: 1
   end:
-    index: 42
     line: 2
     column: 2
 - token: DoubleQuote
   start:
-    index: 42
     line: 2
     column: 2
   end:
-    index: 43
     line: 2
     column: 3
 - token: DoubleQuoted
   start:
-    index: 43
     line: 2
     column: 3
   end:
-    index: 49
     line: 2
     column: 9
 - token: DoubleQuote
   start:
-    index: 49
     line: 2
     column: 9
   end:
-    index: 50
     line: 2
     column: 10
 - token: Break
   start:
-    index: 50
     line: 2
     column: 10
   end:
-    index: 52
     line: 3
     column: 0
 - token: Indent
   start:
-    index: 52
     line: 3
     column: 0
   end:
-    index: 52
     line: 3
     column: 0
 - token: SequenceEntry
   start:
-    index: 52
     line: 3
     column: 0
   end:
-    index: 53
     line: 3
     column: 1
 - token: Separator
   start:
-    index: 53
     line: 3
     column: 1
   end:
-    index: 54
     line: 3
     column: 2
 - token: Scalar
   start:
-    index: 54
     line: 3
     column: 2
   end:
-    index: 71
     line: 3
     column: 19
 - token: Break
   start:
-    index: 71
     line: 3
     column: 19
   end:
-    index: 73
     line: 4
     column: 0
 - token: Indent
   start:
-    index: 73
     line: 4
     column: 0
   end:
-    index: 73
     line: 4
     column: 0
 - token: SequenceEntry
   start:
-    index: 73
     line: 4
     column: 0
   end:
-    index: 74
     line: 4
     column: 1
 - token: Separator
   start:
-    index: 74
     line: 4
     column: 1
   end:
-    index: 75
     line: 4
     column: 2
 - token: Scalar
   start:
-    index: 75
     line: 4
     column: 2
   end:
-    index: 79
     line: 4
     column: 6
 - token: Break
   start:
-    index: 79
     line: 4
     column: 6
   end:
-    index: 81
     line: 5
     column: 0
 - token: Indent
   start:
-    index: 81
     line: 5
     column: 0
   end:
-    index: 81
     line: 5
     column: 0
 - token: SequenceEntry
   start:
-    index: 81
     line: 5
     column: 0
   end:
-    index: 82
     line: 5
     column: 1
 - token: Separator
   start:
-    index: 82
     line: 5
     column: 1
   end:
-    index: 83
     line: 5
     column: 2
 - token: Scalar
   start:
-    index: 83
     line: 5
     column: 2
   end:
-    index: 109
     line: 5
     column: 28
 - token: Break
   start:
-    index: 109
     line: 5
     column: 28
   end:
-    index: 111
     line: 6
     column: 0
 - token: Comment
   start:
-    index: 111
     line: 6
     column: 0
   end:
-    index: 112
     line: 6
     column: 1
 - token: CommentText
   start:
-    index: 112
     line: 6
     column: 1
   end:
-    index: 136
     line: 6
     column: 25
 - token: Break
   start:
-    index: 136
     line: 6
     column: 25
   end:
-    index: 138
     line: 7
     column: 0
 - token: Indent
   start:
-    index: 138
     line: 7
     column: 0
   end:
-    index: 138
     line: 7
     column: 0
 - token: SequenceEntry
   start:
-    index: 138
     line: 7
     column: 0
   end:
-    index: 139
     line: 7
     column: 1
 - token: Separator
   start:
-    index: 139
     line: 7
     column: 1
   end:
-    index: 140
     line: 7
     column: 2
 - token: SequenceStart
   start:
-    index: 140
     line: 7
     column: 2
   end:
-    index: 141
     line: 7
     column: 3
 - token: Separator
   start:
-    index: 141
     line: 7
     column: 3
   end:
-    index: 142
     line: 7
     column: 4
 - token: Scalar
   start:
-    index: 142
     line: 7
     column: 4
   end:
-    index: 150
     line: 7
     column: 12
 - token: CollectionEntry
   start:
-    index: 150
     line: 7
     column: 12
   end:
-    index: 151
     line: 7
     column: 13
 - token: Break
   start:
-    index: 151
     line: 7
     column: 13
   end:
-    index: 153
     line: 8
     column: 0
 - token: Indent
   start:
-    index: 153
     line: 8
     column: 0
   end:
-    index: 154
     line: 8
     column: 1
 - token: Separator
   start:
-    index: 154
     line: 8
     column: 1
   end:
-    index: 155
     line: 8
     column: 2
 - token: DoubleQuote
   start:
-    index: 155
     line: 8
     column: 2
   end:
-    index: 156
     line: 8
     column: 3
 - token: DoubleQuoted
   start:
-    index: 156
     line: 8
     column: 3
   end:
-    index: 162
     line: 8
     column: 9
 - token: DoubleQuote
   start:
-    index: 162
     line: 8
     column: 9
   end:
-    index: 163
     line: 8
     column: 10
 - token: CollectionEntry
   start:
-    index: 163
     line: 8
     column: 10
   end:
-    index: 164
     line: 8
     column: 11
 - token: Break
   start:
-    index: 164
     line: 8
     column: 11
   end:
-    index: 166
     line: 9
     column: 0
 - token: Indent
   start:
-    index: 166
     line: 9
     column: 0
   end:
-    index: 167
     line: 9
     column: 1
 - token: Separator
   start:
-    index: 167
     line: 9
     column: 1
   end:
-    index: 168
     line: 9
     column: 2
 - token: DoubleQuote
   start:
-    index: 168
     line: 9
     column: 2
   end:
-    index: 169
     line: 9
     column: 3
 - token: DoubleQuoted
   start:
-    index: 169
     line: 9
     column: 3
   end:
-    index: 185
     line: 9
     column: 19
 - token: DoubleQuote
   start:
-    index: 185
     line: 9
     column: 19
   end:
-    index: 186
     line: 9
     column: 20
 - token: CollectionEntry
   start:
-    index: 186
     line: 9
     column: 20
   end:
-    index: 187
     line: 9
     column: 21
 - token: Break
   start:
-    index: 187
     line: 9
     column: 21
   end:
-    index: 189
     line: 10
     column: 0
 - token: Indent
   start:
-    index: 189
     line: 10
     column: 0
   end:
-    index: 190
     line: 10
     column: 1
 - token: Separator
   start:
-    index: 190
     line: 10
     column: 1
   end:
-    index: 191
     line: 10
     column: 2
 - token: Scalar
   start:
-    index: 191
     line: 10
     column: 2
   end:
-    index: 195
     line: 10
     column: 6
 - token: CollectionEntry
   start:
-    index: 195
     line: 10
     column: 6
   end:
-    index: 196
     line: 10
     column: 7
 - token: Break
   start:
-    index: 196
     line: 10
     column: 7
   end:
-    index: 198
     line: 11
     column: 0
 - token: Indent
   start:
-    index: 198
     line: 11
     column: 0
   end:
-    index: 199
     line: 11
     column: 1
 - token: Separator
   start:
-    index: 199
     line: 11
     column: 1
   end:
-    index: 200
     line: 11
     column: 2
 - token: Scalar
   start:
-    index: 200
     line: 11
     column: 2
   end:
-    index: 226
     line: 11
     column: 28
 - token: Separator
   start:
-    index: 226
     line: 11
     column: 28
   end:
-    index: 227
     line: 11
     column: 29
 - token: SequenceEnd
   start:
-    index: 227
     line: 11
     column: 29
   end:
-    index: 228
     line: 11
     column: 30
 - token: Break
   start:
-    index: 228
     line: 11
     column: 30
   end:
-    index: 230
     line: 12
     column: 0
 

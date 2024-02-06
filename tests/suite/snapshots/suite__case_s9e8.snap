@@ -4,317 +4,247 @@ expression: tokens
 ---
 - token: Indent
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 0
     line: 0
     column: 0
 - token: Scalar
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 8
     line: 0
     column: 8
 - token: MappingValue
   start:
-    index: 8
     line: 0
     column: 8
   end:
-    index: 9
     line: 0
     column: 9
 - token: Break
   start:
-    index: 9
     line: 0
     column: 9
   end:
-    index: 11
     line: 1
     column: 0
 - token: Indent
   start:
-    index: 11
     line: 1
     column: 0
   end:
-    index: 11
     line: 1
     column: 0
 - token: SequenceEntry
   start:
-    index: 11
     line: 1
     column: 0
   end:
-    index: 12
     line: 1
     column: 1
 - token: Separator
   start:
-    index: 12
     line: 1
     column: 1
   end:
-    index: 13
     line: 1
     column: 2
 - token: Scalar
   start:
-    index: 13
     line: 1
     column: 2
   end:
-    index: 16
     line: 1
     column: 5
 - token: Break
   start:
-    index: 16
     line: 1
     column: 5
   end:
-    index: 18
     line: 2
     column: 0
 - token: Indent
   start:
-    index: 18
     line: 2
     column: 0
   end:
-    index: 18
     line: 2
     column: 0
 - token: SequenceEntry
   start:
-    index: 18
     line: 2
     column: 0
   end:
-    index: 19
     line: 2
     column: 1
 - token: Separator
   start:
-    index: 19
     line: 2
     column: 1
   end:
-    index: 20
     line: 2
     column: 2
 - token: Scalar
   start:
-    index: 20
     line: 2
     column: 2
   end:
-    index: 23
     line: 2
     column: 5
 - token: Break
   start:
-    index: 23
     line: 2
     column: 5
   end:
-    index: 25
     line: 3
     column: 0
 - token: Indent
   start:
-    index: 25
     line: 3
     column: 0
   end:
-    index: 25
     line: 3
     column: 0
 - token: Scalar
   start:
-    index: 25
     line: 3
     column: 0
   end:
-    index: 32
     line: 3
     column: 7
 - token: MappingValue
   start:
-    index: 32
     line: 3
     column: 7
   end:
-    index: 33
     line: 3
     column: 8
 - token: Break
   start:
-    index: 33
     line: 3
     column: 8
   end:
-    index: 35
     line: 4
     column: 0
 - token: Indent
   start:
-    index: 35
     line: 4
     column: 0
   end:
-    index: 37
     line: 4
     column: 2
 - token: MappingKey
   start:
-    index: 37
     line: 4
     column: 2
   end:
-    index: 38
     line: 4
     column: 3
 - token: Separator
   start:
-    index: 38
     line: 4
     column: 3
   end:
-    index: 39
     line: 4
     column: 4
 - token: Scalar
   start:
-    index: 39
     line: 4
     column: 4
   end:
-    index: 42
     line: 4
     column: 7
 - token: Break
   start:
-    index: 42
     line: 4
     column: 7
   end:
-    index: 44
     line: 5
     column: 0
 - token: Indent
   start:
-    index: 44
     line: 5
     column: 0
   end:
-    index: 46
     line: 5
     column: 2
 - token: MappingValue
   start:
-    index: 46
     line: 5
     column: 2
   end:
-    index: 47
     line: 5
     column: 3
 - token: Separator
   start:
-    index: 47
     line: 5
     column: 3
   end:
-    index: 48
     line: 5
     column: 4
 - token: Scalar
   start:
-    index: 48
     line: 5
     column: 4
   end:
-    index: 52
     line: 5
     column: 8
 - token: Break
   start:
-    index: 52
     line: 5
     column: 8
   end:
-    index: 54
     line: 6
     column: 0
 - token: Indent
   start:
-    index: 54
     line: 6
     column: 0
   end:
-    index: 56
     line: 6
     column: 2
 - token: Scalar
   start:
-    index: 56
     line: 6
     column: 2
   end:
-    index: 59
     line: 6
     column: 5
 - token: Separator
   start:
-    index: 59
     line: 6
     column: 5
   end:
-    index: 60
     line: 6
     column: 6
 - token: MappingValue
   start:
-    index: 60
     line: 6
     column: 6
   end:
-    index: 61
     line: 6
     column: 7
 - token: Separator
   start:
-    index: 61
     line: 6
     column: 7
   end:
-    index: 62
     line: 6
     column: 8
 - token: Scalar
   start:
-    index: 62
     line: 6
     column: 8
   end:
-    index: 67
     line: 6
     column: 13
 - token: Break
   start:
-    index: 67
     line: 6
     column: 13
   end:
-    index: 69
     line: 7
     column: 0
 

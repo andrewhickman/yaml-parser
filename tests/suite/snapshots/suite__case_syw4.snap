@@ -4,245 +4,191 @@ expression: tokens
 ---
 - token: Indent
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 0
     line: 0
     column: 0
 - token: Scalar
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 2
     line: 0
     column: 2
 - token: MappingValue
   start:
-    index: 2
     line: 0
     column: 2
   end:
-    index: 3
     line: 0
     column: 3
 - token: Separator
   start:
-    index: 3
     line: 0
     column: 3
   end:
-    index: 5
     line: 0
     column: 5
 - token: Scalar
   start:
-    index: 5
     line: 0
     column: 5
   end:
-    index: 7
     line: 0
     column: 7
 - token: Separator
   start:
-    index: 7
     line: 0
     column: 7
   end:
-    index: 11
     line: 0
     column: 11
 - token: Comment
   start:
-    index: 11
     line: 0
     column: 11
   end:
-    index: 12
     line: 0
     column: 12
 - token: CommentText
   start:
-    index: 12
     line: 0
     column: 12
   end:
-    index: 22
     line: 0
     column: 22
 - token: Break
   start:
-    index: 22
     line: 0
     column: 22
   end:
-    index: 24
     line: 1
     column: 0
 - token: Indent
   start:
-    index: 24
     line: 1
     column: 0
   end:
-    index: 24
     line: 1
     column: 0
 - token: Scalar
   start:
-    index: 24
     line: 1
     column: 0
   end:
-    index: 27
     line: 1
     column: 3
 - token: MappingValue
   start:
-    index: 27
     line: 1
     column: 3
   end:
-    index: 28
     line: 1
     column: 4
 - token: Separator
   start:
-    index: 28
     line: 1
     column: 4
   end:
-    index: 29
     line: 1
     column: 5
 - token: Scalar
   start:
-    index: 29
     line: 1
     column: 5
   end:
-    index: 34
     line: 1
     column: 10
 - token: Separator
   start:
-    index: 34
     line: 1
     column: 10
   end:
-    index: 35
     line: 1
     column: 11
 - token: Comment
   start:
-    index: 35
     line: 1
     column: 11
   end:
-    index: 36
     line: 1
     column: 12
 - token: CommentText
   start:
-    index: 36
     line: 1
     column: 12
   end:
-    index: 52
     line: 1
     column: 28
 - token: Break
   start:
-    index: 52
     line: 1
     column: 28
   end:
-    index: 54
     line: 2
     column: 0
 - token: Indent
   start:
-    index: 54
     line: 2
     column: 0
   end:
-    index: 54
     line: 2
     column: 0
 - token: Scalar
   start:
-    index: 54
     line: 2
     column: 0
   end:
-    index: 57
     line: 2
     column: 3
 - token: MappingValue
   start:
-    index: 57
     line: 2
     column: 3
   end:
-    index: 58
     line: 2
     column: 4
 - token: Separator
   start:
-    index: 58
     line: 2
     column: 4
   end:
-    index: 59
     line: 2
     column: 5
 - token: Scalar
   start:
-    index: 59
     line: 2
     column: 5
   end:
-    index: 62
     line: 2
     column: 8
 - token: Separator
   start:
-    index: 62
     line: 2
     column: 8
   end:
-    index: 65
     line: 2
     column: 11
 - token: Comment
   start:
-    index: 65
     line: 2
     column: 11
   end:
-    index: 66
     line: 2
     column: 12
 - token: CommentText
   start:
-    index: 66
     line: 2
     column: 12
   end:
-    index: 81
     line: 2
     column: 27
 - token: Break
   start:
-    index: 81
     line: 2
     column: 27
   end:
-    index: 83
     line: 3
     column: 0
 

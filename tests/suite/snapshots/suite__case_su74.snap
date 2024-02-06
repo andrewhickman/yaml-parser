@@ -4,11 +4,9 @@ expression: diagnostics
 ---
 - message: "remaining tokens: &b *alias : value2\r\n"
   start:
-    index: 21
     line: 1
     column: 0
   end:
-    index: 21
     line: 1
     column: 0
 

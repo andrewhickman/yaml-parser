@@ -20,6 +20,7 @@ struct TokenSer {
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
 struct SpanSer {
+    #[serde(skip)]
     index: usize,
     line: usize,
     column: usize,

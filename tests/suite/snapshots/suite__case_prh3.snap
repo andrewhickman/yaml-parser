@@ -4,146 +4,114 @@ expression: tokens
 ---
 - token: Indent
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 0
     line: 0
     column: 0
 - token: SingleQuote
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 1
     line: 0
     column: 1
 - token: SingleQuoted
   start:
-    index: 1
     line: 0
     column: 1
   end:
-    index: 15
     line: 0
     column: 15
 - token: Break
   start:
-    index: 15
     line: 0
     column: 15
   end:
-    index: 17
     line: 1
     column: 0
 - token: Indent
   start:
-    index: 17
     line: 1
     column: 0
   end:
-    index: 17
     line: 1
     column: 0
 - token: ScalarBreak
   start:
-    index: 17
     line: 1
     column: 0
   end:
-    index: 19
     line: 2
     column: 0
 - token: Indent
   start:
-    index: 19
     line: 2
     column: 0
   end:
-    index: 19
     line: 2
     column: 0
 - token: Separator
   start:
-    index: 19
     line: 2
     column: 0
   end:
-    index: 20
     line: 2
     column: 1
 - token: SingleQuoted
   start:
-    index: 20
     line: 2
     column: 1
   end:
-    index: 33
     line: 2
     column: 14
 - token: Separator
   start:
-    index: 33
     line: 2
     column: 14
   end:
-    index: 34
     line: 2
     column: 15
 - token: ScalarSpace
   start:
-    index: 34
     line: 2
     column: 15
   end:
-    index: 36
     line: 3
     column: 0
 - token: Indent
   start:
-    index: 36
     line: 3
     column: 0
   end:
-    index: 36
     line: 3
     column: 0
 - token: Separator
   start:
-    index: 36
     line: 3
     column: 0
   end:
-    index: 37
     line: 3
     column: 1
 - token: SingleQuoted
   start:
-    index: 37
     line: 3
     column: 1
   end:
-    index: 51
     line: 3
     column: 15
 - token: SingleQuote
   start:
-    index: 51
     line: 3
     column: 15
   end:
-    index: 52
     line: 3
     column: 16
 - token: Break
   start:
-    index: 52
     line: 3
     column: 16
   end:
-    index: 54
     line: 4
     column: 0
 

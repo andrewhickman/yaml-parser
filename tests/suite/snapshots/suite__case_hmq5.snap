@@ -4,272 +4,212 @@ expression: tokens
 ---
 - token: Indent
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 0
     line: 0
     column: 0
 - token: TagHandle
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 2
     line: 0
     column: 2
 - token: TagSuffix
   start:
-    index: 2
     line: 0
     column: 2
   end:
-    index: 5
     line: 0
     column: 5
 - token: Separator
   start:
-    index: 5
     line: 0
     column: 5
   end:
-    index: 6
     line: 0
     column: 6
 - token: Anchor
   start:
-    index: 6
     line: 0
     column: 6
   end:
-    index: 7
     line: 0
     column: 7
 - token: AnchorName
   start:
-    index: 7
     line: 0
     column: 7
   end:
-    index: 9
     line: 0
     column: 9
 - token: Separator
   start:
-    index: 9
     line: 0
     column: 9
   end:
-    index: 10
     line: 0
     column: 10
 - token: DoubleQuote
   start:
-    index: 10
     line: 0
     column: 10
   end:
-    index: 11
     line: 0
     column: 11
 - token: DoubleQuoted
   start:
-    index: 11
     line: 0
     column: 11
   end:
-    index: 14
     line: 0
     column: 14
 - token: DoubleQuote
   start:
-    index: 14
     line: 0
     column: 14
   end:
-    index: 15
     line: 0
     column: 15
 - token: MappingValue
   start:
-    index: 15
     line: 0
     column: 15
   end:
-    index: 16
     line: 0
     column: 16
 - token: Break
   start:
-    index: 16
     line: 0
     column: 16
   end:
-    index: 18
     line: 1
     column: 0
 - token: Indent
   start:
-    index: 18
     line: 1
     column: 0
   end:
-    index: 19
     line: 1
     column: 1
 - token: Separator
   start:
-    index: 19
     line: 1
     column: 1
   end:
-    index: 20
     line: 1
     column: 2
 - token: TagHandle
   start:
-    index: 20
     line: 1
     column: 2
   end:
-    index: 22
     line: 1
     column: 4
 - token: TagSuffix
   start:
-    index: 22
     line: 1
     column: 4
   end:
-    index: 25
     line: 1
     column: 7
 - token: Separator
   start:
-    index: 25
     line: 1
     column: 7
   end:
-    index: 26
     line: 1
     column: 8
 - token: Scalar
   start:
-    index: 26
     line: 1
     column: 8
   end:
-    index: 29
     line: 1
     column: 11
 - token: Break
   start:
-    index: 29
     line: 1
     column: 11
   end:
-    index: 31
     line: 2
     column: 0
 - token: Indent
   start:
-    index: 31
     line: 2
     column: 0
   end:
-    index: 31
     line: 2
     column: 0
 - token: Anchor
   start:
-    index: 31
     line: 2
     column: 0
   end:
-    index: 32
     line: 2
     column: 1
 - token: AnchorName
   start:
-    index: 32
     line: 2
     column: 1
   end:
-    index: 34
     line: 2
     column: 3
 - token: Separator
   start:
-    index: 34
     line: 2
     column: 3
   end:
-    index: 35
     line: 2
     column: 4
 - token: Scalar
   start:
-    index: 35
     line: 2
     column: 4
   end:
-    index: 38
     line: 2
     column: 7
 - token: Separator
   start:
-    index: 38
     line: 2
     column: 7
   end:
-    index: 39
     line: 2
     column: 8
 - token: MappingValue
   start:
-    index: 39
     line: 2
     column: 8
   end:
-    index: 40
     line: 2
     column: 9
 - token: Separator
   start:
-    index: 40
     line: 2
     column: 9
   end:
-    index: 41
     line: 2
     column: 10
 - token: Alias
   start:
-    index: 41
     line: 2
     column: 10
   end:
-    index: 42
     line: 2
     column: 11
 - token: AnchorName
   start:
-    index: 42
     line: 2
     column: 11
   end:
-    index: 44
     line: 2
     column: 13
 - token: Break
   start:
-    index: 44
     line: 2
     column: 13
   end:
-    index: 46
     line: 3
     column: 0
 

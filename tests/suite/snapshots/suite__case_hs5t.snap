@@ -4,128 +4,100 @@ expression: tokens
 ---
 - token: Indent
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 0
     line: 0
     column: 0
 - token: Scalar
   start:
-    index: 0
     line: 0
     column: 0
   end:
-    index: 13
     line: 0
     column: 13
 - token: Break
   start:
-    index: 13
     line: 0
     column: 13
   end:
-    index: 15
     line: 1
     column: 0
 - token: Indent
   start:
-    index: 15
     line: 1
     column: 0
   end:
-    index: 15
     line: 1
     column: 0
 - token: ScalarBreak
   start:
-    index: 15
     line: 1
     column: 0
   end:
-    index: 17
     line: 2
     column: 0
 - token: Indent
   start:
-    index: 17
     line: 2
     column: 0
   end:
-    index: 17
     line: 2
     column: 0
 - token: Separator
   start:
-    index: 17
     line: 2
     column: 0
   end:
-    index: 18
     line: 2
     column: 1
 - token: Scalar
   start:
-    index: 18
     line: 2
     column: 1
   end:
-    index: 31
     line: 2
     column: 14
 - token: Separator
   start:
-    index: 31
     line: 2
     column: 14
   end:
-    index: 32
     line: 2
     column: 15
 - token: ScalarSpace
   start:
-    index: 32
     line: 2
     column: 15
   end:
-    index: 34
     line: 3
     column: 0
 - token: Indent
   start:
-    index: 34
     line: 3
     column: 0
   end:
-    index: 34
     line: 3
     column: 0
 - token: Separator
   start:
-    index: 34
     line: 3
     column: 0
   end:
-    index: 35
     line: 3
     column: 1
 - token: Scalar
   start:
-    index: 35
     line: 3
     column: 1
   end:
-    index: 48
     line: 3
     column: 14
 - token: Break
   start:
-    index: 48
     line: 3
     column: 14
   end:
-    index: 50
     line: 4
     column: 0
 
