@@ -49,6 +49,7 @@ enum State {
         style: CollectionStyle,
         indent: i32,
         context: Context,
+        first: bool,
     },
 
     /// Expecting a SequenceStart, MappingStart, Alias, Scalar or MappingEnd event
