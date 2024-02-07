@@ -1911,12 +1911,24 @@ fn c_l_block_map_explicit_key<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -
 }
 
 fn l_block_map_explicit_value<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
+    s_ns_block_map_explicit_value_separator(parser, n)?;
+    s_l_block_indented(parser, n, Context::BlockOut)
+}
+
+fn s_ns_block_map_explicit_value_separator<R: Receiver>(
+    parser: &mut Parser<'_, R>,
+    n: i32,
+) -> Result<(), ()> {
     s_indent(parser, n)?;
+    c_block_map_implicit_value_separator(parser)
+}
+
+fn c_block_map_implicit_value_separator<R: Receiver>(parser: &mut Parser<'_, R>) -> Result<(), ()> {
     c_mapping_value(parser)?;
     if parser.is(char::non_space) {
         return Err(());
     }
-    s_l_block_indented(parser, n, Context::BlockOut)
+    Ok(())
 }
 
 fn ns_l_block_map_implicit_entry<R: Receiver>(
@@ -1940,11 +1952,7 @@ fn ns_s_block_map_implicit_key<R: Receiver>(parser: &mut Parser<'_, R>) -> Resul
 }
 
 fn c_l_block_map_implicit_value<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
-    c_mapping_value(parser)?;
-    if parser.is(char::non_space) {
-        return Err(());
-    }
-
+    c_block_map_implicit_value_separator(parser)?;
     s_l_block_node(parser, false, n, Context::BlockOut)
 }
 
@@ -2510,10 +2518,11 @@ pub(super) fn event_flow_node<'t, R: Receiver>(
             indent,
             context,
         } => {
-            parser.push_state(State::MappingKey {
+            parser.push_state(State::Mapping {
                 style,
                 indent,
                 context,
+                first: true,
             });
             Ok((Event::MappingStart { style, anchor, tag }, span))
         }
@@ -2524,7 +2533,7 @@ pub(super) fn event_flow_node<'t, R: Receiver>(
             indent,
             context,
         } => {
-            parser.push_state(State::SequenceNode {
+            parser.push_state(State::Sequence {
                 style,
                 indent,
                 context,
@@ -2565,10 +2574,11 @@ pub(super) fn event_block_node<'t, R: Receiver>(
             indent,
             context,
         } => {
-            parser.push_state(State::MappingKey {
+            parser.push_state(State::Mapping {
                 style,
                 indent,
                 context,
+                first: true,
             });
             Ok((Event::MappingStart { style, anchor, tag }, span))
         }
@@ -2579,7 +2589,7 @@ pub(super) fn event_block_node<'t, R: Receiver>(
             indent,
             context,
         } => {
-            parser.push_state(State::SequenceNode {
+            parser.push_state(State::Sequence {
                 style,
                 indent,
                 context,
@@ -2596,12 +2606,12 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
 
     match parser.state() {
         State::Stream => {
-            parser.replace_state(State::DocumentStart {
+            parser.replace_state(State::Document {
                 prev_terminated: true,
             });
             Ok((Event::StreamStart, Span::empty(parser.location())))
         }
-        State::DocumentStart { prev_terminated } => {
+        State::Document { prev_terminated } => {
             parser.in_document = true;
             match find_next_document(parser, prev_terminated)? {
                 Some((empty, span)) => {
@@ -2630,7 +2640,7 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
             parser.tags.clear();
             parser.yaml_version = None;
             let suffix_span = question!(parser, l_document_suffix(parser));
-            parser.replace_state(State::DocumentStart {
+            parser.replace_state(State::Document {
                 prev_terminated: suffix_span.is_some(),
             });
             Ok((
@@ -2652,7 +2662,7 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
             parser.pop_state();
             event_block_node(parser, allow_compact, allow_empty, indent, context)
         }
-        State::SequenceNode {
+        State::Sequence {
             style,
             indent,
             context,
@@ -2670,7 +2680,7 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
                     })
                 {
                     assert!(
-                        matches!(context, Context::BlockIn),
+                        matches!(context, Context::BlockIn | Context::BlockOut),
                         "unexpected context {:?}",
                         context
                     );
@@ -2678,7 +2688,7 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
                     if !first {
                         s_indent(parser, indent)?;
                     } else {
-                        parser.replace_state(State::SequenceNode {
+                        parser.replace_state(State::Sequence {
                             style,
                             indent,
                             context,
@@ -2706,12 +2716,15 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
                     && !parser.is_char(']')
                 {
                     assert!(
-                        matches!(context, Context::FlowIn | Context::FlowOut),
+                        matches!(
+                            context,
+                            Context::FlowIn | Context::FlowOut | Context::BlockKey
+                        ),
                         "unexpected context {:?}",
                         context
                     );
 
-                    parser.replace_state(State::SequenceNode {
+                    parser.replace_state(State::Sequence {
                         style,
                         indent,
                         context,
@@ -2752,31 +2765,106 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
                 }
             }
         },
-        State::MappingKey {
+        State::Mapping {
             style,
             indent,
             context,
+            first,
         } => {
             let span = match style {
                 CollectionStyle::Block => {
                     assert!(
-                        matches!(context, Context::BlockIn),
+                        matches!(context, Context::BlockIn | Context::BlockOut),
                         "unexpected context {:?}",
                         context
                     );
 
-                    fn entry<R: Receiver>(parser: &mut Parser<'_, R>, n: i32) -> Result<(), ()> {
-                        s_indent(parser, n)?;
-                        ns_l_block_map_entry(parser, n)
-                    }
+                    if first
+                        || parser.lookahead(|parser| {
+                            s_indent(parser, indent)?;
+                            if lookahead_is_block_mapping(parser) {
+                                Ok(())
+                            } else {
+                                Err(())
+                            }
+                        })
+                    {
+                        if !first {
+                            s_indent(parser, indent)?;
+                        } else {
+                            parser.replace_state(State::Mapping {
+                                style,
+                                indent,
+                                context,
+                                first: false,
+                            });
+                        }
 
-                    ns_l_block_map_entry(parser, indent)?;
-                    star!(parser, entry(parser, indent));
-                    Span::empty(parser.location())
+                        let explicit = parser.is_char('?') && !parser.next_is(char::non_space);
+
+                        if explicit {
+                            c_l_block_map_explicit_key(parser, indent)?;
+                            if question!(
+                                parser,
+                                s_ns_block_map_explicit_value_separator(parser, indent)
+                            )
+                            .is_some()
+                            {
+                                return event_block_node(
+                                    parser,
+                                    true,
+                                    true,
+                                    indent,
+                                    Context::BlockOut,
+                                );
+                            } else {
+                                e_node(parser)?;
+                                return Ok((
+                                    Event::Scalar {
+                                        style: ScalarStyle::Plain,
+                                        value: Cow::Borrowed(""),
+                                        anchor: None,
+                                        tag: None,
+                                    },
+                                    Span::empty(parser.location()),
+                                ));
+                            }
+                        } else {
+                            parser.push_state(State::MappingValue {
+                                style,
+                                explicit: false,
+                                indent,
+                                context,
+                            });
+
+                            if parser.is_char(':') && !parser.next_is(char::non_space) {
+                                e_node(parser)?;
+                                return Ok((
+                                    Event::Scalar {
+                                        style: ScalarStyle::Plain,
+                                        value: Cow::Borrowed(""),
+                                        anchor: None,
+                                        tag: None,
+                                    },
+                                    Span::empty(parser.location()),
+                                ));
+                            } else {
+                                // todo length limit
+                                return event_flow_node(parser, 0, Context::BlockKey);
+                            }
+                        }
+                    } else {
+                        parser.pop_state();
+                        let span = Span::empty(parser.location());
+                        return Ok((Event::MappingEnd, span));
+                    }
                 }
                 CollectionStyle::Flow => {
                     assert!(
-                        matches!(context, Context::FlowIn | Context::FlowOut),
+                        matches!(
+                            context,
+                            Context::FlowIn | Context::FlowOut | Context::BlockKey
+                        ),
                         "unexpected context {:?}",
                         context
                     );
@@ -2799,7 +2887,33 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
             parser.pop_state();
             Ok((Event::MappingEnd, span))
         }
-        State::MappingValue => todo!(),
+        State::MappingValue {
+            style,
+            explicit,
+            indent,
+            context,
+        } => match style {
+            CollectionStyle::Block => {
+                assert!(
+                    matches!(context, Context::BlockIn | Context::BlockOut),
+                    "unexpected context {:?}",
+                    context
+                );
+
+                parser.pop_state();
+                if explicit {
+                    todo!()
+                } else {
+                    if !parser.is_char(':') {
+                        s_separate_in_line(parser)?;
+                    }
+
+                    c_block_map_implicit_value_separator(parser)?;
+                    return event_block_node(parser, false, true, indent, Context::BlockOut);
+                }
+            }
+            CollectionStyle::Flow => todo!(),
+        },
         State::FlowNode { .. } => todo!(),
         State::FlowPair { indent, context } => {
             assert!(

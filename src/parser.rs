@@ -27,7 +27,7 @@ where
 enum State {
     Stream,
 
-    DocumentStart {
+    Document {
         prev_terminated: bool,
     },
     // Expecting a DocumentEnd event
@@ -47,19 +47,25 @@ enum State {
         context: Context,
     },
 
-    SequenceNode {
+    Sequence {
         style: CollectionStyle,
         indent: i32,
         context: Context,
         first: bool,
     },
 
-    MappingKey {
+    Mapping {
         style: CollectionStyle,
         indent: i32,
         context: Context,
+        first: bool,
     },
-    MappingValue,
+    MappingValue {
+        style: CollectionStyle,
+        explicit: bool,
+        indent: i32,
+        context: Context,
+    },
 
     FlowPair {
         indent: i32,
