@@ -64,11 +64,16 @@ enum State {
         style: CollectionStyle,
         explicit: bool,
         allow_adjacent: bool,
+        allow_empty: bool,
         indent: i32,
         context: Context,
     },
 
     FlowPair {
+        indent: i32,
+        context: Context,
+    },
+    FlowPairEnd {
         indent: i32,
         context: Context,
     },
