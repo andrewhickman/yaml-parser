@@ -63,6 +63,7 @@ enum State {
     MappingValue {
         style: CollectionStyle,
         explicit: bool,
+        allow_adjacent: bool,
         indent: i32,
         context: Context,
     },
