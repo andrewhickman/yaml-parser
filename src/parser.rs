@@ -3,23 +3,32 @@ mod char;
 mod grammar;
 
 use alloc::{borrow::Cow, collections::BTreeMap, string::String, vec::Vec};
-use core::{mem, ops::Range, str::Chars, unreachable};
+use core::{fmt, mem, ops::Range, str::Chars, unreachable};
 
-use crate::{CollectionStyle, Diagnostic, Event, Location, Receiver, Span, Token};
+use crate::{CollectionStyle, DefaultReceiver, Event, Location, Receiver, Span, Token};
 
-/// Parse a YAML stream, emitting events into the given receiver.
-pub fn parse<'t, R: Receiver>(receiver: &mut R, text: &'t str) -> Result<(), Vec<Diagnostic>>
-where
-    R: 't,
-{
-    let mut parser = Parser::new(receiver, text);
-    while !parser.state.is_empty() {
-        match grammar::event(&mut parser) {
-            Ok((event, span)) => parser.receiver.event(event, span),
-            Err(()) => return Err(parser.diagnostics),
-        }
-    }
-    Ok(())
+/// An iterator over events encountered while parsing a YAML stream.
+pub struct Parser<'t, R = DefaultReceiver> {
+    stream: &'t str,
+    iter: Chars<'t>,
+
+    tokens: Vec<(Token, Span)>,
+    diagnostics: Vec<Diagnostic>,
+    yaml_version: Option<&'t str>,
+    tags: BTreeMap<Cow<'t, str>, Cow<'t, str>>,
+    value: CowBuilder,
+    state: Vec<State>,
+
+    receiver: R,
+    alt_depth: u32,
+    line_number: usize,
+    line_offset: usize,
+
+    in_document: bool,
+    length_limit: Option<usize>,
+
+    #[cfg(debug_assertions)]
+    peek_count: u32,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -79,27 +88,9 @@ enum State {
     },
 }
 
-struct Parser<'t, R> {
-    text: &'t str,
-    iter: Chars<'t>,
-
-    events: Vec<(EventOrToken<'t>, Span)>,
-    diagnostics: Vec<Diagnostic>,
-    yaml_version: Option<&'t str>,
-    tags: BTreeMap<Cow<'t, str>, Cow<'t, str>>,
-    value: CowBuilder,
-    state: Vec<State>,
-
-    receiver: &'t mut R,
-    alt_depth: u32,
-    line_number: usize,
-    line_offset: usize,
-
-    in_document: bool,
-    length_limit: Option<usize>,
-
-    #[cfg(debug_assertions)]
-    peek_count: u32,
+struct Diagnostic {
+    message: String,
+    span: Span,
 }
 
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
@@ -112,19 +103,6 @@ enum Context {
     FlowKey,
 }
 
-#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
-enum Chomping {
-    Strip,
-    Clip,
-    Keep,
-}
-
-#[derive(Clone, Debug)]
-enum EventOrToken<'t> {
-    Event(Event<'t>),
-    Token(Token),
-}
-
 type Properties<'t> = (Option<Cow<'t, str>>, Option<Cow<'t, str>>);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -133,23 +111,22 @@ enum CowBuilder {
     Owned { value: String },
 }
 
-impl<'t, R> Parser<'t, R>
-where
-    R: Receiver,
-{
-    fn new(receiver: &'t mut R, text: &'t str) -> Self {
+impl<'t> Parser<'t, DefaultReceiver> {
+    /// Constructs a new parser from a YAML string.
+    #[allow(clippy::should_implement_trait)]
+    pub fn from_str(stream: &'t str) -> Self {
         let mut state = Vec::with_capacity(16);
         state.push(State::Stream);
 
         Parser {
-            text,
-            iter: text.chars(),
-            events: Vec::new(),
+            stream,
+            iter: stream.chars(),
+            tokens: Vec::new(),
             diagnostics: Vec::new(),
             value: CowBuilder::new(),
             yaml_version: None,
             tags: BTreeMap::new(),
-            receiver,
+            receiver: DefaultReceiver,
             in_document: false,
             length_limit: None,
             alt_depth: 0,
@@ -160,7 +137,93 @@ where
             state,
         }
     }
+}
 
+impl<'s, R> Parser<'s, R> {
+    /// Set a receiver for tokens and diagnostics.
+    pub fn with_receiver<S>(self, receiver: S) -> Parser<'s, S> {
+        Parser {
+            stream: self.stream,
+            iter: self.iter,
+            tokens: self.tokens,
+            diagnostics: self.diagnostics,
+            value: self.value,
+            yaml_version: self.yaml_version,
+            tags: self.tags,
+            receiver,
+            in_document: self.in_document,
+            length_limit: self.length_limit,
+            alt_depth: self.alt_depth,
+            line_number: self.line_number,
+            line_offset: self.line_offset,
+            #[cfg(debug_assertions)]
+            peek_count: self.peek_count,
+            state: self.state,
+        }
+    }
+
+    /// Gets a reference to the receiver.
+    pub fn receiver(&self) -> &R {
+        &self.receiver
+    }
+
+    /// Gets a mutable reference to the receiver.
+    pub fn receiver_mut(&mut self) -> &mut R {
+        &mut self.receiver
+    }
+}
+
+impl<'s, R> fmt::Debug for Parser<'s, R>
+where
+    R: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Parser")
+            .field("location", &self.location())
+            .field("stream", &format_args!("{:.1024?}", self.iter.as_str()))
+            .field("state", &self.state)
+            .finish_non_exhaustive()
+    }
+}
+
+impl<'s, R> Iterator for Parser<'s, R>
+where
+    R: Receiver,
+{
+    type Item = Result<(Event<'s>, Span), ()>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.state.is_empty() {
+            None
+        } else {
+            let res = grammar::event(self);
+            for diag in self.diagnostics.drain(..) {
+                self.receiver.diagnostic(&diag.message, diag.span);
+            }
+            Some(res)
+        }
+    }
+}
+
+impl<'s, R> Parser<'s, R> {
+    fn offset(&self) -> usize {
+        self.stream.len() - self.iter.as_str().len()
+    }
+
+    fn location(&self) -> Location {
+        let index = self.offset();
+        Location {
+            index,
+            line: self.line_number,
+            column: index - self.line_offset,
+        }
+    }
+}
+
+impl<'s, R> Parser<'s, R>
+where
+    R: Receiver,
+{
     fn state(&self) -> State {
         *self.state.last().unwrap()
     }
@@ -234,7 +297,7 @@ where
     }
 
     fn with_rollback<T>(&mut self, mut f: impl FnMut(&mut Self) -> Result<T, ()>) -> Result<T, ()> {
-        let events_len = self.events.len();
+        let events_len = self.tokens.len();
         let diagnostics_len = self.diagnostics.len();
         let value = self.value.clone();
         let offset = self.offset();
@@ -249,19 +312,16 @@ where
         match res {
             Ok(r) => {
                 if self.alt_depth == 0 {
-                    for (event, span) in self.events.drain(events_len..) {
-                        match event {
-                            EventOrToken::Event(event) => self.receiver.event(event, span),
-                            EventOrToken::Token(token) => self.receiver.token(token, span),
-                        }
+                    for (token, span) in self.tokens.drain(events_len..) {
+                        self.receiver.token(token, span);
                     }
                 }
 
                 Ok(r)
             }
             Err(()) => {
-                self.iter = self.text[offset..].chars();
-                self.events.truncate(events_len);
+                self.iter = self.stream[offset..].chars();
+                self.tokens.truncate(events_len);
                 self.diagnostics.truncate(diagnostics_len);
                 self.value = value;
                 self.line_number = line_number;
@@ -311,21 +371,25 @@ where
 
         match res {
             Ok(value) => {
-                self.queue(EventOrToken::Token(token), self.span(start));
+                self.queue(token, self.span(start));
                 Ok(value)
             }
             Err(()) => Err(()),
         }
     }
 
-    fn queue(&mut self, event: EventOrToken<'t>, span: Span) {
+    fn token_char(&mut self, token: Token, ch: char) -> Result<(), ()> {
+        let start = self.location();
+        self.eat_char(ch)?;
+        self.queue(token, self.span(start));
+        Ok(())
+    }
+
+    fn queue(&mut self, token: Token, span: Span) {
         if self.alt_depth > 0 {
-            self.events.push((event, span));
+            self.tokens.push((token, span));
         } else {
-            match event {
-                EventOrToken::Event(event) => self.receiver.event(event, span),
-                EventOrToken::Token(token) => self.receiver.token(token, span),
-            }
+            self.receiver.token(token, span);
         }
     }
 
@@ -334,8 +398,8 @@ where
         self.value = CowBuilder::new();
     }
 
-    fn end_value(&mut self) -> Cow<'t, str> {
-        mem::take(&mut self.value).finish(self.text)
+    fn end_value(&mut self) -> Cow<'s, str> {
+        mem::take(&mut self.value).finish(self.stream)
     }
 
     fn eat(&mut self, pred: impl Fn(char) -> bool) -> Result<(), ()> {
@@ -408,19 +472,6 @@ where
         self.iter.as_str().is_empty()
     }
 
-    fn offset(&self) -> usize {
-        self.text.len() - self.iter.as_str().len()
-    }
-
-    fn location(&self) -> Location {
-        let index = self.offset();
-        Location {
-            index,
-            line: self.line_number,
-            column: index - self.line_offset,
-        }
-    }
-
     fn span(&self, start: Location) -> Span {
         Span {
             start,
@@ -454,7 +505,7 @@ where
     }
 
     fn peek_prev(&self) -> Option<char> {
-        self.text[..self.offset()].chars().last()
+        self.stream[..self.offset()].chars().last()
     }
 
     fn bump(&mut self) {

@@ -457,7 +457,7 @@ expression: tokens
   end:
     line: 5
     column: 18
-- token: QuotedQuote
+- token: EscapedQuote
   start:
     line: 5
     column: 18
@@ -471,7 +471,7 @@ expression: tokens
   end:
     line: 5
     column: 27
-- token: QuotedQuote
+- token: EscapedQuote
   start:
     line: 5
     column: 27

@@ -23,7 +23,7 @@ expression: tokens
   end:
     line: 0
     column: 5
-- token: QuotedQuote
+- token: EscapedQuote
   start:
     line: 0
     column: 5

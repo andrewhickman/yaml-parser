@@ -37,7 +37,7 @@ expression: tokens
   end:
     line: 1
     column: 5
-- token: QuotedQuote
+- token: EscapedQuote
   start:
     line: 1
     column: 5

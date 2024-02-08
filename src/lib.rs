@@ -1,5 +1,5 @@
 //! A pure-rust, safe, YAML parser.
-// #![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 #![warn(missing_debug_implementations, missing_docs)]
 #![deny(unsafe_code)]
 #![doc(html_root_url = "https://docs.rs/yaml-parser/0.1.0/")]
@@ -8,15 +8,17 @@ extern crate alloc;
 
 mod parser;
 
-use alloc::{borrow::Cow, string::String};
-use core::ops::Range;
+use alloc::borrow::Cow;
+use core::{fmt::Display, ops::Range};
 
-pub use self::parser::parse;
+pub use self::parser::Parser;
 
-/// A handler for events and tokens in a YAML stream.
+/// A handler for diagnostics and tokens in a YAML stream.
 pub trait Receiver {
-    /// Called on each event in the YAML stream.
-    fn event(&mut self, event: Event, span: Span);
+    /// Called when a diagnostic error message is emitted.
+    fn diagnostic(&mut self, message: &dyn Display, span: Span) {
+        let _ = (message, span);
+    }
 
     /// Called for every token of the input stream. The stream may be reconstructed by joining the returned tokens.
     fn token(&mut self, token: Token, span: Span) {
@@ -24,18 +26,9 @@ pub trait Receiver {
     }
 }
 
-/// TODO
-#[derive(Debug, Clone)]
-pub struct Diagnostic {
-    /// TODO
-    pub message: String,
-    /// TODO
-    pub span: Span,
-}
-
 /// A high level event in a YAML stream.
 #[derive(Clone, Debug)]
-pub enum Event<'t> {
+pub enum Event<'s> {
     /// Emitted at the start of parsing a YAML stream.
     StreamStart,
     /// Emitted at the end of parsing a YAML stream.
@@ -43,7 +36,7 @@ pub enum Event<'t> {
     /// Emitted at the start of each document within a YAML stream.
     DocumentStart {
         /// The YAML version of this document, if specified with a `%YAML` directive.
-        version: Option<Cow<'t, str>>,
+        version: Option<Cow<'s, str>>,
     },
     /// Emitted at the end of each document within a YAML stream.
     DocumentEnd,
@@ -52,9 +45,9 @@ pub enum Event<'t> {
         /// The style of this mapping node.
         style: CollectionStyle,
         /// The anchor property at this mapping node, if specified.
-        anchor: Option<Cow<'t, str>>,
+        anchor: Option<Cow<'s, str>>,
         /// The tag property of this mapping node, if specified.
-        tag: Option<Cow<'t, str>>,
+        tag: Option<Cow<'s, str>>,
     },
     /// Emitted at the end of a mapping node.
     MappingEnd,
@@ -63,27 +56,27 @@ pub enum Event<'t> {
         /// The style of this sequence node.
         style: CollectionStyle,
         /// The anchor property at this sequence node, if specified.
-        anchor: Option<Cow<'t, str>>,
+        anchor: Option<Cow<'s, str>>,
         /// The tag property of this sequence node, if specified.
-        tag: Option<Cow<'t, str>>,
+        tag: Option<Cow<'s, str>>,
     },
     /// Emitted at the end of a sequence node.
     SequenceEnd,
     /// Emitted when encountering an alias node.
     Alias {
         /// The name of the anchor this alias refers to.
-        value: Cow<'t, str>,
+        value: Cow<'s, str>,
     },
     /// Emitted when encountering a scalar node.
     Scalar {
         /// The presentation style of this scalar node.
         style: ScalarStyle,
         /// The contents of the scalar node.
-        value: Cow<'t, str>,
+        value: Cow<'s, str>,
         /// The anchor property at this scalar node, if specified.
-        anchor: Option<Cow<'t, str>>,
+        anchor: Option<Cow<'s, str>>,
         /// The tag property of this scalar node, if specified.
-        tag: Option<Cow<'t, str>>,
+        tag: Option<Cow<'s, str>>,
     },
 }
 
@@ -154,7 +147,7 @@ pub enum Token {
     MappingStart,
     /// A `}` token.
     MappingEnd,
-    /// A `#` token.
+    /// A `#` token beginning a comment.
     Comment,
     /// The body of a comment.
     CommentText,
@@ -176,16 +169,16 @@ pub enum Token {
     SingleQuote,
     /// A single quoted scalar.
     SingleQuoted,
-    /// A `''` token in a single quoted string.
-    QuotedQuote,
     /// A `"` token.
     DoubleQuote,
     /// A single line of double quoted scalar.
     DoubleQuoted,
-    /// A '\' token.
+    /// A '\' token preceding an escape code in a double quoted string.
     Escape,
-    /// An escape code following a '\' token.
+    /// An escape code following a '\' token in a double quoted string.
     EscapeCode,
+    /// A `''` token in a single quoted string.
+    EscapedQuote,
     /// A `%` token.
     Directive,
     /// A line break (`\r`, `\n` or `\r\n`) outside of scalar content.
@@ -212,7 +205,7 @@ pub enum Token {
     Scalar,
     /// A line break in a scalar node.
     ScalarBreak,
-    /// A line break in a folded scalar node, converted to a space.
+    /// A line break in a folded scalar, converted to a space.
     ScalarSpace,
     /// A `---` token marking the end of directives.
     DirectivesEnd,
@@ -267,5 +260,24 @@ impl Span {
     /// Gets the range of bytes covered by this span.
     pub fn range(&self) -> Range<usize> {
         self.start.index..self.end.index
+    }
+}
+
+/// The default implementation of [`Receiver`] which does nothing.
+#[derive(Debug, Copy, Clone)]
+pub struct DefaultReceiver;
+
+impl Receiver for DefaultReceiver {}
+
+impl<'r, R> Receiver for &'r mut R
+where
+    R: Receiver,
+{
+    fn diagnostic(&mut self, message: &dyn Display, span: Span) {
+        (*self).diagnostic(message, span)
+    }
+
+    fn token(&mut self, token: Token, span: Span) {
+        (*self).token(token, span)
     }
 }

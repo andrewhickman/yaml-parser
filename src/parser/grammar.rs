@@ -1,12 +1,11 @@
-use alloc::{
-    borrow::{Cow, ToOwned},
-    format,
-};
+use alloc::borrow::{Cow, ToOwned};
 
 use crate::{
-    parser::{char, Chomping, Context, Diagnostic, EventOrToken, Parser, Properties, State},
+    parser::{char, Context, Diagnostic, Parser, Properties, State},
     CollectionStyle, Event, Location, Receiver, ScalarStyle, Span, Token,
 };
+
+use self::scalar::{c_double_quoted, c_single_quoted};
 
 macro_rules! star {
     ($parser:expr, $production:ident($parser_param:ident $(, $p:expr)*)) => {
@@ -105,85 +104,51 @@ macro_rules! alt {
     };
 }
 
-fn nb_json<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    let start = parser.offset();
-    parser.eat(char::json)?;
-    parser.value.push_range(parser.text, start..parser.offset());
-    Ok(())
-}
+mod properties;
+mod scalar;
 
 fn c_byte_order_mark<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    if parser.is_char(char::BYTE_ORDER_MARK) {
-        parser.token(Token::ByteOrderMark, |parser| {
-            parser.eat_char(char::BYTE_ORDER_MARK)
-        })
-    } else {
-        Ok(())
-    }
+    parser.token_char(Token::ByteOrderMark, char::BYTE_ORDER_MARK)
 }
 
 fn c_sequence_entry<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::SequenceEntry, |parser| parser.eat_char('-'))
+    parser.token_char(Token::SequenceEntry, char::SEQUENCE_ENTRY)
 }
 
 fn c_mapping_key<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::MappingKey, |parser| parser.eat_char('?'))
+    parser.token_char(Token::MappingKey, char::MAPPING_KEY)
 }
 
 fn c_mapping_value<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::MappingValue, |parser| parser.eat_char(':'))
+    parser.token_char(Token::MappingValue, char::MAPPING_VALUE)
 }
 
 fn c_collect_entry<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::CollectionEntry, |parser| parser.eat_char(','))
+    parser.token_char(Token::CollectionEntry, char::COLLECTION_ENTRY)
 }
 
 fn c_sequence_start<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::SequenceStart, |parser| parser.eat_char('['))
+    parser.token_char(Token::SequenceStart, char::SEQUENCE_START)
 }
 
 fn c_sequence_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::SequenceEnd, |parser| parser.eat_char(']'))
+    parser.token_char(Token::SequenceEnd, char::SEQUENCE_END)
 }
 
 fn c_mapping_start<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::MappingStart, |parser| parser.eat_char('{'))
+    parser.token_char(Token::MappingStart, char::MAPPING_START)
 }
 
 fn c_mapping_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::MappingEnd, |parser| parser.eat_char('}'))
+    parser.token_char(Token::MappingEnd, char::MAPPING_END)
 }
 
 fn c_comment<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::Comment, |parser| parser.eat_char('#'))
-}
-
-fn c_anchor<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::Anchor, |parser| parser.eat_char('&'))
-}
-
-fn c_alias<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::Alias, |parser| parser.eat_char('*'))
-}
-
-fn c_literal<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::Literal, |parser| parser.eat_char('|'))
-}
-
-fn c_folded<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::Folded, |parser| parser.eat_char('>'))
-}
-
-fn c_single_quote<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::SingleQuote, |parser| parser.eat_char('\''))
-}
-
-fn c_double_quote<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::DoubleQuote, |parser| parser.eat_char('"'))
+    parser.token_char(Token::Comment, char::COMMENT)
 }
 
 fn c_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::Directive, |parser| parser.eat_char('%'))
+    parser.token_char(Token::Directive, char::DIRECTIVE)
 }
 
 fn nb_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
@@ -192,17 +157,6 @@ fn nb_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
 
 fn b_break<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     parser.eat_char('\r').or(parser.eat_char('\n'))
-}
-
-fn b_as_line_feed<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    let start = parser.offset();
-    parser.token(Token::ScalarBreak, b_break)?;
-    if &parser.text[start..parser.offset()] == "\n" {
-        parser.value.push_range(parser.text, start..parser.offset());
-    } else {
-        parser.value.push_char(parser.text, '\n');
-    }
-    Ok(())
 }
 
 fn b_non_content<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
@@ -217,11 +171,6 @@ fn s_white<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     parser.eat(char::space)
 }
 
-fn s_whites<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    star_fast!(parser, s_white(parser));
-    Ok(())
-}
-
 fn ns_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     parser.eat(char::non_space)
 }
@@ -232,148 +181,6 @@ fn ns_dec_digit<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
 
 fn ns_hex_digit<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     parser.eat(|ch| ch.is_ascii_hexdigit())
-}
-
-fn ns_word_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat(char::word)
-}
-
-fn ns_uri_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    if parser.is_char('%') {
-        let start = parser.location();
-        parser.eat_char('%').unwrap();
-        let hex_start = parser.offset();
-        if ns_hex_digit(parser).is_ok() && ns_hex_digit(parser).is_ok() {
-            let hex = &parser.text[hex_start..parser.offset()];
-            let codepoint = u32::from_str_radix(hex, 16).unwrap();
-            match char::try_from(codepoint) {
-                Ok(ch) => {
-                    parser.value.push_char(parser.text, ch);
-                    Ok(())
-                }
-                Err(_) => {
-                    parser.diagnostics.push(Diagnostic {
-                        message: "invalid percent escape".to_owned(),
-                        span: parser.span(start),
-                    });
-                    Err(())
-                }
-            }
-        } else {
-            parser.diagnostics.push(Diagnostic {
-                message: "invalid percent escape".to_owned(),
-                span: parser.span(start),
-            });
-            Err(())
-        }
-    } else {
-        let start = parser.offset();
-        parser.eat(|ch| {
-            char::word(ch)
-                || matches!(
-                    ch,
-                    '#' | ';'
-                        | '/'
-                        | '?'
-                        | ':'
-                        | '@'
-                        | '&'
-                        | '='
-                        | '+'
-                        | '$'
-                        | ','
-                        | '_'
-                        | '.'
-                        | '!'
-                        | '~'
-                        | '*'
-                        | '\''
-                        | '('
-                        | ')'
-                        | '['
-                        | ']'
-                )
-        })?;
-        parser.value.push_range(parser.text, start..parser.offset());
-        Ok(())
-    }
-}
-
-fn ns_tag_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    if parser.is_char('!') || parser.is(char::flow_indicator) {
-        Err(())
-    } else {
-        ns_uri_char(parser)
-    }
-}
-
-fn c_escape<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::Escape, |parser| parser.eat_char('\\'))
-}
-
-fn ns_esc_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    let ch = match parser.peek() {
-        Some('0') => '\0',
-        Some('a') => '\x07',
-        Some('b') => '\x08',
-        Some('t' | '\x09') => '\x09',
-        Some('n') => '\x0a',
-        Some('v') => '\x0b',
-        Some('f') => '\x0c',
-        Some('r') => '\x0d',
-        Some('e') => '\x1b',
-        Some(' ') => '\x20',
-        Some('"') => '\x22',
-        Some('/') => '\x2f',
-        Some('\\') => '\x5c',
-        Some('N') => '\u{85}',
-        Some('_') => '\u{a0}',
-        Some('L') => '\u{2028}',
-        Some('P') => '\u{2029}',
-        _ => return Err(()),
-    };
-
-    parser.value.push_char(parser.text, ch);
-    parser.bump();
-    Ok(())
-}
-
-fn ns_esc_hex<R: Receiver>(parser: &mut Parser<R>, initial: char, len: u32) -> Result<(), ()> {
-    parser.eat_char(initial)?;
-    let start = parser.location();
-    if (0..len).try_for_each(|_| ns_hex_digit(parser)).is_ok() {
-        let hex = &parser.text[start.index..parser.offset()];
-        let codepoint: u32 = u32::from_str_radix(hex, 16).unwrap();
-        match core::char::from_u32(codepoint) {
-            Some(ch) => {
-                parser.value.push_char(parser.text, ch);
-                Ok(())
-            }
-            None => {
-                parser.diagnostics.push(Diagnostic {
-                    message: format!("'{:x}' is not a valid character", codepoint),
-                    span: parser.span(start),
-                });
-                Err(())
-            }
-        }
-    } else {
-        parser.diagnostics.push(Diagnostic {
-            message: "invalid escape sequence".to_owned(),
-            span: parser.span(start),
-        });
-        Err(())
-    }
-}
-
-fn c_ns_esc_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    c_escape(parser)?;
-    parser.token(Token::EscapeCode, |parser| match parser.peek() {
-        Some('x') => ns_esc_hex(parser, 'x', 2),
-        Some('u') => ns_esc_hex(parser, 'u', 4),
-        Some('U') => ns_esc_hex(parser, 'U', 8),
-        _ => ns_esc_char(parser),
-    })
 }
 
 fn s_indent<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
@@ -409,7 +216,9 @@ fn s_indent_less_or_equal<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result
 
 fn s_separate_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     if parser.is(char::space) {
-        parser.token(Token::Separator, s_whites)
+        parser.token(Token::Separator, |parser| {
+            Ok(star_fast!(parser, s_white(parser)))
+        })
     } else if parser.is_start_of_line() {
         Ok(())
     } else {
@@ -421,34 +230,6 @@ fn s_flow_line_prefix<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(),
     s_indent(parser, n)?;
     question_fast!(parser, s_separate_in_line(parser));
     Ok(())
-}
-
-fn l_empty<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
-    if s_indent_less_or_equal(parser, n)? == n && matches!(c, Context::FlowIn | Context::FlowOut) {
-        question_fast!(parser, s_separate_in_line(parser));
-    }
-    b_as_line_feed(parser)
-}
-
-fn b_l_trimmed<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
-    b_non_content(parser)?;
-    plus!(parser, l_empty(parser, n, c))
-}
-
-fn b_as_space<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::ScalarSpace, b_break)?;
-    parser.value.push_char(parser.text, ' ');
-    Ok(())
-}
-
-fn b_l_folded<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
-    alt!(parser, b_l_trimmed(parser, n, c), b_as_space(parser))
-}
-
-fn s_flow_folded<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    question_fast!(parser, s_separate_in_line(parser));
-    b_l_folded(parser, n, Context::FlowIn)?;
-    s_flow_line_prefix(parser, n)
 }
 
 fn c_nb_comment_text<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
@@ -468,7 +249,7 @@ fn b_comment<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
 }
 
 fn s_b_comment<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    if s_separate_in_line(parser).is_ok() && parser.peek() == Some('#') {
+    if s_separate_in_line(parser).is_ok() && parser.peek() == Some(char::COMMENT) {
         c_nb_comment_text(parser)?;
     }
     b_comment(parser)
@@ -514,7 +295,7 @@ fn l_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     if parser.is_str("YAML ") {
         ns_yaml_directive(parser)?;
     } else if parser.is_str("TAG ") {
-        ns_tag_directive(parser)?;
+        properties::ns_tag_directive(parser)?;
     } else {
         ns_reserved_directive(parser)?;
     }
@@ -524,7 +305,7 @@ fn l_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
 fn ns_reserved_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     fn param<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
         s_separate_in_line(parser)?;
-        if parser.is_char('#') {
+        if parser.is_char(char::COMMENT) {
             return Err(());
         }
         ns_directive_parameter(parser)
@@ -565,498 +346,12 @@ fn ns_yaml_version<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
         plus_fast!(parser, ns_dec_digit(parser))
     })?;
     let end = parser.offset();
-    parser.yaml_version = Some(&parser.text[start..end]);
-    Ok(())
-}
-
-fn ns_tag_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::DirectiveName, |parser| parser.eat_str("TAG"))?;
-    s_separate_in_line(parser)?;
-    let tag_handle = c_tag_handle(parser)?;
-    s_separate_in_line(parser)?;
-    let prefix = ns_tag_prefix(parser)?;
-    parser.tags.insert(tag_handle, prefix);
-    Ok(())
-}
-
-fn c_tag_handle<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<'t, str>, ()> {
-    parser.begin_value();
-    parser.token(Token::TagHandle, |parser| {
-        alt!(
-            parser,
-            c_named_tag_handle(parser),
-            c_secondary_tag_handle(parser),
-            c_primary_tag_handle(parser)
-        )
-    })?;
-    Ok(parser.end_value())
-}
-
-fn c_primary_tag_handle<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    let start = parser.offset();
-    parser.eat_char('!')?;
-    parser.value.push_range(parser.text, start..parser.offset());
-    Ok(())
-}
-
-fn c_secondary_tag_handle<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    let start = parser.offset();
-    parser.eat_str("!!")?;
-    parser.value.push_range(parser.text, start..parser.offset());
-    Ok(())
-}
-
-fn c_named_tag_handle<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char('!')?;
-    plus_fast!(parser, ns_word_char(parser))?;
-    parser.eat_char('!')
-}
-
-fn ns_tag_prefix<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<'t, str>, ()> {
-    parser.begin_value();
-    parser.token(Token::TagPrefix, |parser| {
-        if parser.is_char('!') {
-            c_ns_local_tag_prefix(parser)
-        } else {
-            ns_global_tag_prefix(parser)
-        }
-    })?;
-    Ok(parser.end_value())
-}
-
-fn c_ns_local_tag_prefix<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    let start = parser.offset();
-    parser.eat_char('!')?;
-    parser.value.push_range(parser.text, start..parser.offset());
-    star!(parser, ns_uri_char(parser));
-    Ok(())
-}
-
-fn ns_global_tag_prefix<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    ns_tag_char(parser)?;
-    star!(parser, ns_uri_char(parser));
-    Ok(())
-}
-
-fn c_ns_properties<'t, R: Receiver>(
-    parser: &mut Parser<'t, R>,
-    n: i32,
-    c: Context,
-) -> Result<Properties<'t>, ()> {
-    fn separated_anchor<'t, R: Receiver>(
-        parser: &mut Parser<'t, R>,
-        n: i32,
-        c: Context,
-    ) -> Result<Cow<'t, str>, ()> {
-        s_separate(parser, n, c)?;
-        c_ns_anchor_property(parser)
-    }
-
-    fn separated_tag<'t, R: Receiver>(
-        parser: &mut Parser<'t, R>,
-        n: i32,
-        c: Context,
-    ) -> Result<Cow<'t, str>, ()> {
-        s_separate(parser, n, c)?;
-        c_ns_tag_property(parser)
-    }
-
-    match parser.peek() {
-        Some('!') => {
-            let tag = c_ns_tag_property(parser)?;
-            let anchor = question!(parser, separated_anchor(parser, n, c));
-            Ok((anchor, Some(tag)))
-        }
-        Some('&') => {
-            let anchor = c_ns_anchor_property(parser)?;
-            let tag = question!(parser, separated_tag(parser, n, c));
-            Ok((Some(anchor), tag))
-        }
-        _ => Err(()),
-    }
-}
-
-fn c_ns_tag_property<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<'t, str>, ()> {
-    if parser.peek_next() == Some('<') {
-        c_verbatim_tag(parser)
-    } else {
-        alt!(
-            parser,
-            c_ns_shorthand_tag(parser),
-            c_non_specific_tag(parser)
-        )
-    }
-}
-
-fn c_verbatim_tag<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<'t, str>, ()> {
-    parser.begin_value();
-    parser.token(Token::VerbatimTag, |parser| {
-        parser.eat_char('!')?;
-        let start = parser.offset();
-        parser.eat_char('<')?;
-        parser.value.push_range(parser.text, start..parser.offset());
-        plus!(parser, ns_uri_char(parser))?;
-        let start = parser.offset();
-        parser.eat_char('>')?;
-        parser.value.push_range(parser.text, start..parser.offset());
-        Ok(())
-    })?;
-    Ok(parser.end_value())
-}
-
-fn c_ns_shorthand_tag<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<'t, str>, ()> {
-    let handle = c_tag_handle(parser)?;
-
-    parser.begin_value();
-    parser.token(Token::TagSuffix, |parser| {
-        plus!(parser, ns_tag_char(parser))
-    })?;
-    let suffix = parser.end_value();
-
-    let resolved = match parser.tags.get(handle.as_ref()) {
-        Some(prefix) => Cow::Owned(format!("<{}{}>", prefix, suffix)),
-        None if handle.as_ref() == "!" => Cow::Owned(format!("<!{}>", suffix)),
-        None if handle.as_ref() == "!!" => Cow::Owned(format!("<tag:yaml.org,2002:{}>", suffix)),
-        None => {
-            parser.diagnostics.push(Diagnostic {
-                message: format!("unknown tag handle {}", handle),
-                span: Span::empty(Location {
-                    index: 0,
-                    line: 0,
-                    column: 0,
-                }),
-            });
-            return Err(());
-        }
-    };
-
-    Ok(resolved)
-}
-
-fn c_non_specific_tag<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<'t, str>, ()> {
-    parser.token(Token::NonSpecificTag, |parser| parser.eat_char('!'))?;
-    Ok(Cow::Borrowed("<!>"))
-}
-
-fn c_ns_anchor_property<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<'t, str>, ()> {
-    c_anchor(parser)?;
-    ns_anchor_name(parser)
-}
-
-fn ns_anchor_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    if parser.is(char::flow_indicator) {
-        Err(())
-    } else {
-        ns_char(parser)
-    }
-}
-
-fn ns_anchor_name<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Cow<'t, str>, ()> {
-    let start = parser.offset();
-    parser.token(Token::AnchorName, |parser| {
-        plus_fast!(parser, ns_anchor_char(parser))
-    })?;
-    Ok(Cow::Borrowed(&parser.text[start..parser.offset()]))
-}
-
-fn c_ns_alias_node<'t, R: Receiver>(
-    parser: &mut Parser<'t, R>,
-) -> Result<(Cow<'t, str>, Span), ()> {
-    let start = parser.location();
-    c_alias(parser)?;
-    let name_start = parser.offset();
-    ns_anchor_name(parser)?;
-    Ok((
-        Cow::Borrowed(&parser.text[name_start..parser.offset()]),
-        parser.span(start),
-    ))
-}
-
-fn c_ns_alias_node2<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    c_ns_alias_node(parser)?;
+    parser.yaml_version = Some(&parser.stream[start..end]);
     Ok(())
 }
 
 fn e_node<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     parser.token(Token::Empty, |_| Ok(()))
-}
-
-fn nb_double_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    match parser.peek() {
-        Some('\\') => c_ns_esc_char(parser),
-        Some('"') => Err(()),
-        _ => parser.token(Token::DoubleQuoted, nb_json),
-    }
-}
-
-fn ns_double_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    if parser.is(char::space) {
-        Err(())
-    } else {
-        nb_double_char(parser)
-    }
-}
-
-fn c_double_quoted<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
-    c_double_quote(parser)?;
-    nb_double_text(parser, n, c)?;
-    c_double_quote(parser)?;
-    Ok(())
-}
-
-fn nb_double_text<'t, R: Receiver>(
-    parser: &mut Parser<'t, R>,
-    n: i32,
-    c: Context,
-) -> Result<Cow<'t, str>, ()> {
-    parser.begin_value();
-    match c {
-        Context::BlockKey | Context::FlowKey => nb_double_one_line(parser)?,
-        Context::FlowIn | Context::FlowOut => nb_double_multi_line(parser, n)?,
-        Context::BlockIn | Context::BlockOut => unimplemented!(),
-    };
-    Ok(parser.end_value())
-}
-
-fn nb_double_one_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    star!(parser, nb_double_char(parser));
-    Ok(())
-}
-
-fn s_double_escaped<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    // should be joined to start of double quoted string
-    let start = parser.offset();
-    parser.token(Token::DoubleQuoted, s_whites)?;
-    parser.value.push_range(parser.text, start..parser.offset());
-    c_escape(parser)?;
-    b_non_content(parser)?;
-    star!(parser, l_empty(parser, n, Context::FlowIn));
-    s_flow_line_prefix(parser, n)
-}
-
-fn s_double_break<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    alt!(
-        parser,
-        s_double_escaped(parser, n),
-        s_flow_folded(parser, n)
-    )
-}
-
-fn nb_ns_double_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    fn char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-        let start = parser.offset();
-        parser.token(Token::DoubleQuoted, s_whites)?;
-        parser.value.push_range(parser.text, start..parser.offset());
-        ns_double_char(parser)
-    }
-
-    star!(parser, char(parser));
-    Ok(())
-}
-
-fn s_double_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    fn trailing_whites<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-        let start = parser.offset();
-        parser.token(Token::DoubleQuoted, s_whites)?;
-        parser.value.push_range(parser.text, start..parser.offset());
-        Ok(())
-    }
-
-    fn line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-        ns_double_char(parser)?;
-        nb_ns_double_in_line(parser)
-    }
-
-    loop {
-        if question!(parser, s_double_break(parser, n)).is_none() {
-            break;
-        }
-        if question!(parser, line(parser)).is_none() {
-            break;
-        }
-    }
-    trailing_whites(parser)
-}
-
-fn nb_double_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    nb_ns_double_in_line(parser)?;
-    s_double_next_line(parser, n)
-}
-
-fn c_quoted_quote<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::QuotedQuote, |parser| parser.eat_str("''"))?;
-    parser.value.push_char(parser.text, '\'');
-    Ok(())
-}
-
-fn nb_single_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    if parser.is_char('\'') {
-        c_quoted_quote(parser)
-    } else {
-        parser.token(Token::SingleQuoted, nb_json)
-    }
-}
-
-fn ns_single_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    if parser.is(char::space) {
-        Err(())
-    } else {
-        nb_single_char(parser)
-    }
-}
-
-fn c_single_quoted<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
-    c_single_quote(parser)?;
-    nb_single_text(parser, n, c)?;
-    c_single_quote(parser)?;
-    Ok(())
-}
-
-fn nb_single_text<'t, R: Receiver>(
-    parser: &mut Parser<'t, R>,
-    n: i32,
-    c: Context,
-) -> Result<Cow<'t, str>, ()> {
-    parser.begin_value();
-    match c {
-        Context::BlockKey | Context::FlowKey => nb_single_one_line(parser)?,
-        Context::FlowIn | Context::FlowOut => nb_single_multi_line(parser, n)?,
-        Context::BlockIn | Context::BlockOut => unimplemented!(),
-    };
-    Ok(parser.end_value())
-}
-
-fn nb_single_one_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    star!(parser, nb_single_char(parser));
-    Ok(())
-}
-
-fn nb_ns_single_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    fn char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-        let start = parser.offset();
-        parser.token(Token::SingleQuoted, s_whites)?;
-        parser.value.push_range(parser.text, start..parser.offset());
-        ns_single_char(parser)
-    }
-
-    star!(parser, char(parser));
-    Ok(())
-}
-
-fn s_single_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    fn trailing_whites<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-        let start = parser.offset();
-        parser.token(Token::SingleQuoted, s_whites)?;
-        parser.value.push_range(parser.text, start..parser.offset());
-        Ok(())
-    }
-
-    fn line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-        ns_single_char(parser)?;
-        nb_ns_single_in_line(parser)
-    }
-
-    loop {
-        if question!(parser, s_flow_folded(parser, n)).is_none() {
-            break;
-        }
-        if question!(parser, line(parser)).is_none() {
-            break;
-        }
-    }
-    trailing_whites(parser)
-}
-
-fn nb_single_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    nb_ns_single_in_line(parser)?;
-    s_single_next_line(parser, n)
-}
-
-fn ns_plain_first<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
-    let start = parser.offset();
-    match parser.peek() {
-        Some('?' | ':' | '-') if parser.next_is(|ch| char::plain_safe(ch, c)) => {
-            parser.bump();
-        }
-        Some(ch) if char::indicator(ch) => return Err(()),
-        _ => ns_char(parser)?,
-    }
-    parser.value.push_range(parser.text, start..parser.offset());
-    Ok(())
-}
-
-fn ns_plain_safe<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
-    parser.eat(|ch| char::plain_safe(ch, c))
-}
-
-fn ns_plain_char<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
-    let start = parser.offset();
-    match parser.peek() {
-        Some('#') => {
-            if parser.prev_is(char::non_space) {
-                parser.bump();
-            } else {
-                return Err(());
-            }
-        }
-        Some(':') => {
-            if parser.next_is(|ch| char::plain_safe(ch, c)) {
-                parser.bump();
-            } else {
-                return Err(());
-            }
-        }
-        _ => ns_plain_safe(parser, c)?,
-    }
-    parser.value.push_range(parser.text, start..parser.offset());
-    Ok(())
-}
-
-fn ns_plain<'t, R: Receiver>(
-    parser: &mut Parser<'t, R>,
-    n: i32,
-    c: Context,
-) -> Result<Cow<'t, str>, ()> {
-    parser.begin_value();
-    match c {
-        Context::BlockKey | Context::FlowKey => ns_plain_one_line(parser, c)?,
-        Context::FlowIn | Context::FlowOut => ns_plain_multi_line(parser, n, c)?,
-        Context::BlockIn | Context::BlockOut => unimplemented!(),
-    }
-    Ok(parser.end_value())
-}
-
-fn nb_ns_plain_in_line<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
-    fn char<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
-        let start = parser.offset();
-        s_whites(parser)?;
-        parser.value.push_range(parser.text, start..parser.offset());
-        ns_plain_char(parser, c)
-    }
-
-    star!(parser, char(parser, c));
-    Ok(())
-}
-
-fn ns_plain_one_line<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
-    parser.token(Token::Scalar, |parser| {
-        ns_plain_first(parser, c)?;
-        nb_ns_plain_in_line(parser, c)
-    })
-}
-
-fn s_ns_plain_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
-    s_flow_folded(parser, n)?;
-    parser.token(Token::Scalar, |parser| {
-        ns_plain_char(parser, c)?;
-        nb_ns_plain_in_line(parser, c)
-    })
-}
-
-fn ns_plain_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
-    ns_plain_one_line(parser, c)?;
-    star!(parser, s_ns_plain_next_line(parser, n, c));
-    Ok(())
 }
 
 fn c_flow_sequence<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
@@ -1071,13 +366,7 @@ fn c_flow_sequence_remainder<R: Receiver>(
     c: Context,
 ) -> Result<(), ()> {
     question!(parser, ns_s_flow_seq_entries(parser, n, c.in_flow()));
-    let end_start = parser.location();
-    c_sequence_end(parser)?;
-    parser.queue(
-        EventOrToken::Event(Event::SequenceEnd),
-        parser.span(end_start),
-    );
-    Ok(())
+    c_sequence_end(parser)
 }
 
 fn ns_s_flow_seq_entries<R: Receiver>(
@@ -1088,7 +377,7 @@ fn ns_s_flow_seq_entries<R: Receiver>(
     ns_flow_seq_entry(parser, n, c)?;
     question_fast!(parser, s_separate(parser, n, c));
     while question_fast!(parser, c_flow_collection_separator(parser, n, c)).is_some()
-        && !parser.is_char(']')
+        && !parser.is_char(char::SEQUENCE_END)
     {
         ns_flow_seq_entry(parser, n, c)?;
         question_fast!(parser, s_separate(parser, n, c));
@@ -1107,10 +396,11 @@ fn c_flow_collection_separator<R: Receiver>(
 }
 
 fn ns_flow_seq_entry<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
-    if ((parser.is_char('?') || parser.is_char(':')) && !parser.next_is(char::non_space))
+    if ((parser.is_char(char::MAPPING_KEY) || parser.is_char(char::MAPPING_VALUE))
+        && !parser.next_is(char::non_space))
         || parser.lookahead(ns_s_flow_map_implicit_key)
     {
-        ns_flow_pair2(parser, n, c)
+        ns_flow_pair(parser, n, c)
     } else {
         ns_flow_node(parser, n, c)
     }
@@ -1136,13 +426,7 @@ fn c_flow_mapping_remainder<R: Receiver>(
 ) -> Result<(), ()> {
     question_fast!(parser, s_separate(parser, n, c));
     question!(parser, ns_s_flow_map_entries(parser, n, c.in_flow()));
-    let end_start = parser.location();
-    c_mapping_end(parser)?;
-    parser.queue(
-        EventOrToken::Event(Event::MappingEnd),
-        parser.span(end_start),
-    );
-    Ok(())
+    c_mapping_end(parser)
 }
 
 fn ns_s_flow_map_entries<R: Receiver>(
@@ -1153,7 +437,7 @@ fn ns_s_flow_map_entries<R: Receiver>(
     ns_flow_map_entry(parser, n, c)?;
     question_fast!(parser, s_separate(parser, n, c));
     while question_fast!(parser, c_flow_collection_separator(parser, n, c)).is_some()
-        && !parser.is_char('}')
+        && !parser.is_char(char::MAPPING_END)
     {
         if question!(parser, ns_flow_map_entry(parser, n, c)).is_some() {
             question_fast!(parser, s_separate(parser, n, c));
@@ -1165,7 +449,7 @@ fn ns_s_flow_map_entries<R: Receiver>(
 }
 
 fn ns_flow_map_entry<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
-    if parser.is_char('?') && !parser.next_is(char::non_space) {
+    if parser.is_char(char::MAPPING_KEY) && !parser.next_is(char::non_space) {
         c_mapping_key(parser)?;
         s_separate(parser, n, c)?;
         ns_flow_map_explicit_entry(parser, n, c)
@@ -1272,25 +556,8 @@ fn c_ns_flow_map_adjacent_value<R: Receiver>(
     alt!(parser, node(parser, n, c), e_node(parser))
 }
 
-fn ns_flow_pair2<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
-    parser.queue(
-        EventOrToken::Event(Event::MappingStart {
-            style: CollectionStyle::Flow,
-            anchor: None,
-            tag: None,
-        }),
-        Span::empty(parser.location()),
-    );
-    ns_flow_pair(parser, n, c)?;
-    parser.queue(
-        EventOrToken::Event(Event::MappingEnd),
-        Span::empty(parser.location()),
-    );
-    Ok(())
-}
-
 fn ns_flow_pair<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
-    if parser.is_char('?') && !parser.next_is(char::non_space) {
+    if parser.is_char(char::MAPPING_KEY) && !parser.next_is(char::non_space) {
         c_mapping_key(parser)?;
         s_separate(parser, n, c)?;
         ns_flow_map_explicit_entry(parser, n, c)?;
@@ -1331,7 +598,7 @@ fn ns_s_implicit_yaml_key<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Re
     parser.with_length_limit(1024, |parser| {
         ns_flow_yaml_node(parser, 0, c)?;
         question_fast!(parser, s_separate_in_line(parser));
-        if !parser.is_char(':') {
+        if !parser.is_char(char::MAPPING_VALUE) {
             return Err(());
         }
         Ok(())
@@ -1342,7 +609,7 @@ fn c_s_implicit_json_key<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Res
     parser.with_length_limit(1024, |parser| {
         c_flow_json_node(parser, 0, c)?;
         question_fast!(parser, s_separate_in_line(parser));
-        if !parser.is_char(':') {
+        if !parser.is_char(char::MAPPING_VALUE) {
             return Err(());
         }
         Ok(())
@@ -1350,16 +617,16 @@ fn c_s_implicit_json_key<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Res
 }
 
 fn ns_flow_yaml_content<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
-    ns_plain(parser, n, c)?;
+    scalar::ns_plain(parser, n, c)?;
     Ok(())
 }
 
 fn c_flow_json_content<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
     match parser.peek() {
-        Some('[') => c_flow_sequence(parser, n, c),
-        Some('{') => c_flow_mapping(parser, n, c),
-        Some('\'') => c_single_quoted(parser, n, c),
-        Some('"') => c_double_quoted(parser, n, c),
+        Some(char::SEQUENCE_START) => c_flow_sequence(parser, n, c),
+        Some(char::MAPPING_START) => c_flow_mapping(parser, n, c),
+        Some(char::SINGLE_QUOTE) => scalar::c_single_quoted(parser, n, c).map(drop),
+        Some(char::DOUBLE_QUOTE) => scalar::c_double_quoted(parser, n, c).map(drop),
         _ => Err(()),
     }
 }
@@ -1373,27 +640,32 @@ fn ns_flow_content<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> R
 }
 
 fn ns_flow_yaml_node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    fn alias<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+        properties::c_ns_alias_node(parser)?;
+        Ok(())
+    }
+
     fn content<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
         s_separate(parser, n, c)?;
         ns_flow_content(parser, n, c)
     }
 
     fn props<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
-        c_ns_properties(parser, n, c)?;
+        properties::c_ns_properties(parser, n, c)?;
         alt!(parser, content(parser, n, c), e_node(parser))
     }
 
     alt!(
         parser,
-        c_ns_alias_node2(parser),
+        alias(parser),
         ns_flow_yaml_content(parser, n, c),
         props(parser, n, c)
     )
 }
 
 fn c_flow_json_node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
-    if parser.is(|ch| matches!(ch, '!' | '&')) {
-        c_ns_properties(parser, n, c)?;
+    if parser.is(|ch| matches!(ch, char::TAG | char::ANCHOR)) {
+        properties::c_ns_properties(parser, n, c)?;
         s_separate(parser, n, c)?;
     }
     c_flow_json_content(parser, n, c)
@@ -1401,293 +673,26 @@ fn c_flow_json_node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> 
 
 fn ns_flow_node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
     match peek_flow_node(parser, false, n, c)? {
-        NodeKind::Alias { value, span } => {
-            parser.queue(EventOrToken::Event(Event::Alias { value }), span);
-            Ok(())
-        }
-        NodeKind::Scalar {
-            style,
-            properties: (anchor, tag),
-            value,
-            span,
-        } => {
-            parser.queue(
-                EventOrToken::Event(Event::Scalar {
-                    style,
-                    value,
-                    anchor,
-                    tag,
-                }),
-                span,
-            );
-            Ok(())
-        }
+        NodeKind::Alias { .. } | NodeKind::Scalar { .. } => Ok(()),
         NodeKind::MappingStart {
             style,
-            properties: (anchor, tag),
-            span,
             indent,
             context,
-        } => {
-            parser.queue(
-                EventOrToken::Event(Event::MappingStart { style, anchor, tag }),
-                span,
-            );
-
-            match style {
-                CollectionStyle::Block => unreachable!(),
-                CollectionStyle::Flow => {
-                    c_flow_mapping_remainder(parser, indent, context.in_flow())
-                }
-            }
-        }
+            ..
+        } => match style {
+            CollectionStyle::Block => unreachable!(),
+            CollectionStyle::Flow => c_flow_mapping_remainder(parser, indent, context.in_flow()),
+        },
         NodeKind::SequenceStart {
             style,
-            properties: (anchor, tag),
-            span,
             indent,
             context,
-        } => {
-            parser.queue(
-                EventOrToken::Event(Event::SequenceStart { style, anchor, tag }),
-                span,
-            );
-
-            match style {
-                CollectionStyle::Block => unreachable!(),
-                CollectionStyle::Flow => {
-                    c_flow_sequence_remainder(parser, indent, context.in_flow())
-                }
-            }
-        }
+            ..
+        } => match style {
+            CollectionStyle::Block => unreachable!(),
+            CollectionStyle::Flow => c_flow_sequence_remainder(parser, indent, context.in_flow()),
+        },
     }
-}
-
-fn c_b_block_header<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(i32, Chomping), ()> {
-    let (m, t) = match parser.peek() {
-        Some('1'..='9') => (
-            c_indentation_indicator(parser)?,
-            c_chomping_indicator(parser)?,
-        ),
-        Some('-' | '+') => {
-            let t = c_chomping_indicator(parser)?;
-            let m = c_indentation_indicator(parser)?;
-            (m, t)
-        }
-        _ => (None, Chomping::Clip),
-    };
-
-    s_b_comment(parser)?;
-
-    match m {
-        Some(m) => Ok((m, t)),
-        None => {
-            let m = parser.detect_scalar_indent(n)?;
-            Ok((m, t))
-        }
-    }
-}
-
-fn c_indentation_indicator<R: Receiver>(parser: &mut Parser<R>) -> Result<Option<i32>, ()> {
-    match parser.peek() {
-        Some(ch @ '1'..='9') => {
-            parser.token(Token::IndentationIndicator, |parser| {
-                parser.bump();
-                Ok(())
-            })?;
-            Ok(Some(ch.to_digit(10).unwrap() as i32))
-        }
-        _ => Ok(None),
-    }
-}
-
-fn c_chomping_indicator<R: Receiver>(parser: &mut Parser<R>) -> Result<Chomping, ()> {
-    if parser
-        .token(Token::ChompingIndicator, |parser| parser.eat_char('-'))
-        .is_ok()
-    {
-        Ok(Chomping::Strip)
-    } else if parser
-        .token(Token::ChompingIndicator, |parser| parser.eat_char('+'))
-        .is_ok()
-    {
-        Ok(Chomping::Keep)
-    } else {
-        Ok(Chomping::Clip)
-    }
-}
-
-fn b_chomped_last<R: Receiver>(parser: &mut Parser<R>, t: Chomping) -> Result<(), ()> {
-    if parser.is_end_of_input() {
-        if matches!(t, Chomping::Clip | Chomping::Keep) {
-            parser.value.push_char(parser.text, '\n');
-        }
-        Ok(())
-    } else {
-        match t {
-            Chomping::Strip => b_non_content(parser),
-            Chomping::Clip | Chomping::Keep => b_as_line_feed(parser),
-        }
-    }
-}
-
-fn l_chomped_empty<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) -> Result<(), ()> {
-    let t = match t {
-        Chomping::Strip | Chomping::Clip => Chomping::Strip,
-        Chomping::Keep => Chomping::Keep,
-    };
-
-    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) -> Result<(), ()> {
-        if parser.is_end_of_input() {
-            return Err(());
-        }
-
-        s_indent_less_or_equal(parser, n)?;
-        b_chomped_last(parser, t)
-    }
-
-    star!(parser, line(parser, n, t));
-    question!(parser, l_trail_comments(parser, n));
-    Ok(())
-}
-
-fn l_trail_comments<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    s_indent_less_than(parser, n)?;
-    c_nb_comment_text(parser)?;
-    b_comment(parser)?;
-    star!(parser, l_comment(parser));
-    Ok(())
-}
-
-fn c_l_literal<'t, R: Receiver>(parser: &mut Parser<'t, R>, n: i32) -> Result<Cow<'t, str>, ()> {
-    c_literal(parser)?;
-    let (m, t) = c_b_block_header(parser, n)?;
-    l_literal_content(parser, n + m, t)
-}
-
-fn l_nb_literal_text<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    star!(parser, l_empty(parser, n, Context::BlockIn));
-    s_indent(parser, n)?;
-    let start = parser.offset();
-    parser.token(Token::Scalar, |parser| plus_fast!(parser, nb_char(parser)))?;
-    parser.value.push_range(parser.text, start..parser.offset());
-    Ok(())
-}
-
-fn b_nb_literal_next<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    b_as_line_feed(parser)?;
-    l_nb_literal_text(parser, n)
-}
-
-fn l_literal_content<'t, R: Receiver>(
-    parser: &mut Parser<'t, R>,
-    n: i32,
-    t: Chomping,
-) -> Result<Cow<'t, str>, ()> {
-    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) -> Result<(), ()> {
-        l_nb_literal_text(parser, n)?;
-        star!(parser, b_nb_literal_next(parser, n));
-        b_chomped_last(parser, t)
-    }
-
-    parser.begin_value();
-    question!(parser, line(parser, n, t));
-    l_chomped_empty(parser, n, t)?;
-    Ok(parser.end_value())
-}
-
-fn c_l_folded<'t, R: Receiver>(parser: &mut Parser<'t, R>, n: i32) -> Result<Cow<'t, str>, ()> {
-    c_folded(parser)?;
-    let (m, t) = c_b_block_header(parser, n)?;
-    l_folded_content(parser, n + m, t)
-}
-
-fn s_nb_folded_text<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    s_indent(parser, n)?;
-    let start = parser.offset();
-    parser.token(Token::Scalar, |parser| {
-        ns_char(parser)?;
-        star!(parser, nb_char(parser));
-        Ok(())
-    })?;
-    parser.value.push_range(parser.text, start..parser.offset());
-    Ok(())
-}
-
-fn l_nb_folded_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-        b_l_folded(parser, n, Context::BlockIn)?;
-        s_nb_folded_text(parser, n)
-    }
-
-    s_nb_folded_text(parser, n)?;
-    star!(parser, line(parser, n));
-    Ok(())
-}
-
-fn s_nb_spaced_text<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    s_indent(parser, n)?;
-    let start = parser.offset();
-    parser.token(Token::Scalar, |parser| {
-        s_white(parser)?;
-        star!(parser, nb_char(parser));
-        Ok(())
-    })?;
-    parser.value.push_range(parser.text, start..parser.offset());
-    Ok(())
-}
-
-fn b_l_spaced<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    b_as_line_feed(parser)?;
-    star!(parser, l_empty(parser, n, Context::BlockIn));
-    Ok(())
-}
-
-fn l_nb_spaced_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-        b_l_spaced(parser, n)?;
-        s_nb_spaced_text(parser, n)
-    }
-
-    s_nb_spaced_text(parser, n)?;
-    star!(parser, line(parser, n));
-    Ok(())
-}
-
-fn l_nb_same_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    star!(parser, l_empty(parser, n, Context::BlockIn));
-    alt!(
-        parser,
-        l_nb_folded_lines(parser, n),
-        l_nb_spaced_lines(parser, n)
-    )
-}
-
-fn l_nb_diff_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-        b_as_line_feed(parser)?;
-        l_nb_same_lines(parser, n)
-    }
-
-    l_nb_same_lines(parser, n)?;
-    star!(parser, line(parser, n));
-    Ok(())
-}
-
-fn l_folded_content<'t, R: Receiver>(
-    parser: &mut Parser<'t, R>,
-    n: i32,
-    t: Chomping,
-) -> Result<Cow<'t, str>, ()> {
-    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) -> Result<(), ()> {
-        l_nb_diff_lines(parser, n)?;
-        b_chomped_last(parser, t)
-    }
-
-    parser.begin_value();
-    question!(parser, line(parser, n, t));
-    l_chomped_empty(parser, n, t)?;
-    Ok(parser.end_value())
 }
 
 fn s_ns_block_map_explicit_value_separator<R: Receiver>(
@@ -1715,40 +720,40 @@ fn ns_s_block_map_implicit_key<R: Receiver>(parser: &mut Parser<R>) -> Result<()
 }
 
 #[derive(Debug)]
-enum NodeKind<'t> {
+enum NodeKind<'s> {
     Alias {
-        value: Cow<'t, str>,
+        value: Cow<'s, str>,
         span: Span,
     },
     Scalar {
         style: ScalarStyle,
-        properties: Properties<'t>,
-        value: Cow<'t, str>,
+        properties: Properties<'s>,
+        value: Cow<'s, str>,
         span: Span,
     },
     MappingStart {
         style: CollectionStyle,
-        properties: Properties<'t>,
+        properties: Properties<'s>,
         span: Span,
         indent: i32,
         context: Context,
     },
     SequenceStart {
         style: CollectionStyle,
-        properties: Properties<'t>,
+        properties: Properties<'s>,
         span: Span,
         indent: i32,
         context: Context,
     },
 }
 
-fn peek_block_node<'t, R: Receiver>(
-    parser: &mut Parser<'t, R>,
+fn peek_block_node<'s, R: Receiver>(
+    parser: &mut Parser<'s, R>,
     allow_compact: bool,
     allow_empty: bool,
     n: i32,
     c: Context,
-) -> Result<NodeKind<'t>, ()> {
+) -> Result<NodeKind<'s>, ()> {
     if allow_compact {
         if let Some(kind) = question!(parser, peek_compact_collection(parser, n, c)) {
             return Ok(kind);
@@ -1794,11 +799,11 @@ fn peek_block_node<'t, R: Receiver>(
     Err(())
 }
 
-fn peek_compact_collection<'t, R: Receiver>(
-    parser: &mut Parser<'t, R>,
+fn peek_compact_collection<'s, R: Receiver>(
+    parser: &mut Parser<'s, R>,
     n: i32,
     c: Context,
-) -> Result<NodeKind<'t>, ()> {
+) -> Result<NodeKind<'s>, ()> {
     let m = parser.detect_compact_indent()?;
     let span = Span::empty(parser.location());
     s_indent(parser, m)?;
@@ -1823,24 +828,24 @@ fn peek_compact_collection<'t, R: Receiver>(
     }
 }
 
-fn s_l_block_scalar<'t, R: Receiver>(
-    parser: &mut Parser<'t, R>,
+fn s_l_block_scalar<'s, R: Receiver>(
+    parser: &mut Parser<'s, R>,
     n: i32,
     c: Context,
-) -> Result<(ScalarStyle, Properties<'t>, Cow<'t, str>, Span), ()> {
+) -> Result<(ScalarStyle, Properties<'s>, Cow<'s, str>, Span), ()> {
     s_separate(parser, n + 1, c)?;
     let start = parser.location();
-    let props = if parser.is(|ch| matches!(ch, '!' | '&')) {
-        let props = c_ns_properties(parser, n + 1, c)?;
+    let props = if parser.is(|ch| matches!(ch, char::TAG | char::ANCHOR)) {
+        let props = properties::c_ns_properties(parser, n + 1, c)?;
         s_separate(parser, n + 1, c)?;
         props
     } else {
         (None, None)
     };
-    let (style, value) = if parser.is_char('|') {
-        (ScalarStyle::Literal, c_l_literal(parser, n)?)
-    } else if parser.is_char('>') {
-        (ScalarStyle::Folded, c_l_folded(parser, n)?)
+    let (style, value) = if parser.is_char(char::LITERAL) {
+        (ScalarStyle::Literal, scalar::c_l_literal(parser, n)?)
+    } else if parser.is_char(char::FOLDED) {
+        (ScalarStyle::Folded, scalar::c_l_folded(parser, n)?)
     } else {
         return Err(());
     };
@@ -1848,36 +853,36 @@ fn s_l_block_scalar<'t, R: Receiver>(
     Ok((style, props, value, span))
 }
 
-fn peek_s_l_block_collection<'t, R: Receiver>(
-    parser: &mut Parser<'t, R>,
+fn peek_s_l_block_collection<'s, R: Receiver>(
+    parser: &mut Parser<'s, R>,
     n: i32,
     c: Context,
-) -> Result<NodeKind<'t>, ()> {
-    fn props<'t, R: Receiver>(
-        parser: &mut Parser<'t, R>,
+) -> Result<NodeKind<'s>, ()> {
+    fn props<'s, R: Receiver>(
+        parser: &mut Parser<'s, R>,
         n: i32,
         c: Context,
-    ) -> Result<Properties<'t>, ()> {
-        let props = c_ns_properties(parser, n, c)?;
+    ) -> Result<Properties<'s>, ()> {
+        let props = properties::c_ns_properties(parser, n, c)?;
         s_l_comments(parser)?;
         Ok(props)
     }
-    fn anchor<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Properties<'t>, ()> {
-        let anchor = c_ns_anchor_property(parser)?;
+    fn anchor<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<Properties<'s>, ()> {
+        let anchor = properties::c_ns_anchor_property(parser)?;
         s_l_comments(parser)?;
         Ok((Some(anchor), None))
     }
-    fn tag<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<Properties<'t>, ()> {
-        let tag = c_ns_tag_property(parser)?;
+    fn tag<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<Properties<'s>, ()> {
+        let tag = properties::c_ns_tag_property(parser)?;
         s_l_comments(parser)?;
         Ok((None, Some(tag)))
     }
 
-    fn collection_props<'t, R: Receiver>(
-        parser: &mut Parser<'t, R>,
+    fn collection_props<'s, R: Receiver>(
+        parser: &mut Parser<'s, R>,
         n: i32,
         c: Context,
-    ) -> Result<(Location, Properties<'t>), ()> {
+    ) -> Result<(Location, Properties<'s>), ()> {
         s_separate(parser, n, c)?;
         let start = parser.location();
         let props = alt!(parser, props(state, n, c), anchor(state), tag(state))?;
@@ -1924,19 +929,20 @@ fn peek_s_l_block_collection<'t, R: Receiver>(
 }
 
 fn lookahead_is_block_sequence<R: Receiver>(parser: &mut Parser<R>) -> bool {
-    parser.is_char('-') && !parser.next_is(char::non_space)
+    parser.is_char(char::SEQUENCE_ENTRY) && !parser.next_is(char::non_space)
 }
 
 fn lookahead_is_block_mapping<R: Receiver>(parser: &mut Parser<R>) -> bool {
-    ((parser.is_char('?') || parser.is_char(':')) && !parser.next_is(char::non_space))
+    ((parser.is_char(char::MAPPING_KEY) || parser.is_char(char::MAPPING_VALUE))
+        && !parser.next_is(char::non_space))
         || parser.lookahead(ns_s_block_map_implicit_key)
 }
 
-fn peek_flow_in_block<'t, R: Receiver>(
-    parser: &mut Parser<'t, R>,
+fn peek_flow_in_block<'s, R: Receiver>(
+    parser: &mut Parser<'s, R>,
     n: i32,
     c: Context,
-) -> Result<NodeKind<'t>, ()> {
+) -> Result<NodeKind<'s>, ()> {
     s_separate(parser, n, c)?;
     let kind = peek_flow_node(parser, false, n, c)?;
     if matches!(kind, NodeKind::Scalar { .. } | NodeKind::Alias { .. }) {
@@ -1945,27 +951,27 @@ fn peek_flow_in_block<'t, R: Receiver>(
     Ok(kind)
 }
 
-fn peek_flow_node<'t, R: Receiver>(
-    parser: &mut Parser<'t, R>,
+fn peek_flow_node<'s, R: Receiver>(
+    parser: &mut Parser<'s, R>,
     allow_empty: bool,
     n: i32,
     c: Context,
-) -> Result<NodeKind<'t>, ()> {
-    if parser.is_char('*') {
-        let (value, span) = c_ns_alias_node(parser)?;
+) -> Result<NodeKind<'s>, ()> {
+    if parser.is_char(char::ALIAS) {
+        let (value, span) = properties::c_ns_alias_node(parser)?;
         return Ok(NodeKind::Alias { value, span });
     }
 
     let start = parser.location();
-    let properties = if parser.is_char('!') || parser.is_char('&') {
-        c_ns_properties(parser, n, c)?
+    let properties = if parser.is_char(char::TAG) || parser.is_char(char::ANCHOR) {
+        properties::c_ns_properties(parser, n, c)?
     } else {
         (None, None)
     };
 
     let separated = properties.0.is_some() || properties.1.is_some();
 
-    if lookahead_is_maybe_separated_char(parser, separated, n, c, '[') {
+    if lookahead_is_maybe_separated_char(parser, separated, n, c, char::SEQUENCE_START) {
         if separated {
             s_separate(parser, n, c)?;
         }
@@ -1978,7 +984,7 @@ fn peek_flow_node<'t, R: Receiver>(
             indent: n,
             context: c,
         })
-    } else if lookahead_is_maybe_separated_char(parser, separated, n, c, '{') {
+    } else if lookahead_is_maybe_separated_char(parser, separated, n, c, char::MAPPING_START) {
         if separated {
             s_separate(parser, n, c)?;
         }
@@ -1991,13 +997,11 @@ fn peek_flow_node<'t, R: Receiver>(
             indent: n,
             context: c,
         })
-    } else if lookahead_is_maybe_separated_char(parser, separated, n, c, '\'') {
+    } else if lookahead_is_maybe_separated_char(parser, separated, n, c, char::SINGLE_QUOTE) {
         if separated {
             s_separate(parser, n, c)?;
         }
-        c_single_quote(parser)?;
-        let value = nb_single_text(parser, n, c)?;
-        c_single_quote(parser)?;
+        let value = c_single_quoted(parser, n, c)?;
         let span = parser.span(start);
         Ok(NodeKind::Scalar {
             style: ScalarStyle::SingleQuoted,
@@ -2005,13 +1009,11 @@ fn peek_flow_node<'t, R: Receiver>(
             value,
             span,
         })
-    } else if lookahead_is_maybe_separated_char(parser, separated, n, c, '"') {
+    } else if lookahead_is_maybe_separated_char(parser, separated, n, c, char::DOUBLE_QUOTE) {
         if separated {
             s_separate(parser, n, c)?;
         }
-        c_double_quote(parser)?;
-        let value = nb_double_text(parser, n, c)?;
-        c_double_quote(parser)?;
+        let value = c_double_quoted(parser, n, c)?;
         let span = parser.span(start);
         Ok(NodeKind::Scalar {
             style: ScalarStyle::DoubleQuoted,
@@ -2023,7 +1025,7 @@ fn peek_flow_node<'t, R: Receiver>(
         if separated {
             s_separate(parser, n, c)?;
         }
-        let value = ns_plain(parser, n, c)?;
+        let value = scalar::ns_plain(parser, n, c)?;
         let span = parser.span(start);
         Ok(NodeKind::Scalar {
             style: ScalarStyle::Plain,
@@ -2072,12 +1074,12 @@ fn lookahead_is_maybe_separated_plain<R: Receiver>(
         if separated {
             s_separate(parser, n, c)?;
         }
-        ns_plain_first(parser, c)
+        scalar::ns_plain_first(parser, c)
     })
 }
 
 fn l_document_prefix<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    c_byte_order_mark(parser)?;
+    question_fast!(parser, c_byte_order_mark(parser));
     star!(parser, l_comment(parser));
     Ok(())
 }
@@ -2109,14 +1111,14 @@ fn nb_document_prefix<R: Receiver>(
     terminated: bool,
 ) -> Result<Option<(bool, Span)>, ()> {
     let start = parser.location();
-    if parser.is_char('%') && !terminated {
+    if parser.is_char(char::DIRECTIVE) && !terminated {
         return Err(());
     }
-    if parser.is_char('%')
+    if parser.is_char(char::DIRECTIVE)
         || (parser.is_str("---")
             && matches!(parser.peek_nth(3), None | Some('\r' | '\n' | '\t' | ' ')))
     {
-        while parser.is_char('%') {
+        while parser.is_char(char::DIRECTIVE) {
             l_directive(parser)?;
         }
         c_directives_end(parser)?;
@@ -2178,12 +1180,12 @@ fn lookahead_l_bare_document<R: Receiver>(parser: &mut Parser<R>) -> bool {
     })
 }
 
-pub(super) fn event_flow_node<'t, R: Receiver>(
-    parser: &mut Parser<'t, R>,
+pub(super) fn event_flow_node<'s, R: Receiver>(
+    parser: &mut Parser<'s, R>,
     allow_empty: bool,
     n: i32,
     c: Context,
-) -> Result<(Event<'t>, Span), ()> {
+) -> Result<(Event<'s>, Span), ()> {
     match peek_flow_node(parser, allow_empty, n, c)? {
         NodeKind::Alias { value, span } => Ok((Event::Alias { value }, span)),
         NodeKind::Scalar {
@@ -2233,13 +1235,13 @@ pub(super) fn event_flow_node<'t, R: Receiver>(
     }
 }
 
-pub(super) fn event_block_node<'t, R: Receiver>(
-    parser: &mut Parser<'t, R>,
+pub(super) fn event_block_node<'s, R: Receiver>(
+    parser: &mut Parser<'s, R>,
     allow_compact: bool,
     allow_empty: bool,
     n: i32,
     c: Context,
-) -> Result<(Event<'t>, Span), ()> {
+) -> Result<(Event<'s>, Span), ()> {
     match peek_block_node(parser, allow_compact, allow_empty, n, c)? {
         NodeKind::Alias { value, span } => Ok((Event::Alias { value }, span)),
         NodeKind::Scalar {
@@ -2289,9 +1291,9 @@ pub(super) fn event_block_node<'t, R: Receiver>(
     }
 }
 
-pub(super) fn event_empty_node<'t, R: Receiver>(
-    parser: &mut Parser<'t, R>,
-) -> Result<(Event<'t>, Span), ()> {
+pub(super) fn event_empty_node<'s, R: Receiver>(
+    parser: &mut Parser<'s, R>,
+) -> Result<(Event<'s>, Span), ()> {
     e_node(parser)?;
     return Ok((
         Event::Scalar {
@@ -2304,10 +1306,7 @@ pub(super) fn event_empty_node<'t, R: Receiver>(
     ));
 }
 
-pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Event<'t>, Span), ()> {
-    println!("state: {:?}", parser.state);
-    println!("remaining: {:?}", parser.iter.as_str());
-
+pub(super) fn event<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<(Event<'s>, Span), ()> {
     match parser.state() {
         State::Stream => {
             parser.replace_state(State::Document {
@@ -2426,7 +1425,7 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
                         c_flow_collection_separator(parser, indent, context.in_flow())
                     )
                     .is_some())
-                    && !parser.is_char(']')
+                    && !parser.is_char(char::SEQUENCE_END)
                 {
                     parser.replace_state(State::Sequence {
                         style,
@@ -2435,16 +1434,11 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
                         first: false,
                     });
 
-                    if ((parser.is_char('?') || parser.is_char(':'))
+                    if ((parser.is_char(char::MAPPING_KEY) || parser.is_char(char::MAPPING_VALUE))
                         && !parser.next_is(char::non_space))
                         || parser.lookahead(ns_s_flow_map_implicit_key)
                     {
                         parser.push_state(State::FlowPair { indent, context });
-                        // parser.push_state(State::MappingKey {
-                        //     style: CollectionStyle::Flow,
-                        //     indent,
-                        //     context,
-                        // });
                         Ok((
                             Event::MappingStart {
                                 style: CollectionStyle::Flow,
@@ -2504,7 +1498,8 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
                             });
                         }
 
-                        let explicit = parser.is_char('?') && !parser.next_is(char::non_space);
+                        let explicit =
+                            parser.is_char(char::MAPPING_KEY) && !parser.next_is(char::non_space);
                         parser.push_state(State::MappingValue {
                             style,
                             explicit,
@@ -2541,9 +1536,7 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
                         context
                     );
 
-                    println!("mapping_value {:?}", parser.iter.as_str());
                     question_fast!(parser, s_separate(parser, indent, context));
-                    println!("mapping_value2 {:?}", parser.iter.as_str());
 
                     if (first
                         || question_fast!(
@@ -2551,7 +1544,7 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
                             c_flow_collection_separator(parser, indent, context.in_flow())
                         )
                         .is_some())
-                        && !parser.is_char('}')
+                        && !parser.is_char(char::MAPPING_END)
                     {
                         parser.replace_state(State::Mapping {
                             style,
@@ -2560,7 +1553,8 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
                             first: false,
                         });
 
-                        let explicit = parser.is_char('?') && !parser.next_is(char::non_space);
+                        let explicit =
+                            parser.is_char(char::MAPPING_KEY) && !parser.next_is(char::non_space);
 
                         if explicit {
                             c_mapping_key(parser)?;
@@ -2607,7 +1601,6 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
                         let start = parser.location();
                         c_mapping_end(parser)?;
                         let span = parser.span(start);
-                        println!("mapping_value3 {context:?} {:?}", parser.iter.as_str());
                         if context == Context::FlowOut {
                             s_l_comments(parser)?;
                         }
@@ -2680,7 +1673,7 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
 
                 if parser.lookahead(|parser| {
                     question_fast!(parser, s_separate(parser, indent, context));
-                    if parser.is_char(',') || parser.is_char('}') {
+                    if parser.is_char(char::COLLECTION_ENTRY) || parser.is_char(char::MAPPING_END) {
                         Ok(())
                     } else {
                         Err(())
@@ -2708,8 +1701,7 @@ pub(super) fn event<'t, R: Receiver>(parser: &mut Parser<'t, R>) -> Result<(Even
 
             parser.replace_state(State::FlowPairEnd { indent, context });
 
-            let explicit = parser.is_char('?') && !parser.next_is(char::non_space);
-
+            let explicit = parser.is_char(char::MAPPING_KEY) && !parser.next_is(char::non_space);
             if explicit {
                 c_mapping_key(parser)?;
                 s_separate(parser, indent, context.in_flow())?;

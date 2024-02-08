@@ -5,80 +5,161 @@ use core::{
     str::Chars,
 };
 
-enum Encoding {
+use crate::{Location, Span};
+
+/// The encoding of a YAML stream.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Encoding {
+    /// UTF-8 encoding.
     Utf8,
-    Utf16,
-    Utf32,
+    /// Big-endian UTF-16 encoding.
+    Utf16Be,
+    /// Little-endian UTF-16 encoding.
+    Utf16Le,
+    /// Big-endian UTF-32 encoding.
+    Utf32Be,
+    /// Little-endian UTF-32 encoding.
+    Utf32Le,
 }
 
 #[derive(Debug, Clone)]
-struct DecodeError {
+pub(crate) struct DecodeError {
     kind: DecodeErrorKind,
     range: Range<usize>,
 }
 
 #[derive(Debug, Copy, Clone)]
-enum DecodeErrorKind {
+pub(crate) enum DecodeErrorKind {
     InvalidUtf8,
     InvalidUtf16,
     InvalidUtf32,
     InvalidLength,
 }
 
-trait Reader<'t>: Iterator<Item = Result<char, DecodeError>> + Clone {
-    /// The offset into the original text.
-    fn index(&self) -> usize;
-
-    /// Get a reference to the remainder of the text, if supported
-    fn as_str(&self) -> Option<&'t str> {
-        None
-    }
-}
-
 #[derive(Debug, Clone)]
-struct StringReader<'t> {
-    text: &'t str,
-    iter: Chars<'t>,
-}
-
-#[derive(Debug, Clone)]
-enum BytesReader<'t> {
-    Error(DecodeError),
-    Utf8(StringReader<'t>),
-    Utf16Le {
-        index: usize,
-        iter: DecodeUtf16<U16LeIter<'t>>,
+pub(crate) enum ByteStream<'s> {
+    Utf8 {
+        stream: &'s str,
+        iter: Chars<'s>,
     },
     Utf16Be {
         index: usize,
-        iter: DecodeUtf16<U16BeIter<'t>>,
+        iter: DecodeUtf16<U16BeIter<'s>>,
     },
-    Utf32Le {
+    Utf16Le {
         index: usize,
-        iter: U32LeIter<'t>,
+        iter: DecodeUtf16<U16LeIter<'s>>,
     },
     Utf32Be {
         index: usize,
-        iter: U32BeIter<'t>,
+        iter: U32BeIter<'s>,
     },
+    Utf32Le {
+        index: usize,
+        iter: U32LeIter<'s>,
+    },
+}
+
+impl<'s> ByteStream<'s> {
+    pub(crate) fn from_str(stream: &'s str) -> Self {
+        ByteStream::Utf8 { stream, iter: stream.chars() }
+    }
+
+    pub(crate) fn from_slice(stream: &'s [u8]) -> Result<Self, DecodeError> {
+        match stream {
+            [0x00, 0x00, 0xfe, 0xff, ..] | [0x00, 0x00, 0x00, _, ..] => Ok(ByteStream::Utf32Be {
+                index: 0,
+                iter: U32BeIter::new(stream)?,
+            }),
+            [0xff, 0xfe, 0x00, 0x00, ..] | [_, 0x00, 0x00, 0x00, ..] => Ok(ByteStream::Utf32Le {
+                index: 0,
+                iter: U32LeIter::new(stream)?,
+            }),
+            [0xfe, 0xff, ..] | [0x00, _, ..] => Ok(ByteStream::Utf16Be {
+                index: 0,
+                iter: char::decode_utf16(U16BeIter::new(stream)?),
+            }),
+            [0xff, 0xfe, ..] | [_, 0x00, ..] => Ok(ByteStream::Utf16Le {
+                index: 0,
+                iter: char::decode_utf16(U16LeIter::new(stream)?),
+            }),
+            _ => match core::str::from_utf8(stream) {
+                Ok(stream) => Ok(ByteStream::Utf8 {
+                    stream,
+                    iter: stream.chars(),
+                }),
+                Err(err) => {
+                    let end = match err.error_len() {
+                        Some(len) => err.valid_up_to() + len,
+                        None => stream.len(),
+                    };
+                    Err(DecodeError {
+                        range: err.valid_up_to()..end,
+                        kind: DecodeErrorKind::InvalidUtf8,
+                    })
+                }
+            },
+        }
+    }
+
+    fn encoding(&self) -> Encoding {
+        match self {
+            ByteStream::Utf8 { .. } => Encoding::Utf8,
+            ByteStream::Utf16Be { .. } => Encoding::Utf16Be,
+            ByteStream::Utf16Le { .. } => Encoding::Utf16Le,
+            ByteStream::Utf32Be { .. } => Encoding::Utf32Be,
+            ByteStream::Utf32Le { .. } => Encoding::Utf32Le,
+        }
+    }
+
+    fn index(&self) -> usize {
+        match self {
+            ByteStream::Utf8 { stream: text, iter } => text.len() - iter.as_str().len(),
+            ByteStream::Utf16Be { index, .. }
+            | ByteStream::Utf16Le { index, .. }
+            | ByteStream::Utf32Be { index, .. }
+            | ByteStream::Utf32Le { index, .. } => *index,
+        }
+    }
+
+    fn as_str(&self) -> Option<&'s str> {
+        match self {
+            ByteStream::Utf8 { iter, .. } => Some(iter.as_str()),
+            _ => None,
+        }
+    }
+}
+
+impl<'s> Iterator for ByteStream<'s> {
+    type Item = Result<char, DecodeError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            ByteStream::Utf8 { iter, .. } => iter.next().map(Ok),
+            ByteStream::Utf16Be { iter, index } => next_utf16(iter, index),
+            ByteStream::Utf16Le { iter, index } => next_utf16(iter, index),
+            ByteStream::Utf32Be { iter, index } => next_utf32(iter, index),
+            ByteStream::Utf32Le { iter, index } => next_utf32(iter, index),
+        }
+    }
 }
 
 macro_rules! int_iter {
     ($name:ident, $int:ty, $len:expr, $from:path) => {
         #[derive(Debug, Clone)]
-        struct $name<'t> {
-            chunks: ChunksExact<'t, u8>,
+        struct $name<'s> {
+            chunks: ChunksExact<'s, u8>,
         }
 
-        impl<'t> $name<'t> {
-            fn new(text: &'t [u8]) -> Result<Self, DecodeError> {
-                let rem = text.len() % $len;
+        impl<'s> $name<'s> {
+            fn new(stream: &'s [u8]) -> Result<Self, DecodeError> {
+                let rem = stream.len() % $len;
                 if rem == 0 {
                     Ok($name {
-                        chunks: text.chunks_exact($len),
+                        chunks: stream.chunks_exact($len),
                     })
                 } else {
-                    let range = (text.len() - rem)..text.len();
+                    let range = (stream.len() - rem)..stream.len();
                     Err(DecodeError {
                         range,
                         kind: DecodeErrorKind::InvalidLength,
@@ -87,12 +168,12 @@ macro_rules! int_iter {
             }
         }
 
-        impl<'t> Iterator for $name<'t> {
+        impl<'s> Iterator for $name<'s> {
             type Item = $int;
 
             fn next(&mut self) -> Option<Self::Item> {
                 match self.chunks.next() {
-                    Some(slice) => Some($from(slice.try_into().unwrap())),
+                    Some(chunk) => Some($from(chunk.try_into().unwrap())),
                     None => None,
                 }
             }
@@ -100,63 +181,10 @@ macro_rules! int_iter {
     };
 }
 
-int_iter!(U16LeIter, u16, 2, u16::from_le_bytes);
 int_iter!(U16BeIter, u16, 2, u16::from_be_bytes);
-int_iter!(U32LeIter, u32, 2, u32::from_le_bytes);
+int_iter!(U16LeIter, u16, 2, u16::from_le_bytes);
 int_iter!(U32BeIter, u32, 2, u32::from_be_bytes);
-
-impl<'t> Reader<'t> for StringReader<'t> {
-    fn index(&self) -> usize {
-        self.text.len() - self.iter.as_str().len()
-    }
-
-    fn as_str(&self) -> Option<&'t str> {
-        Some(self.iter.as_str())
-    }
-}
-
-impl<'t> Iterator for StringReader<'t> {
-    type Item = Result<char, DecodeError>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iter.next().map(Ok)
-    }
-}
-
-impl<'t> Reader<'t> for BytesReader<'t> {
-    fn index(&self) -> usize {
-        match self {
-            BytesReader::Error(error)  => error.range.start,
-            BytesReader::Utf8(reader) => reader.index(),
-            BytesReader::Utf16Le { index, .. }
-            | BytesReader::Utf16Be { index, .. }
-            | BytesReader::Utf32Le { index, .. }
-            | BytesReader::Utf32Be { index, .. } => *index,
-        }
-    }
-
-    fn as_str(&self) -> Option<&'t str> {
-        match self {
-            BytesReader::Utf8(reader) => reader.as_str(),
-            _ => None,
-        }
-    }
-}
-
-impl<'t> Iterator for BytesReader<'t> {
-    type Item = Result<char, DecodeError>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match self {
-            BytesReader::Error(error) => Some(Err(error.clone())),
-            BytesReader::Utf8(reader) => reader.next(),
-            BytesReader::Utf16Le { iter, index } => next_utf16(iter, index),
-            BytesReader::Utf16Be { iter, index } => next_utf16(iter, index),
-            BytesReader::Utf32Le { iter, index } => next_utf32(iter, index),
-            BytesReader::Utf32Be { iter, index } => next_utf32(iter, index),
-        }
-    }
-}
+int_iter!(U32LeIter, u32, 2, u32::from_le_bytes);
 
 fn next_utf16(
     iter: &mut impl Iterator<Item = Result<char, DecodeUtf16Error>>,
@@ -191,5 +219,26 @@ fn next_utf32(
             })),
         },
         None => None,
+    }
+}
+
+impl DecodeError {
+    pub(crate) fn span(&self) -> Span {
+        Span {
+            start: Location {
+                index: self.range.start,
+                line: 0,
+                column: 0,
+            },
+            end: Location {
+                index: self.range.end,
+                line: 0,
+                column: 0,
+            },
+        }
+    }
+
+    pub(crate) fn kind(&self) -> DecodeErrorKind {
+        self.kind
     }
 }
