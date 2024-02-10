@@ -170,13 +170,6 @@ expression: tokens
   end:
     line: 7
     column: 0
-- token: DoubleQuoted
-  start:
-    line: 7
-    column: 0
-  end:
-    line: 7
-    column: 0
 - token: DoubleQuote
   start:
     line: 7

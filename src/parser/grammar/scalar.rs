@@ -13,7 +13,7 @@ use crate::{
         },
         Context, Diagnostic, Parser,
     },
-    Receiver, Token,
+    Receiver, Span, Token,
 };
 
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
@@ -178,105 +178,71 @@ fn c_double_quote<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     parser.token_char(Token::DoubleQuote, char::DOUBLE_QUOTE)
 }
 
-fn nb_double_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    match parser.peek() {
-        Some(char::ESCAPE) => c_ns_esc_char(parser),
-        Some(char::DOUBLE_QUOTE) => Err(()),
-        _ => parser.token(Token::DoubleQuoted, nb_json),
-    }
-}
-
-fn ns_double_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    if parser.is(char::space) {
-        Err(())
-    } else {
-        nb_double_char(parser)
-    }
-}
-
 fn nb_double_text<'s, R: Receiver>(
     parser: &mut Parser<'s, R>,
     n: i32,
     c: Context,
 ) -> Result<Cow<'s, str>, ()> {
     parser.begin_value();
-    match c {
-        Context::BlockKey | Context::FlowKey => nb_double_one_line(parser)?,
-        Context::FlowIn | Context::FlowOut => nb_double_multi_line(parser, n)?,
-        Context::BlockIn | Context::BlockOut => unimplemented!(),
-    };
-    Ok(parser.end_value())
-}
-
-fn nb_double_one_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    star!(parser, nb_double_char(parser));
-    Ok(())
-}
-
-fn s_double_escaped<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    // should be joined to start of double quoted string
-    let start = parser.offset();
-    parser.token(Token::DoubleQuoted, s_whites)?;
-    parser
-        .value
-        .push_range(parser.stream, start..parser.offset());
-    c_escape(parser)?;
-    b_non_content(parser)?;
-    star!(parser, l_empty(parser, n, Context::FlowIn));
-    s_flow_line_prefix(parser, n)
-}
-
-fn s_double_break<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    alt!(
-        parser,
-        s_double_escaped(parser, n),
-        s_flow_folded(parser, n)
-    )
-}
-
-fn nb_ns_double_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    fn char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-        let start = parser.offset();
-        parser.token(Token::DoubleQuoted, s_whites)?;
-        parser
-            .value
-            .push_range(parser.stream, start..parser.offset());
-        ns_double_char(parser)
-    }
-
-    star!(parser, char(parser));
-    Ok(())
-}
-
-fn s_double_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    fn trailing_whites<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-        let start = parser.offset();
-        parser.token(Token::DoubleQuoted, s_whites)?;
-        parser
-            .value
-            .push_range(parser.stream, start..parser.offset());
-        Ok(())
-    }
-
-    fn line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-        ns_double_char(parser)?;
-        nb_ns_double_in_line(parser)
-    }
-
+    let mut span = Span::empty(parser.location());
     loop {
-        if question!(parser, s_double_break(parser, n)).is_none() {
-            break;
-        }
-        if question!(parser, line(parser)).is_none() {
-            break;
+        match parser.peek() {
+            Some(char::DOUBLE_QUOTE) => {
+                span.end = parser.location();
+                if !span.is_empty() {
+                    parser.queue(Token::DoubleQuoted, span);
+                    parser.value.push_range(parser.stream, span.range());
+                }
+                break;
+            }
+            Some(char::ESCAPE) if parser.next_is(char::r#break) => {
+                if matches!(c, Context::BlockKey | Context::FlowKey) {
+                    return Err(());
+                }
+                span.end = parser.location();
+                if !span.is_empty() {
+                    parser.queue(Token::DoubleQuoted, span);
+                    parser.value.push_range(parser.stream, span.range());
+                }
+                c_escape(parser)?;
+                b_non_content(parser)?;
+                star!(parser, l_empty(parser, n, Context::FlowIn));
+                s_flow_line_prefix(parser, n)?;
+                span = Span::empty(parser.location());
+            }
+            Some(char::ESCAPE) => {
+                span.end = parser.location();
+                if !span.is_empty() {
+                    parser.queue(Token::DoubleQuoted, span);
+                    parser.value.push_range(parser.stream, span.range());
+                }
+                c_ns_esc_char(parser)?;
+                span = Span::empty(parser.location());
+            }
+            Some(' ' | '\t') => parser.bump(),
+            Some(ch) if char::json(ch) => {
+                parser.bump();
+                span.end = parser.location();
+            }
+            Some('\r' | '\n') => {
+                if matches!(c, Context::BlockKey | Context::FlowKey) {
+                    return Err(());
+                }
+                if !span.is_empty() {
+                    parser.queue(Token::DoubleQuoted, span);
+                    parser.value.push_range(parser.stream, span.range());
+                }
+                if span.end != parser.location() {
+                    parser.queue(Token::Separator, parser.span(span.end));
+                }
+                b_l_folded(parser, n, Context::FlowIn)?;
+                s_flow_line_prefix(parser, n)?;
+                span = Span::empty(parser.location());
+            }
+            _ => return Err(()),
         }
     }
-    trailing_whites(parser)
-}
-
-fn nb_double_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    nb_ns_double_in_line(parser)?;
-    s_double_next_line(parser, n)
+    Ok(parser.end_value())
 }
 
 /////////////////////////////

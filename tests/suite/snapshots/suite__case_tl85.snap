@@ -156,13 +156,6 @@ expression: tokens
   end:
     line: 6
     column: 0
-- token: DoubleQuoted
-  start:
-    line: 6
-    column: 0
-  end:
-    line: 6
-    column: 0
 - token: DoubleQuote
   start:
     line: 6

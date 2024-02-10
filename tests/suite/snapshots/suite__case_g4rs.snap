@@ -58,13 +58,6 @@ expression: tokens
   end:
     line: 0
     column: 30
-- token: DoubleQuoted
-  start:
-    line: 0
-    column: 30
-  end:
-    line: 0
-    column: 30
 - token: DoubleQuote
   start:
     line: 0
@@ -111,13 +104,6 @@ expression: tokens
   start:
     line: 1
     column: 9
-  end:
-    line: 1
-    column: 10
-- token: DoubleQuoted
-  start:
-    line: 1
-    column: 10
   end:
     line: 1
     column: 10
@@ -198,13 +184,6 @@ expression: tokens
   end:
     line: 1
     column: 30
-- token: DoubleQuoted
-  start:
-    line: 1
-    column: 30
-  end:
-    line: 1
-    column: 30
 - token: DoubleQuote
   start:
     line: 1
@@ -254,13 +233,6 @@ expression: tokens
   end:
     line: 2
     column: 10
-- token: DoubleQuoted
-  start:
-    line: 2
-    column: 10
-  end:
-    line: 2
-    column: 10
 - token: Escape
   start:
     line: 2
@@ -272,13 +244,6 @@ expression: tokens
   start:
     line: 2
     column: 11
-  end:
-    line: 2
-    column: 14
-- token: DoubleQuoted
-  start:
-    line: 2
-    column: 14
   end:
     line: 2
     column: 14
@@ -317,13 +282,6 @@ expression: tokens
   end:
     line: 2
     column: 24
-- token: DoubleQuoted
-  start:
-    line: 2
-    column: 24
-  end:
-    line: 2
-    column: 24
 - token: Escape
   start:
     line: 2
@@ -335,13 +293,6 @@ expression: tokens
   start:
     line: 2
     column: 25
-  end:
-    line: 2
-    column: 26
-- token: DoubleQuoted
-  start:
-    line: 2
-    column: 26
   end:
     line: 2
     column: 26

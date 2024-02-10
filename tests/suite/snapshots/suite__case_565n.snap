@@ -58,13 +58,6 @@ expression: tokens
   end:
     line: 0
     column: 21
-- token: DoubleQuoted
-  start:
-    line: 0
-    column: 21
-  end:
-    line: 0
-    column: 21
 - token: Escape
   start:
     line: 0
