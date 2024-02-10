@@ -6,6 +6,8 @@
 
 extern crate alloc;
 
+mod decode;
+mod error;
 mod parser;
 
 use alloc::borrow::Cow;

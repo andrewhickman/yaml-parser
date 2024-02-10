@@ -1,5 +1,4 @@
 mod char;
-// mod cursor;
 mod grammar;
 
 use alloc::{borrow::Cow, collections::BTreeMap, string::String, vec::Vec};
