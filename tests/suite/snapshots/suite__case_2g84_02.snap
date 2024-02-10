@@ -1,0 +1,40 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: DirectivesEnd
+  start:
+    line: 0
+    column: 0
+  end:
+    line: 0
+    column: 3
+- token: Separator
+  start:
+    line: 0
+    column: 3
+  end:
+    line: 0
+    column: 4
+- token: Literal
+  start:
+    line: 0
+    column: 4
+  end:
+    line: 0
+    column: 5
+- token: IndentationIndicator
+  start:
+    line: 0
+    column: 5
+  end:
+    line: 0
+    column: 6
+- token: ChompingIndicator
+  start:
+    line: 0
+    column: 6
+  end:
+    line: 0
+    column: 7
+

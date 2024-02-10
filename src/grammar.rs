@@ -1,38 +1,25 @@
-use crate::cursor::Cursor;
+use crate::{cursor::Cursor, stream::DecodeError, Encoding};
 
 mod scalar;
 
-enum State {
-    /// Parsing a stream, looking for directives or document start markers.
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub(crate) enum Context {
+    BlockIn,
+    BlockOut,
+    BlockKey,
+    FlowIn,
+    FlowOut,
+    FlowKey,
+}
+
+#[derive(Debug)]
+pub(crate) enum State {
     Stream,
-    /// Parsing a document, looking for a node or a document end marker.
+    DecodeError(DecodeError),
     Document {
-        explicit: bool,
+        prev_terminated: bool,
     },
-    /// Parsing a node, determining which kind it is.
-    Node {
-        indent: i32,
-    },
-    /// We're in a mapping
-    Mapping {
-    },
-    CompactMapping {
-    },
-    FlowMapping {
-    },
-
-    /// We're in a sequence
-    Sequence {
-    },
-    CompactSequence {
-    },
-    FlowSequence {
-    },
-    
-    /// We're in a sequence
-    Scalar,
+    DocumentEnd,
 }
 
-pub fn production<'s>(cursor: Cursor /* parser/state/n/c? */) {
-
-}
+pub fn production<'s>(cursor: Cursor /* parser/state/n/c? */) {}

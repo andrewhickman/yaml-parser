@@ -1,6 +1,24 @@
-use crate::parser::Context;
+use crate::grammar::Context;
 
 pub(super) const BYTE_ORDER_MARK: char = '\u{feff}';
+pub(super) const SEQUENCE_ENTRY: char = '-';
+pub(super) const MAPPING_KEY: char = '?';
+pub(super) const MAPPING_VALUE: char = ':';
+pub(super) const COLLECTION_ENTRY: char = ',';
+pub(super) const SEQUENCE_START: char = '[';
+pub(super) const SEQUENCE_END: char = ']';
+pub(super) const MAPPING_START: char = '{';
+pub(super) const MAPPING_END: char = '}';
+pub(super) const COMMENT: char = '#';
+pub(super) const ANCHOR: char = '&';
+pub(super) const ALIAS: char = '*';
+pub(super) const TAG: char = '!';
+pub(super) const LITERAL: char = '|';
+pub(super) const FOLDED: char = '>';
+pub(super) const SINGLE_QUOTE: char = '\'';
+pub(super) const DOUBLE_QUOTE: char = '"';
+pub(super) const DIRECTIVE: char = '%';
+pub(super) const ESCAPE: char = '\\';
 
 pub(super) fn printable(ch: char) -> bool {
     matches!(
@@ -14,6 +32,10 @@ pub(super) fn printable(ch: char) -> bool {
     )
 }
 
+pub(super) fn json(ch: char) -> bool {
+    matches!(ch, '\x09' | '\x20'..='\u{10ffff}')
+}
+
 pub(super) fn word(ch: char) -> bool {
     ch.is_ascii_alphanumeric() || ch == '-'
 }
@@ -21,29 +43,33 @@ pub(super) fn word(ch: char) -> bool {
 pub(super) fn indicator(ch: char) -> bool {
     matches!(
         ch,
-        '-' | '?'
-            | ':'
-            | ','
-            | '['
-            | ']'
-            | '{'
-            | '}'
-            | '#'
-            | '&'
-            | '*'
-            | '!'
-            | '|'
-            | '>'
-            | '\''
-            | '"'
-            | '%'
+        SEQUENCE_ENTRY
+            | MAPPING_KEY
+            | MAPPING_VALUE
+            | COLLECTION_ENTRY
+            | SEQUENCE_START
+            | SEQUENCE_END
+            | MAPPING_START
+            | MAPPING_END
+            | COMMENT
+            | ANCHOR
+            | ALIAS
+            | TAG
+            | LITERAL
+            | FOLDED
+            | SINGLE_QUOTE
+            | DOUBLE_QUOTE
+            | DIRECTIVE
             | '@'
             | '`'
     )
 }
 
 pub(super) fn flow_indicator(ch: char) -> bool {
-    matches!(ch, ',' | '[' | ']' | '{' | '}')
+    matches!(
+        ch,
+        COLLECTION_ENTRY | SEQUENCE_START | SEQUENCE_END | MAPPING_START | MAPPING_END
+    )
 }
 
 pub(super) fn r#break(ch: char) -> bool {

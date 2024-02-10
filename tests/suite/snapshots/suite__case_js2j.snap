@@ -1,0 +1,117 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    line: 0
+    column: 0
+  end:
+    line: 0
+    column: 0
+- token: Scalar
+  start:
+    line: 0
+    column: 0
+  end:
+    line: 0
+    column: 16
+- token: MappingValue
+  start:
+    line: 0
+    column: 16
+  end:
+    line: 0
+    column: 17
+- token: Separator
+  start:
+    line: 0
+    column: 17
+  end:
+    line: 0
+    column: 18
+- token: Anchor
+  start:
+    line: 0
+    column: 18
+  end:
+    line: 0
+    column: 19
+- token: AnchorName
+  start:
+    line: 0
+    column: 19
+  end:
+    line: 0
+    column: 25
+- token: Separator
+  start:
+    line: 0
+    column: 25
+  end:
+    line: 0
+    column: 26
+- token: Scalar
+  start:
+    line: 0
+    column: 26
+  end:
+    line: 0
+    column: 31
+- token: Break
+  start:
+    line: 0
+    column: 31
+  end:
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    line: 1
+    column: 0
+  end:
+    line: 1
+    column: 0
+- token: Scalar
+  start:
+    line: 1
+    column: 0
+  end:
+    line: 1
+    column: 17
+- token: MappingValue
+  start:
+    line: 1
+    column: 17
+  end:
+    line: 1
+    column: 18
+- token: Separator
+  start:
+    line: 1
+    column: 18
+  end:
+    line: 1
+    column: 19
+- token: Alias
+  start:
+    line: 1
+    column: 19
+  end:
+    line: 1
+    column: 20
+- token: AnchorName
+  start:
+    line: 1
+    column: 20
+  end:
+    line: 1
+    column: 26
+- token: Break
+  start:
+    line: 1
+    column: 26
+  end:
+    line: 2
+    column: 0
+

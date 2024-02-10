@@ -1,0 +1,467 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Comment
+  start:
+    line: 0
+    column: 0
+  end:
+    line: 0
+    column: 1
+- token: CommentText
+  start:
+    line: 0
+    column: 1
+  end:
+    line: 0
+    column: 26
+- token: Break
+  start:
+    line: 0
+    column: 26
+  end:
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    line: 1
+    column: 0
+  end:
+    line: 1
+    column: 0
+- token: SequenceEntry
+  start:
+    line: 1
+    column: 0
+  end:
+    line: 1
+    column: 1
+- token: Separator
+  start:
+    line: 1
+    column: 1
+  end:
+    line: 1
+    column: 2
+- token: Scalar
+  start:
+    line: 1
+    column: 2
+  end:
+    line: 1
+    column: 10
+- token: Break
+  start:
+    line: 1
+    column: 10
+  end:
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    line: 2
+    column: 0
+  end:
+    line: 2
+    column: 0
+- token: SequenceEntry
+  start:
+    line: 2
+    column: 0
+  end:
+    line: 2
+    column: 1
+- token: Separator
+  start:
+    line: 2
+    column: 1
+  end:
+    line: 2
+    column: 2
+- token: DoubleQuote
+  start:
+    line: 2
+    column: 2
+  end:
+    line: 2
+    column: 3
+- token: DoubleQuoted
+  start:
+    line: 2
+    column: 3
+  end:
+    line: 2
+    column: 9
+- token: DoubleQuote
+  start:
+    line: 2
+    column: 9
+  end:
+    line: 2
+    column: 10
+- token: Break
+  start:
+    line: 2
+    column: 10
+  end:
+    line: 3
+    column: 0
+- token: Indent
+  start:
+    line: 3
+    column: 0
+  end:
+    line: 3
+    column: 0
+- token: SequenceEntry
+  start:
+    line: 3
+    column: 0
+  end:
+    line: 3
+    column: 1
+- token: Separator
+  start:
+    line: 3
+    column: 1
+  end:
+    line: 3
+    column: 2
+- token: Scalar
+  start:
+    line: 3
+    column: 2
+  end:
+    line: 3
+    column: 19
+- token: Break
+  start:
+    line: 3
+    column: 19
+  end:
+    line: 4
+    column: 0
+- token: Indent
+  start:
+    line: 4
+    column: 0
+  end:
+    line: 4
+    column: 0
+- token: SequenceEntry
+  start:
+    line: 4
+    column: 0
+  end:
+    line: 4
+    column: 1
+- token: Separator
+  start:
+    line: 4
+    column: 1
+  end:
+    line: 4
+    column: 2
+- token: Scalar
+  start:
+    line: 4
+    column: 2
+  end:
+    line: 4
+    column: 6
+- token: Break
+  start:
+    line: 4
+    column: 6
+  end:
+    line: 5
+    column: 0
+- token: Indent
+  start:
+    line: 5
+    column: 0
+  end:
+    line: 5
+    column: 0
+- token: SequenceEntry
+  start:
+    line: 5
+    column: 0
+  end:
+    line: 5
+    column: 1
+- token: Separator
+  start:
+    line: 5
+    column: 1
+  end:
+    line: 5
+    column: 2
+- token: Scalar
+  start:
+    line: 5
+    column: 2
+  end:
+    line: 5
+    column: 28
+- token: Break
+  start:
+    line: 5
+    column: 28
+  end:
+    line: 6
+    column: 0
+- token: Comment
+  start:
+    line: 6
+    column: 0
+  end:
+    line: 6
+    column: 1
+- token: CommentText
+  start:
+    line: 6
+    column: 1
+  end:
+    line: 6
+    column: 25
+- token: Break
+  start:
+    line: 6
+    column: 25
+  end:
+    line: 7
+    column: 0
+- token: Indent
+  start:
+    line: 7
+    column: 0
+  end:
+    line: 7
+    column: 0
+- token: SequenceEntry
+  start:
+    line: 7
+    column: 0
+  end:
+    line: 7
+    column: 1
+- token: Separator
+  start:
+    line: 7
+    column: 1
+  end:
+    line: 7
+    column: 2
+- token: SequenceStart
+  start:
+    line: 7
+    column: 2
+  end:
+    line: 7
+    column: 3
+- token: Separator
+  start:
+    line: 7
+    column: 3
+  end:
+    line: 7
+    column: 4
+- token: Scalar
+  start:
+    line: 7
+    column: 4
+  end:
+    line: 7
+    column: 12
+- token: CollectionEntry
+  start:
+    line: 7
+    column: 12
+  end:
+    line: 7
+    column: 13
+- token: Break
+  start:
+    line: 7
+    column: 13
+  end:
+    line: 8
+    column: 0
+- token: Indent
+  start:
+    line: 8
+    column: 0
+  end:
+    line: 8
+    column: 1
+- token: Separator
+  start:
+    line: 8
+    column: 1
+  end:
+    line: 8
+    column: 2
+- token: DoubleQuote
+  start:
+    line: 8
+    column: 2
+  end:
+    line: 8
+    column: 3
+- token: DoubleQuoted
+  start:
+    line: 8
+    column: 3
+  end:
+    line: 8
+    column: 9
+- token: DoubleQuote
+  start:
+    line: 8
+    column: 9
+  end:
+    line: 8
+    column: 10
+- token: CollectionEntry
+  start:
+    line: 8
+    column: 10
+  end:
+    line: 8
+    column: 11
+- token: Break
+  start:
+    line: 8
+    column: 11
+  end:
+    line: 9
+    column: 0
+- token: Indent
+  start:
+    line: 9
+    column: 0
+  end:
+    line: 9
+    column: 1
+- token: Separator
+  start:
+    line: 9
+    column: 1
+  end:
+    line: 9
+    column: 2
+- token: DoubleQuote
+  start:
+    line: 9
+    column: 2
+  end:
+    line: 9
+    column: 3
+- token: DoubleQuoted
+  start:
+    line: 9
+    column: 3
+  end:
+    line: 9
+    column: 19
+- token: DoubleQuote
+  start:
+    line: 9
+    column: 19
+  end:
+    line: 9
+    column: 20
+- token: CollectionEntry
+  start:
+    line: 9
+    column: 20
+  end:
+    line: 9
+    column: 21
+- token: Break
+  start:
+    line: 9
+    column: 21
+  end:
+    line: 10
+    column: 0
+- token: Indent
+  start:
+    line: 10
+    column: 0
+  end:
+    line: 10
+    column: 1
+- token: Separator
+  start:
+    line: 10
+    column: 1
+  end:
+    line: 10
+    column: 2
+- token: Scalar
+  start:
+    line: 10
+    column: 2
+  end:
+    line: 10
+    column: 6
+- token: CollectionEntry
+  start:
+    line: 10
+    column: 6
+  end:
+    line: 10
+    column: 7
+- token: Break
+  start:
+    line: 10
+    column: 7
+  end:
+    line: 11
+    column: 0
+- token: Indent
+  start:
+    line: 11
+    column: 0
+  end:
+    line: 11
+    column: 1
+- token: Separator
+  start:
+    line: 11
+    column: 1
+  end:
+    line: 11
+    column: 2
+- token: Scalar
+  start:
+    line: 11
+    column: 2
+  end:
+    line: 11
+    column: 28
+- token: Separator
+  start:
+    line: 11
+    column: 28
+  end:
+    line: 11
+    column: 29
+- token: SequenceEnd
+  start:
+    line: 11
+    column: 29
+  end:
+    line: 11
+    column: 30
+- token: Break
+  start:
+    line: 11
+    column: 30
+  end:
+    line: 12
+    column: 0
+

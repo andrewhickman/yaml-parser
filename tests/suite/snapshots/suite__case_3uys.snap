@@ -1,0 +1,82 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    line: 0
+    column: 0
+  end:
+    line: 0
+    column: 0
+- token: Scalar
+  start:
+    line: 0
+    column: 0
+  end:
+    line: 0
+    column: 13
+- token: MappingValue
+  start:
+    line: 0
+    column: 13
+  end:
+    line: 0
+    column: 14
+- token: Separator
+  start:
+    line: 0
+    column: 14
+  end:
+    line: 0
+    column: 15
+- token: DoubleQuote
+  start:
+    line: 0
+    column: 15
+  end:
+    line: 0
+    column: 16
+- token: DoubleQuoted
+  start:
+    line: 0
+    column: 16
+  end:
+    line: 0
+    column: 17
+- token: Escape
+  start:
+    line: 0
+    column: 17
+  end:
+    line: 0
+    column: 18
+- token: EscapeCode
+  start:
+    line: 0
+    column: 18
+  end:
+    line: 0
+    column: 19
+- token: DoubleQuoted
+  start:
+    line: 0
+    column: 19
+  end:
+    line: 0
+    column: 20
+- token: DoubleQuote
+  start:
+    line: 0
+    column: 20
+  end:
+    line: 0
+    column: 21
+- token: Break
+  start:
+    line: 0
+    column: 21
+  end:
+    line: 1
+    column: 0
+

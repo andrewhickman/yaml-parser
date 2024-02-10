@@ -1,0 +1,61 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Directive
+  start:
+    line: 0
+    column: 0
+  end:
+    line: 0
+    column: 1
+- token: DirectiveName
+  start:
+    line: 0
+    column: 1
+  end:
+    line: 0
+    column: 5
+- token: Separator
+  start:
+    line: 0
+    column: 5
+  end:
+    line: 0
+    column: 8
+- token: YamlVersion
+  start:
+    line: 0
+    column: 8
+  end:
+    line: 0
+    column: 11
+- token: Break
+  start:
+    line: 0
+    column: 11
+  end:
+    line: 1
+    column: 0
+- token: DirectivesEnd
+  start:
+    line: 1
+    column: 0
+  end:
+    line: 1
+    column: 3
+- token: Empty
+  start:
+    line: 1
+    column: 3
+  end:
+    line: 1
+    column: 3
+- token: Break
+  start:
+    line: 1
+    column: 3
+  end:
+    line: 2
+    column: 0
+

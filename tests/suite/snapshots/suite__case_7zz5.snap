@@ -1,0 +1,285 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: DirectivesEnd
+  start:
+    line: 0
+    column: 0
+  end:
+    line: 0
+    column: 3
+- token: Break
+  start:
+    line: 0
+    column: 3
+  end:
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    line: 1
+    column: 0
+  end:
+    line: 1
+    column: 0
+- token: Scalar
+  start:
+    line: 1
+    column: 0
+  end:
+    line: 1
+    column: 16
+- token: MappingValue
+  start:
+    line: 1
+    column: 16
+  end:
+    line: 1
+    column: 17
+- token: Break
+  start:
+    line: 1
+    column: 17
+  end:
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    line: 2
+    column: 0
+  end:
+    line: 2
+    column: 0
+- token: SequenceEntry
+  start:
+    line: 2
+    column: 0
+  end:
+    line: 2
+    column: 1
+- token: Indent
+  start:
+    line: 2
+    column: 1
+  end:
+    line: 2
+    column: 2
+- token: SequenceEntry
+  start:
+    line: 2
+    column: 2
+  end:
+    line: 2
+    column: 3
+- token: Indent
+  start:
+    line: 2
+    column: 3
+  end:
+    line: 2
+    column: 4
+- token: SequenceEntry
+  start:
+    line: 2
+    column: 4
+  end:
+    line: 2
+    column: 5
+- token: Separator
+  start:
+    line: 2
+    column: 5
+  end:
+    line: 2
+    column: 6
+- token: SequenceStart
+  start:
+    line: 2
+    column: 6
+  end:
+    line: 2
+    column: 7
+- token: SequenceEnd
+  start:
+    line: 2
+    column: 7
+  end:
+    line: 2
+    column: 8
+- token: Break
+  start:
+    line: 2
+    column: 8
+  end:
+    line: 3
+    column: 0
+- token: Indent
+  start:
+    line: 3
+    column: 0
+  end:
+    line: 3
+    column: 0
+- token: SequenceEntry
+  start:
+    line: 3
+    column: 0
+  end:
+    line: 3
+    column: 1
+- token: Indent
+  start:
+    line: 3
+    column: 1
+  end:
+    line: 3
+    column: 2
+- token: SequenceEntry
+  start:
+    line: 3
+    column: 2
+  end:
+    line: 3
+    column: 3
+- token: Indent
+  start:
+    line: 3
+    column: 3
+  end:
+    line: 3
+    column: 4
+- token: SequenceEntry
+  start:
+    line: 3
+    column: 4
+  end:
+    line: 3
+    column: 5
+- token: Separator
+  start:
+    line: 3
+    column: 5
+  end:
+    line: 3
+    column: 6
+- token: MappingStart
+  start:
+    line: 3
+    column: 6
+  end:
+    line: 3
+    column: 7
+- token: MappingEnd
+  start:
+    line: 3
+    column: 7
+  end:
+    line: 3
+    column: 8
+- token: Break
+  start:
+    line: 3
+    column: 8
+  end:
+    line: 4
+    column: 0
+- token: Indent
+  start:
+    line: 4
+    column: 0
+  end:
+    line: 4
+    column: 0
+- token: Scalar
+  start:
+    line: 4
+    column: 0
+  end:
+    line: 4
+    column: 4
+- token: MappingValue
+  start:
+    line: 4
+    column: 4
+  end:
+    line: 4
+    column: 5
+- token: Separator
+  start:
+    line: 4
+    column: 5
+  end:
+    line: 4
+    column: 6
+- token: SequenceStart
+  start:
+    line: 4
+    column: 6
+  end:
+    line: 4
+    column: 7
+- token: SequenceEnd
+  start:
+    line: 4
+    column: 7
+  end:
+    line: 4
+    column: 8
+- token: Break
+  start:
+    line: 4
+    column: 8
+  end:
+    line: 5
+    column: 0
+- token: Indent
+  start:
+    line: 5
+    column: 0
+  end:
+    line: 5
+    column: 0
+- token: Scalar
+  start:
+    line: 5
+    column: 0
+  end:
+    line: 5
+    column: 4
+- token: MappingValue
+  start:
+    line: 5
+    column: 4
+  end:
+    line: 5
+    column: 5
+- token: Separator
+  start:
+    line: 5
+    column: 5
+  end:
+    line: 5
+    column: 6
+- token: MappingStart
+  start:
+    line: 5
+    column: 6
+  end:
+    line: 5
+    column: 7
+- token: MappingEnd
+  start:
+    line: 5
+    column: 7
+  end:
+    line: 5
+    column: 8
+- token: Break
+  start:
+    line: 5
+    column: 8
+  end:
+    line: 6
+    column: 0
+

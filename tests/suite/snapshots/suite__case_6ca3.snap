@@ -1,0 +1,61 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    line: 0
+    column: 0
+  end:
+    line: 0
+    column: 0
+- token: Separator
+  start:
+    line: 0
+    column: 0
+  end:
+    line: 0
+    column: 1
+- token: SequenceStart
+  start:
+    line: 0
+    column: 1
+  end:
+    line: 0
+    column: 2
+- token: Break
+  start:
+    line: 0
+    column: 2
+  end:
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    line: 1
+    column: 0
+  end:
+    line: 1
+    column: 0
+- token: Separator
+  start:
+    line: 1
+    column: 0
+  end:
+    line: 1
+    column: 1
+- token: SequenceEnd
+  start:
+    line: 1
+    column: 1
+  end:
+    line: 1
+    column: 2
+- token: Break
+  start:
+    line: 1
+    column: 2
+  end:
+    line: 2
+    column: 0
+

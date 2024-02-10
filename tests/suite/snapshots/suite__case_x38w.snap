@@ -1,0 +1,271 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    line: 0
+    column: 0
+  end:
+    line: 0
+    column: 0
+- token: MappingStart
+  start:
+    line: 0
+    column: 0
+  end:
+    line: 0
+    column: 1
+- token: Separator
+  start:
+    line: 0
+    column: 1
+  end:
+    line: 0
+    column: 2
+- token: Anchor
+  start:
+    line: 0
+    column: 2
+  end:
+    line: 0
+    column: 3
+- token: AnchorName
+  start:
+    line: 0
+    column: 3
+  end:
+    line: 0
+    column: 4
+- token: Separator
+  start:
+    line: 0
+    column: 4
+  end:
+    line: 0
+    column: 5
+- token: SequenceStart
+  start:
+    line: 0
+    column: 5
+  end:
+    line: 0
+    column: 6
+- token: Scalar
+  start:
+    line: 0
+    column: 6
+  end:
+    line: 0
+    column: 7
+- token: CollectionEntry
+  start:
+    line: 0
+    column: 7
+  end:
+    line: 0
+    column: 8
+- token: Separator
+  start:
+    line: 0
+    column: 8
+  end:
+    line: 0
+    column: 9
+- token: Anchor
+  start:
+    line: 0
+    column: 9
+  end:
+    line: 0
+    column: 10
+- token: AnchorName
+  start:
+    line: 0
+    column: 10
+  end:
+    line: 0
+    column: 11
+- token: Separator
+  start:
+    line: 0
+    column: 11
+  end:
+    line: 0
+    column: 12
+- token: Scalar
+  start:
+    line: 0
+    column: 12
+  end:
+    line: 0
+    column: 13
+- token: SequenceEnd
+  start:
+    line: 0
+    column: 13
+  end:
+    line: 0
+    column: 14
+- token: MappingValue
+  start:
+    line: 0
+    column: 14
+  end:
+    line: 0
+    column: 15
+- token: Separator
+  start:
+    line: 0
+    column: 15
+  end:
+    line: 0
+    column: 16
+- token: Alias
+  start:
+    line: 0
+    column: 16
+  end:
+    line: 0
+    column: 17
+- token: AnchorName
+  start:
+    line: 0
+    column: 17
+  end:
+    line: 0
+    column: 18
+- token: CollectionEntry
+  start:
+    line: 0
+    column: 18
+  end:
+    line: 0
+    column: 19
+- token: Separator
+  start:
+    line: 0
+    column: 19
+  end:
+    line: 0
+    column: 20
+- token: Alias
+  start:
+    line: 0
+    column: 20
+  end:
+    line: 0
+    column: 21
+- token: AnchorName
+  start:
+    line: 0
+    column: 21
+  end:
+    line: 0
+    column: 22
+- token: Separator
+  start:
+    line: 0
+    column: 22
+  end:
+    line: 0
+    column: 23
+- token: MappingValue
+  start:
+    line: 0
+    column: 23
+  end:
+    line: 0
+    column: 24
+- token: Separator
+  start:
+    line: 0
+    column: 24
+  end:
+    line: 0
+    column: 25
+- token: SequenceStart
+  start:
+    line: 0
+    column: 25
+  end:
+    line: 0
+    column: 26
+- token: Scalar
+  start:
+    line: 0
+    column: 26
+  end:
+    line: 0
+    column: 27
+- token: CollectionEntry
+  start:
+    line: 0
+    column: 27
+  end:
+    line: 0
+    column: 28
+- token: Separator
+  start:
+    line: 0
+    column: 28
+  end:
+    line: 0
+    column: 29
+- token: Alias
+  start:
+    line: 0
+    column: 29
+  end:
+    line: 0
+    column: 30
+- token: AnchorName
+  start:
+    line: 0
+    column: 30
+  end:
+    line: 0
+    column: 31
+- token: CollectionEntry
+  start:
+    line: 0
+    column: 31
+  end:
+    line: 0
+    column: 32
+- token: Separator
+  start:
+    line: 0
+    column: 32
+  end:
+    line: 0
+    column: 33
+- token: Scalar
+  start:
+    line: 0
+    column: 33
+  end:
+    line: 0
+    column: 34
+- token: SequenceEnd
+  start:
+    line: 0
+    column: 34
+  end:
+    line: 0
+    column: 35
+- token: MappingEnd
+  start:
+    line: 0
+    column: 35
+  end:
+    line: 0
+    column: 36
+- token: Break
+  start:
+    line: 0
+    column: 36
+  end:
+    line: 1
+    column: 0
+

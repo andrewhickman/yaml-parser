@@ -1,0 +1,12 @@
+---
+source: tests/suite/cases.gen.rs
+expression: diagnostics
+---
+- message: invalid document
+  start:
+    line: 4
+    column: 0
+  end:
+    line: 4
+    column: 0
+

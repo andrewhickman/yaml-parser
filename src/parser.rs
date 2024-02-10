@@ -1,10 +1,26 @@
-use core::ops::Range;
+use core::fmt::{self, Display};
 
-use crate::{Error, Event};
+use crate::{cursor::Cursor, grammar::State, Error, Event, Location, Span};
 
 /// An iterator over events encountered while parsing a YAML document.
-pub struct Parser<'s> {
-    cursor: &'s str,
+#[derive(Debug, Clone)]
+pub struct Parser<'s, R = DefaultReceiver> {
+    cursor: Cursor<'s>,
+    receiver: R,
+    state: State,
+}
+
+/// A handler for diagnostics and tokens in a YAML stream.
+pub trait Receiver {
+    /// Called when a diagnostic error message is emitted.
+    fn diagnostic(&mut self, message: &dyn Display, span: Span) {
+        let _ = (message, span);
+    }
+
+    /// Called for every token of the input stream. The stream may be reconstructed by joining the returned tokens.
+    fn token(&mut self, token: Token, span: Span) {
+        let _ = (token, span);
+    }
 }
 
 /// A token type in a YAML stream.
@@ -98,36 +114,6 @@ pub enum Token {
     DocumentEnd,
 }
 
-/// A range of characters within a source file.
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
-pub struct Span {
-    /// The start of the span (inclusive).
-    pub start: Location,
-    /// The end of the span (exclusive).
-    pub end: Location,
-}
-
-/// The position of a character in a source file.
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
-pub struct Location {
-    /// The byte offset of the character.
-    pub index: usize,
-    /// The 0-based line number of the character.
-    pub line: usize,
-    /// The 0-based byte offset of the character within the line.
-    pub column: usize,
-}
-
-#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
-pub(crate) enum Context {
-    BlockIn,
-    BlockOut,
-    BlockKey,
-    FlowIn,
-    FlowOut,
-    FlowKey,
-}
-
 impl<'s> Parser<'s> {
     /// Creates a YAML parser from an `&str`.
     pub fn from_str(stream: &'s str) -> Self {
@@ -140,9 +126,38 @@ impl<'s> Parser<'s> {
     pub fn from_slice(stream: &'s [u8]) -> Self {
         todo!()
     }
+
+    /// Overrides the [`Receiver`] implementation for handling token and diagnostic events.
+    pub fn with_receiver<R>(self, receiver: R) -> Parser<'s, R> {
+        Parser {
+            cursor: self.cursor,
+            receiver,
+            state: self.state,
+        }
+    }
 }
 
-impl<'s> Iterator for Parser<'s> {
+impl<'s, R> Parser<'s, R> {
+    /// Gets the current position of the parser in the YAML stream.
+    pub fn location(&self) -> Location {
+        self.cursor.location()
+    }
+
+    /// Gets a reference to the [`Receiver`] for this parser.
+    pub fn receiver(&self) -> &R {
+        todo!()
+    }
+
+    /// Gets a mutable reference to the [`Receiver`] for this parser.
+    pub fn receiver_mut(&mut self) -> &mut R {
+        todo!()
+    }
+}
+
+impl<'s, R> Iterator for Parser<'s, R>
+where
+    R: Receiver,
+{
     type Item = Result<(Event<'s>, Span), Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -150,32 +165,21 @@ impl<'s> Iterator for Parser<'s> {
     }
 }
 
-impl Span {
-    /// Creates a new span between two locations.
-    pub fn new(start: Location, end: Location) -> Self {
-        Span { start, end }
+/// The default implementation of [`Receiver`] which does nothing.
+#[derive(Debug, Copy, Clone)]
+pub struct DefaultReceiver;
+
+impl Receiver for DefaultReceiver {}
+
+impl<'r, R> Receiver for &'r mut R
+where
+    R: Receiver,
+{
+    fn diagnostic(&mut self, message: &dyn Display, span: Span) {
+        (*self).diagnostic(message, span)
     }
 
-    /// Creates an empty span at a location.
-    pub fn empty(location: Location) -> Self {
-        Span {
-            start: location,
-            end: location,
-        }
-    }
-
-    /// Returns `true` if this span contains zero characters.
-    pub fn is_empty(&self) -> bool {
-        self.range().is_empty()
-    }
-
-    /// The number of bytes covered by the characters in this span.
-    pub fn len(&self) -> usize {
-        self.range().len()
-    }
-
-    /// Gets the range of bytes covered by this span.
-    pub fn range(&self) -> Range<usize> {
-        self.start.index..self.end.index
+    fn token(&mut self, token: Token, span: Span) {
+        (*self).token(token, span)
     }
 }

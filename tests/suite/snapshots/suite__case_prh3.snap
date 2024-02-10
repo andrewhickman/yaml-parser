@@ -1,0 +1,117 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    line: 0
+    column: 0
+  end:
+    line: 0
+    column: 0
+- token: SingleQuote
+  start:
+    line: 0
+    column: 0
+  end:
+    line: 0
+    column: 1
+- token: SingleQuoted
+  start:
+    line: 0
+    column: 1
+  end:
+    line: 0
+    column: 15
+- token: Break
+  start:
+    line: 0
+    column: 15
+  end:
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    line: 1
+    column: 0
+  end:
+    line: 1
+    column: 0
+- token: ScalarBreak
+  start:
+    line: 1
+    column: 0
+  end:
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    line: 2
+    column: 0
+  end:
+    line: 2
+    column: 0
+- token: Separator
+  start:
+    line: 2
+    column: 0
+  end:
+    line: 2
+    column: 1
+- token: SingleQuoted
+  start:
+    line: 2
+    column: 1
+  end:
+    line: 2
+    column: 14
+- token: Separator
+  start:
+    line: 2
+    column: 14
+  end:
+    line: 2
+    column: 15
+- token: ScalarSpace
+  start:
+    line: 2
+    column: 15
+  end:
+    line: 3
+    column: 0
+- token: Indent
+  start:
+    line: 3
+    column: 0
+  end:
+    line: 3
+    column: 0
+- token: Separator
+  start:
+    line: 3
+    column: 0
+  end:
+    line: 3
+    column: 1
+- token: SingleQuoted
+  start:
+    line: 3
+    column: 1
+  end:
+    line: 3
+    column: 15
+- token: SingleQuote
+  start:
+    line: 3
+    column: 15
+  end:
+    line: 3
+    column: 16
+- token: Break
+  start:
+    line: 3
+    column: 16
+  end:
+    line: 4
+    column: 0
+

@@ -1,0 +1,194 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+- token: Indent
+  start:
+    line: 0
+    column: 0
+  end:
+    line: 0
+    column: 0
+- token: MappingStart
+  start:
+    line: 0
+    column: 0
+  end:
+    line: 0
+    column: 1
+- token: Break
+  start:
+    line: 0
+    column: 1
+  end:
+    line: 1
+    column: 0
+- token: Indent
+  start:
+    line: 1
+    column: 0
+  end:
+    line: 1
+    column: 0
+- token: MappingKey
+  start:
+    line: 1
+    column: 0
+  end:
+    line: 1
+    column: 1
+- token: Separator
+  start:
+    line: 1
+    column: 1
+  end:
+    line: 1
+    column: 2
+- token: Scalar
+  start:
+    line: 1
+    column: 2
+  end:
+    line: 1
+    column: 10
+- token: MappingValue
+  start:
+    line: 1
+    column: 10
+  end:
+    line: 1
+    column: 11
+- token: Separator
+  start:
+    line: 1
+    column: 11
+  end:
+    line: 1
+    column: 12
+- token: Scalar
+  start:
+    line: 1
+    column: 12
+  end:
+    line: 1
+    column: 17
+- token: CollectionEntry
+  start:
+    line: 1
+    column: 17
+  end:
+    line: 1
+    column: 18
+- token: Break
+  start:
+    line: 1
+    column: 18
+  end:
+    line: 2
+    column: 0
+- token: Indent
+  start:
+    line: 2
+    column: 0
+  end:
+    line: 2
+    column: 0
+- token: Scalar
+  start:
+    line: 2
+    column: 0
+  end:
+    line: 2
+    column: 8
+- token: MappingValue
+  start:
+    line: 2
+    column: 8
+  end:
+    line: 2
+    column: 9
+- token: Separator
+  start:
+    line: 2
+    column: 9
+  end:
+    line: 2
+    column: 10
+- token: Scalar
+  start:
+    line: 2
+    column: 10
+  end:
+    line: 2
+    column: 15
+- token: CollectionEntry
+  start:
+    line: 2
+    column: 15
+  end:
+    line: 2
+    column: 16
+- token: Break
+  start:
+    line: 2
+    column: 16
+  end:
+    line: 3
+    column: 0
+- token: Indent
+  start:
+    line: 3
+    column: 0
+  end:
+    line: 3
+    column: 0
+- token: MappingKey
+  start:
+    line: 3
+    column: 0
+  end:
+    line: 3
+    column: 1
+- token: Break
+  start:
+    line: 3
+    column: 1
+  end:
+    line: 4
+    column: 0
+- token: Indent
+  start:
+    line: 4
+    column: 0
+  end:
+    line: 4
+    column: 0
+- token: Empty
+  start:
+    line: 4
+    column: 0
+  end:
+    line: 4
+    column: 0
+- token: Indent
+  start:
+    line: 4
+    column: 0
+  end:
+    line: 4
+    column: 0
+- token: MappingEnd
+  start:
+    line: 4
+    column: 0
+  end:
+    line: 4
+    column: 1
+- token: Break
+  start:
+    line: 4
+    column: 1
+  end:
+    line: 5
+    column: 0
+
