@@ -1209,8 +1209,8 @@ pub(super) fn event_flow_node<'s, R: Receiver>(
             indent,
             context,
         } => {
-            parser.push_state(State::Mapping {
-                style,
+            assert_eq!(style, CollectionStyle::Flow);
+            parser.push_state(State::FlowMapping {
                 indent,
                 context,
                 first: true,
@@ -1224,8 +1224,8 @@ pub(super) fn event_flow_node<'s, R: Receiver>(
             indent,
             context,
         } => {
-            parser.push_state(State::Sequence {
-                style,
+            assert_eq!(style, CollectionStyle::Flow);
+            parser.push_state(State::FlowSequence {
                 indent,
                 context,
                 first: true,
@@ -1265,12 +1265,18 @@ pub(super) fn event_block_node<'s, R: Receiver>(
             indent,
             context,
         } => {
-            parser.push_state(State::Mapping {
-                style,
-                indent,
-                context,
-                first: true,
-            });
+            match style {
+                CollectionStyle::Block => parser.push_state(State::BlockMapping {
+                    indent,
+                    context,
+                    first: true,
+                }),
+                CollectionStyle::Flow => parser.push_state(State::FlowMapping {
+                    indent,
+                    context,
+                    first: true,
+                }),
+            }
             Ok((Event::MappingStart { style, anchor, tag }, span))
         }
         NodeKind::SequenceStart {
@@ -1280,12 +1286,18 @@ pub(super) fn event_block_node<'s, R: Receiver>(
             indent,
             context,
         } => {
-            parser.push_state(State::Sequence {
-                style,
-                indent,
-                context,
-                first: true,
-            });
+            match style {
+                CollectionStyle::Block => parser.push_state(State::BlockSequence {
+                    indent,
+                    context,
+                    first: true,
+                }),
+                CollectionStyle::Flow => parser.push_state(State::FlowSequence {
+                    indent,
+                    context,
+                    first: true,
+                }),
+            };
             Ok((Event::SequenceStart { style, anchor, tag }, span))
         }
     }
@@ -1318,8 +1330,7 @@ pub(super) fn event<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<(Even
             parser.in_document = true;
             match find_next_document(parser, prev_terminated)? {
                 Some((empty, span)) => {
-                    parser.replace_state(State::DocumentEnd);
-                    parser.push_state(State::BlockNode {
+                    parser.replace_state(State::DocumentNode {
                         allow_empty: empty,
                         allow_compact: false,
                         indent: -1,
@@ -1351,7 +1362,7 @@ pub(super) fn event<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<(Even
                 suffix_span.unwrap_or_else(|| Span::empty(parser.location())),
             ))
         }
-        State::BlockNode {
+        State::DocumentNode {
             allow_empty,
             allow_compact,
             indent,
@@ -1362,336 +1373,325 @@ pub(super) fn event<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<(Even
                 "unexpected context {:?}",
                 context
             );
-            parser.pop_state();
+            parser.replace_state(State::DocumentEnd);
             event_block_node(parser, allow_compact, allow_empty, indent, context)
         }
-        State::Sequence {
-            style,
-            indent,
-            context,
-            first,
-        } => match style {
-            CollectionStyle::Block => {
-                if first
-                    || parser.lookahead(|parser| {
-                        s_indent(parser, indent)?;
-                        if lookahead_is_block_sequence(parser) {
-                            Ok(())
-                        } else {
-                            Err(())
-                        }
-                    })
-                {
-                    assert!(
-                        matches!(context, Context::BlockIn | Context::BlockOut),
-                        "unexpected context {:?}",
-                        context
-                    );
-
-                    if !first {
-                        s_indent(parser, indent)?;
-                    } else {
-                        parser.replace_state(State::Sequence {
-                            style,
-                            indent,
-                            context,
-                            first: false,
-                        });
-                    }
-
-                    c_sequence_entry(parser)?;
-                    event_block_node(parser, true, true, indent, Context::BlockIn)
-                } else {
-                    let span = Span::empty(parser.location());
-                    parser.pop_state();
-                    Ok((Event::SequenceEnd, span))
-                }
-            }
-            CollectionStyle::Flow => {
-                assert!(
-                    matches!(
-                        context,
-                        Context::FlowIn | Context::FlowOut | Context::BlockKey
-                    ),
-                    "unexpected context {:?}",
-                    context
-                );
-
-                question_fast!(parser, s_separate(parser, indent, context));
-
-                if (first
-                    || question_fast!(
-                        parser,
-                        c_flow_collection_separator(parser, indent, context.in_flow())
-                    )
-                    .is_some())
-                    && !parser.is_char(char::SEQUENCE_END)
-                {
-                    parser.replace_state(State::Sequence {
-                        style,
-                        indent,
-                        context,
-                        first: false,
-                    });
-
-                    if ((parser.is_char(char::MAPPING_KEY) || parser.is_char(char::MAPPING_VALUE))
-                        && !parser.next_is(char::non_space))
-                        || parser.lookahead(ns_s_flow_map_implicit_key)
-                    {
-                        parser.push_state(State::FlowPair { indent, context });
-                        Ok((
-                            Event::MappingStart {
-                                style: CollectionStyle::Flow,
-                                anchor: None,
-                                tag: None,
-                            },
-                            Span::empty(parser.location()),
-                        ))
-                    } else {
-                        event_flow_node(parser, false, indent, context.in_flow())
-                    }
-                } else {
-                    let start = parser.location();
-                    c_sequence_end(parser)?;
-                    let span = parser.span(start);
-                    if context == Context::FlowOut {
-                        s_l_comments(parser)?;
-                    }
-
-                    parser.pop_state();
-                    Ok((Event::SequenceEnd, span))
-                }
-            }
-        },
-        State::Mapping {
-            style,
+        State::BlockSequence {
             indent,
             context,
             first,
         } => {
-            match style {
-                CollectionStyle::Block => {
-                    assert!(
-                        matches!(context, Context::BlockIn | Context::BlockOut),
-                        "unexpected context {:?}",
-                        context
-                    );
+            assert!(
+                matches!(context, Context::BlockIn | Context::BlockOut),
+                "unexpected context {:?}",
+                context
+            );
 
-                    if first
-                        || parser.lookahead(|parser| {
-                            s_indent(parser, indent)?;
-                            if lookahead_is_block_mapping(parser) {
-                                Ok(())
-                            } else {
-                                Err(())
-                            }
-                        })
-                    {
-                        if !first {
-                            s_indent(parser, indent)?;
-                        } else {
-                            parser.replace_state(State::Mapping {
-                                style,
-                                indent,
-                                context,
-                                first: false,
-                            });
-                        }
-
-                        let explicit =
-                            parser.is_char(char::MAPPING_KEY) && !parser.next_is(char::non_space);
-                        parser.push_state(State::MappingValue {
-                            style,
-                            explicit,
-                            allow_adjacent: false,
-                            allow_empty: true,
-                            indent,
-                            context,
-                        });
-
-                        if explicit {
-                            c_mapping_key(parser)?;
-                            if parser.is(char::non_space) {
-                                return Err(());
-                            }
-
-                            event_block_node(parser, true, true, indent, Context::BlockOut)
-                        } else {
-                            // todo length limit
-                            event_flow_node(parser, true, 0, Context::BlockKey)
-                        }
-                    } else {
-                        parser.pop_state();
-                        let span = Span::empty(parser.location());
-                        Ok((Event::MappingEnd, span))
-                    }
-                }
-                CollectionStyle::Flow => {
-                    assert!(
-                        matches!(
-                            context,
-                            Context::FlowIn | Context::FlowOut | Context::BlockKey
-                        ),
-                        "unexpected context {:?}",
-                        context
-                    );
-
-                    question_fast!(parser, s_separate(parser, indent, context));
-
-                    if (first
-                        || question_fast!(
-                            parser,
-                            c_flow_collection_separator(parser, indent, context.in_flow())
-                        )
-                        .is_some())
-                        && !parser.is_char(char::MAPPING_END)
-                    {
-                        parser.replace_state(State::Mapping {
-                            style,
-                            indent,
-                            context,
-                            first: false,
-                        });
-
-                        let explicit =
-                            parser.is_char(char::MAPPING_KEY) && !parser.next_is(char::non_space);
-
-                        if explicit {
-                            c_mapping_key(parser)?;
-                            s_separate(parser, indent, context.in_flow())?;
-                        }
-
-                        let state_len = parser.state.len();
-                        parser.push_state(State::MappingValue {
-                            style,
-                            explicit,
-                            allow_adjacent: false,
-                            allow_empty: true,
-                            indent,
-                            context: context.in_flow(),
-                        });
-
-                        let (kind, span) =
-                            event_flow_node(parser, true, indent, context.in_flow())?;
-                        let allow_adjacent = matches!(
-                            kind,
-                            Event::MappingStart {
-                                style: CollectionStyle::Flow,
-                                ..
-                            } | Event::SequenceStart {
-                                style: CollectionStyle::Flow,
-                                ..
-                            } | Event::Scalar {
-                                style: ScalarStyle::SingleQuoted | ScalarStyle::DoubleQuoted,
-                                ..
-                            }
-                        );
-
-                        parser.state[state_len] = State::MappingValue {
-                            style,
-                            explicit,
-                            allow_adjacent,
-                            allow_empty: true,
-                            indent,
-                            context: context.in_flow(),
-                        };
-
-                        Ok((kind, span))
-                    } else {
-                        let start = parser.location();
-                        c_mapping_end(parser)?;
-                        let span = parser.span(start);
-                        if context == Context::FlowOut {
-                            s_l_comments(parser)?;
-                        }
-
-                        parser.pop_state();
-                        Ok((Event::MappingEnd, span))
-                    }
-                }
-            }
-        }
-        State::MappingValue {
-            style,
-            explicit,
-            allow_adjacent,
-            allow_empty,
-            indent,
-            context,
-        } => match style {
-            CollectionStyle::Block => {
-                assert!(
-                    matches!(context, Context::BlockIn | Context::BlockOut),
-                    "unexpected context {:?}",
-                    context
-                );
-
-                parser.pop_state();
-                if explicit {
-                    if question!(
-                        parser,
-                        s_ns_block_map_explicit_value_separator(parser, indent)
-                    )
-                    .is_some()
-                    {
-                        event_block_node(parser, true, true, indent, Context::BlockOut)
-                    } else {
-                        event_empty_node(parser)
-                    }
-                } else {
-                    if !parser.is_char(':') {
-                        s_separate_in_line(parser)?;
-                    }
-
-                    c_block_map_implicit_value_separator(parser)?;
-                    return event_block_node(parser, false, true, indent, Context::BlockOut);
-                }
-            }
-            CollectionStyle::Flow => {
-                assert!(
-                    matches!(context, Context::FlowIn | Context::FlowKey),
-                    "unexpected context {:?}",
-                    context
-                );
-
-                parser.pop_state();
-
-                if allow_empty
-                    && !parser.lookahead(|parser| {
-                        question_fast!(parser, s_separate(parser, indent, context));
-                        c_mapping_value(parser)
-                    })
-                {
-                    return event_empty_node(parser);
-                }
-
-                question_fast!(parser, s_separate(parser, indent, context));
-                c_mapping_value(parser)?;
-                if !allow_adjacent && parser.is(|ch| char::plain_safe(ch, context)) {
-                    return Err(());
-                }
-
-                if parser.lookahead(|parser| {
-                    question_fast!(parser, s_separate(parser, indent, context));
-                    if parser.is_char(char::COLLECTION_ENTRY) || parser.is_char(char::MAPPING_END) {
+            if first
+                || parser.lookahead(|parser| {
+                    s_indent(parser, indent)?;
+                    if lookahead_is_block_sequence(parser) {
                         Ok(())
                     } else {
                         Err(())
                     }
-                }) {
-                    return event_empty_node(parser);
-                }
-
-                if allow_adjacent {
-                    question_fast!(parser, s_separate(parser, indent, context));
+                })
+            {
+                if !first {
+                    s_indent(parser, indent)?;
                 } else {
-                    s_separate(parser, indent, context)?;
+                    parser.replace_state(State::BlockSequence {
+                        indent,
+                        context,
+                        first: false,
+                    });
                 }
 
-                event_flow_node(parser, true, indent, context)
+                c_sequence_entry(parser)?;
+                event_block_node(parser, true, true, indent, Context::BlockIn)
+            } else {
+                let span = Span::empty(parser.location());
+                parser.pop_state();
+                Ok((Event::SequenceEnd, span))
             }
-        },
-        State::FlowNode { .. } => todo!(),
+        }
+        State::FlowSequence {
+            indent,
+            context,
+            first,
+        } => {
+            assert!(
+                matches!(
+                    context,
+                    Context::FlowIn | Context::FlowOut | Context::BlockKey
+                ),
+                "unexpected context {:?}",
+                context
+            );
+
+            question_fast!(parser, s_separate(parser, indent, context));
+
+            if (first
+                || question_fast!(
+                    parser,
+                    c_flow_collection_separator(parser, indent, context.in_flow())
+                )
+                .is_some())
+                && !parser.is_char(char::SEQUENCE_END)
+            {
+                parser.replace_state(State::FlowSequence {
+                    indent,
+                    context,
+                    first: false,
+                });
+
+                if ((parser.is_char(char::MAPPING_KEY) || parser.is_char(char::MAPPING_VALUE))
+                    && !parser.next_is(char::non_space))
+                    || parser.lookahead(ns_s_flow_map_implicit_key)
+                {
+                    parser.push_state(State::FlowPair { indent, context });
+                    Ok((
+                        Event::MappingStart {
+                            style: CollectionStyle::Flow,
+                            anchor: None,
+                            tag: None,
+                        },
+                        Span::empty(parser.location()),
+                    ))
+                } else {
+                    event_flow_node(parser, false, indent, context.in_flow())
+                }
+            } else {
+                let start = parser.location();
+                c_sequence_end(parser)?;
+                let span = parser.span(start);
+                if context == Context::FlowOut {
+                    s_l_comments(parser)?;
+                }
+
+                parser.pop_state();
+                Ok((Event::SequenceEnd, span))
+            }
+        }
+        State::BlockMapping {
+            indent,
+            context,
+            first,
+        } => {
+            assert!(
+                matches!(context, Context::BlockIn | Context::BlockOut),
+                "unexpected context {:?}",
+                context
+            );
+
+            if first
+                || parser.lookahead(|parser| {
+                    s_indent(parser, indent)?;
+                    if lookahead_is_block_mapping(parser) {
+                        Ok(())
+                    } else {
+                        Err(())
+                    }
+                })
+            {
+                if !first {
+                    s_indent(parser, indent)?;
+                } else {
+                    parser.replace_state(State::BlockMapping {
+                        indent,
+                        context,
+                        first: false,
+                    });
+                }
+
+                let explicit =
+                    parser.is_char(char::MAPPING_KEY) && !parser.next_is(char::non_space);
+                parser.push_state(State::BlockMappingValue {
+                    explicit,
+                    indent,
+                    context,
+                });
+
+                if explicit {
+                    c_mapping_key(parser)?;
+                    if parser.is(char::non_space) {
+                        return Err(());
+                    }
+
+                    event_block_node(parser, true, true, indent, Context::BlockOut)
+                } else {
+                    // todo length limit
+                    event_flow_node(parser, true, 0, Context::BlockKey)
+                }
+            } else {
+                parser.pop_state();
+                let span = Span::empty(parser.location());
+                Ok((Event::MappingEnd, span))
+            }
+        }
+        State::FlowMapping {
+            indent,
+            context,
+            first,
+        } => {
+            assert!(
+                matches!(
+                    context,
+                    Context::FlowIn | Context::FlowOut | Context::BlockKey
+                ),
+                "unexpected context {:?}",
+                context
+            );
+
+            question_fast!(parser, s_separate(parser, indent, context));
+
+            if (first
+                || question_fast!(
+                    parser,
+                    c_flow_collection_separator(parser, indent, context.in_flow())
+                )
+                .is_some())
+                && !parser.is_char(char::MAPPING_END)
+            {
+                parser.replace_state(State::FlowMapping {
+                    indent,
+                    context,
+                    first: false,
+                });
+
+                let explicit =
+                    parser.is_char(char::MAPPING_KEY) && !parser.next_is(char::non_space);
+
+                if explicit {
+                    c_mapping_key(parser)?;
+                    s_separate(parser, indent, context.in_flow())?;
+                }
+
+                let state_len = parser.state.len();
+                parser.push_state(State::FlowMappingValue {
+                    allow_adjacent: false,
+                    allow_empty: true,
+                    indent,
+                    context: context.in_flow(),
+                });
+
+                let (kind, span) = event_flow_node(parser, true, indent, context.in_flow())?;
+                let allow_adjacent = matches!(
+                    kind,
+                    Event::MappingStart {
+                        style: CollectionStyle::Flow,
+                        ..
+                    } | Event::SequenceStart {
+                        style: CollectionStyle::Flow,
+                        ..
+                    } | Event::Scalar {
+                        style: ScalarStyle::SingleQuoted | ScalarStyle::DoubleQuoted,
+                        ..
+                    }
+                );
+
+                parser.state[state_len] = State::FlowMappingValue {
+                    allow_adjacent,
+                    allow_empty: true,
+                    indent,
+                    context: context.in_flow(),
+                };
+
+                Ok((kind, span))
+            } else {
+                let start = parser.location();
+                c_mapping_end(parser)?;
+                let span = parser.span(start);
+                if context == Context::FlowOut {
+                    s_l_comments(parser)?;
+                }
+
+                parser.pop_state();
+                Ok((Event::MappingEnd, span))
+            }
+        }
+        State::BlockMappingValue {
+            explicit,
+            indent,
+            context,
+            ..
+        } => {
+            assert!(
+                matches!(context, Context::BlockIn | Context::BlockOut),
+                "unexpected context {:?}",
+                context
+            );
+
+            parser.pop_state();
+            if explicit {
+                if question!(
+                    parser,
+                    s_ns_block_map_explicit_value_separator(parser, indent)
+                )
+                .is_some()
+                {
+                    event_block_node(parser, true, true, indent, Context::BlockOut)
+                } else {
+                    event_empty_node(parser)
+                }
+            } else {
+                if !parser.is_char(':') {
+                    s_separate_in_line(parser)?;
+                }
+
+                c_block_map_implicit_value_separator(parser)?;
+                return event_block_node(parser, false, true, indent, Context::BlockOut);
+            }
+        }
+        State::FlowMappingValue {
+            allow_adjacent,
+            allow_empty,
+            indent,
+            context,
+            ..
+        } => {
+            assert!(
+                matches!(context, Context::FlowIn | Context::FlowKey),
+                "unexpected context {:?}",
+                context
+            );
+
+            parser.pop_state();
+
+            if allow_empty
+                && !parser.lookahead(|parser| {
+                    question_fast!(parser, s_separate(parser, indent, context));
+                    c_mapping_value(parser)
+                })
+            {
+                return event_empty_node(parser);
+            }
+
+            question_fast!(parser, s_separate(parser, indent, context));
+            c_mapping_value(parser)?;
+            if !allow_adjacent && parser.is(|ch| char::plain_safe(ch, context)) {
+                return Err(());
+            }
+
+            if parser.lookahead(|parser| {
+                question_fast!(parser, s_separate(parser, indent, context));
+                if parser.is_char(char::COLLECTION_ENTRY) || parser.is_char(char::MAPPING_END) {
+                    Ok(())
+                } else {
+                    Err(())
+                }
+            }) {
+                return event_empty_node(parser);
+            }
+
+            if allow_adjacent {
+                question_fast!(parser, s_separate(parser, indent, context));
+            } else {
+                s_separate(parser, indent, context)?;
+            }
+
+            event_flow_node(parser, true, indent, context)
+        }
         State::FlowPair { indent, context } => {
             assert!(
                 matches!(context, Context::FlowIn | Context::FlowOut),
@@ -1708,9 +1708,7 @@ pub(super) fn event<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<(Even
             }
 
             let state_len = parser.state.len();
-            parser.push_state(State::MappingValue {
-                style: CollectionStyle::Flow,
-                explicit,
+            parser.push_state(State::FlowMappingValue {
                 allow_adjacent: false,
                 allow_empty: explicit,
                 indent,
@@ -1732,9 +1730,7 @@ pub(super) fn event<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<(Even
                 }
             );
 
-            parser.state[state_len] = State::MappingValue {
-                style: CollectionStyle::Flow,
-                explicit,
+            parser.state[state_len] = State::FlowMappingValue {
                 allow_adjacent,
                 allow_empty: true,
                 indent,

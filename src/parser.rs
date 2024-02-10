@@ -4,7 +4,7 @@ mod grammar;
 use alloc::{borrow::Cow, collections::BTreeMap, string::String, vec::Vec};
 use core::{fmt, mem, ops::Range, str::Chars, unreachable};
 
-use crate::{CollectionStyle, DefaultReceiver, Event, Location, Receiver, Span, Token};
+use crate::{DefaultReceiver, Event, Location, Receiver, Span, Token};
 
 /// An iterator over events encountered while parsing a YAML stream.
 pub struct Parser<'t, R = DefaultReceiver> {
@@ -38,39 +38,42 @@ enum State {
     Document {
         prev_terminated: bool,
     },
-    // Expecting a DocumentEnd event
+    DocumentNode {
+        allow_empty: bool,
+        allow_compact: bool,
+        indent: i32,
+        context: Context,
+    },
     DocumentEnd,
 
-    /// Expecting a SequenceStart, MappingStart, Alias or Scalar event
-    BlockNode {
-        allow_empty: bool,
-        allow_compact: bool,
+    BlockSequence {
         indent: i32,
         context: Context,
+        first: bool,
     },
-    FlowNode {
-        allow_empty: bool,
-        allow_compact: bool,
-        indent: i32,
-        context: Context,
-    },
-
-    Sequence {
-        style: CollectionStyle,
+    FlowSequence {
         indent: i32,
         context: Context,
         first: bool,
     },
 
-    Mapping {
-        style: CollectionStyle,
+    BlockMapping {
         indent: i32,
         context: Context,
         first: bool,
     },
-    MappingValue {
-        style: CollectionStyle,
+    FlowMapping {
+        indent: i32,
+        context: Context,
+        first: bool,
+    },
+
+    BlockMappingValue {
         explicit: bool,
+        indent: i32,
+        context: Context,
+    },
+    FlowMappingValue {
         allow_adjacent: bool,
         allow_empty: bool,
         indent: i32,
