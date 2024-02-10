@@ -11,14 +11,18 @@ pub struct Error {
 
 #[derive(Debug)]
 pub(crate) enum ErrorKind {
-    Parse(ParseErrorKind),
     Decode(DecodeErrorKind),
-}
-
-#[derive(Debug)]
-pub(crate) enum ParseErrorKind {
     ExpectedToken(Token),
-    Other,
+    DuplicateYamlVersion,
+    InvalidYamlVersion,
+    ExpectedBlockNode,
+    ExpectedFlowNode,
+    InvalidIndent,
+    ExpectedDocumentEndBeforeDirectives,
+    InvalidTagProperty,
+    InvalidPercentEscape,
+    InvalidUriChar,
+    Todo,
 }
 
 impl From<DecodeErrorKind> for ErrorKind {
@@ -26,7 +30,7 @@ impl From<DecodeErrorKind> for ErrorKind {
         ErrorKind::Decode(error)
     }
 }
- 
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         todo!()

@@ -4,12 +4,13 @@ use alloc::{
 };
 
 use crate::{
+    error::ErrorKind,
     parser::{
         char,
         grammar::{
             b_break, b_comment, b_non_content, c_nb_comment_text, l_comment, nb_char, ns_char,
             ns_hex_digit, s_b_comment, s_flow_line_prefix, s_indent, s_indent_less_or_equal,
-            s_indent_less_than, s_separate_in_line, s_white,
+            s_separate_in_line, s_space, s_white,
         },
         Context, Diagnostic, Parser,
     },
@@ -27,7 +28,7 @@ pub(super) fn c_double_quoted<'s, R: Receiver>(
     parser: &mut Parser<'s, R>,
     n: i32,
     c: Context,
-) -> Result<Cow<'s, str>, ()> {
+) -> Result<Cow<'s, str>, ErrorKind> {
     c_double_quote(parser)?;
     let value = nb_double_text(parser, n, c)?;
     c_double_quote(parser)?;
@@ -38,7 +39,7 @@ pub(super) fn c_single_quoted<'s, R: Receiver>(
     parser: &mut Parser<'s, R>,
     n: i32,
     c: Context,
-) -> Result<Cow<'s, str>, ()> {
+) -> Result<Cow<'s, str>, ErrorKind> {
     c_single_quote(parser)?;
     let value = nb_single_text(parser, n, c)?;
     c_single_quote(parser)?;
@@ -49,7 +50,7 @@ pub(super) fn ns_plain<'s, R: Receiver>(
     parser: &mut Parser<'s, R>,
     n: i32,
     c: Context,
-) -> Result<Cow<'s, str>, ()> {
+) -> Result<Cow<'s, str>, ErrorKind> {
     parser.begin_value();
     match c {
         Context::BlockKey | Context::FlowKey => ns_plain_one_line(parser, c)?,
@@ -59,7 +60,10 @@ pub(super) fn ns_plain<'s, R: Receiver>(
     Ok(parser.end_value())
 }
 
-pub(super) fn ns_plain_first<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
+pub(super) fn ns_plain_first<R: Receiver>(
+    parser: &mut Parser<R>,
+    c: Context,
+) -> Result<(), ErrorKind> {
     let start = parser.offset();
     match parser.peek() {
         Some('?' | ':' | '-') if parser.next_is(|ch| char::plain_safe(ch, c)) => {
@@ -77,7 +81,7 @@ pub(super) fn ns_plain_first<R: Receiver>(parser: &mut Parser<R>, c: Context) ->
 pub(super) fn c_l_literal<'s, R: Receiver>(
     parser: &mut Parser<'s, R>,
     n: i32,
-) -> Result<Cow<'s, str>, ()> {
+) -> Result<Cow<'s, str>, ErrorKind> {
     c_literal(parser)?;
     let (m, t) = c_b_block_header(parser, n)?;
     l_literal_content(parser, n + m, t)
@@ -86,7 +90,7 @@ pub(super) fn c_l_literal<'s, R: Receiver>(
 pub(super) fn c_l_folded<'s, R: Receiver>(
     parser: &mut Parser<'s, R>,
     n: i32,
-) -> Result<Cow<'s, str>, ()> {
+) -> Result<Cow<'s, str>, ErrorKind> {
     c_folded(parser)?;
     let (m, t) = c_b_block_header(parser, n)?;
     l_folded_content(parser, n + m, t)
@@ -96,7 +100,7 @@ pub(super) fn c_l_folded<'s, R: Receiver>(
 // Double quoted
 /////////////////////////////
 
-fn c_ns_esc_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_ns_esc_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     c_escape(parser)?;
     parser.token(Token::EscapeCode, |parser| match parser.peek() {
         Some('x') => ns_esc_hex(parser, 'x', 2),
@@ -106,11 +110,11 @@ fn c_ns_esc_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     })
 }
 
-fn c_escape<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_escape<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token_char(Token::Escape, char::ESCAPE)
 }
 
-fn ns_esc_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn ns_esc_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     let ch = match parser.peek() {
         Some('0') => '\0',
         Some('a') => '\x07',
@@ -137,7 +141,11 @@ fn ns_esc_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     Ok(())
 }
 
-fn ns_esc_hex<R: Receiver>(parser: &mut Parser<R>, initial: char, len: u32) -> Result<(), ()> {
+fn ns_esc_hex<R: Receiver>(
+    parser: &mut Parser<R>,
+    initial: char,
+    len: u32,
+) -> Result<(), ErrorKind> {
     parser.eat_char(initial)?;
     let start = parser.location();
     if (0..len).try_for_each(|_| ns_hex_digit(parser)).is_ok() {
@@ -165,7 +173,7 @@ fn ns_esc_hex<R: Receiver>(parser: &mut Parser<R>, initial: char, len: u32) -> R
     }
 }
 
-fn nb_json<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn nb_json<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     let start = parser.offset();
     parser.eat(char::json)?;
     parser
@@ -174,11 +182,11 @@ fn nb_json<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     Ok(())
 }
 
-fn c_double_quote<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_double_quote<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token_char(Token::DoubleQuote, char::DOUBLE_QUOTE)
 }
 
-fn nb_double_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn nb_double_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     match parser.peek() {
         Some(char::ESCAPE) => c_ns_esc_char(parser),
         Some(char::DOUBLE_QUOTE) => Err(()),
@@ -186,7 +194,7 @@ fn nb_double_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     }
 }
 
-fn ns_double_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn ns_double_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     if parser.is(char::space) {
         Err(())
     } else {
@@ -208,12 +216,12 @@ fn nb_double_text<'s, R: Receiver>(
     Ok(parser.end_value())
 }
 
-fn nb_double_one_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn nb_double_one_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     star!(parser, nb_double_char(parser));
     Ok(())
 }
 
-fn s_double_escaped<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn s_double_escaped<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
     // should be joined to start of double quoted string
     let start = parser.offset();
     parser.token(Token::DoubleQuoted, s_whites)?;
@@ -226,7 +234,7 @@ fn s_double_escaped<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), (
     s_flow_line_prefix(parser, n)
 }
 
-fn s_double_break<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn s_double_break<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
     alt!(
         parser,
         s_double_escaped(parser, n),
@@ -234,8 +242,8 @@ fn s_double_break<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()>
     )
 }
 
-fn nb_ns_double_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    fn char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn nb_ns_double_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
+    fn char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
         let start = parser.offset();
         parser.token(Token::DoubleQuoted, s_whites)?;
         parser
@@ -248,8 +256,8 @@ fn nb_ns_double_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     Ok(())
 }
 
-fn s_double_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    fn trailing_whites<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn s_double_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
+    fn trailing_whites<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
         let start = parser.offset();
         parser.token(Token::DoubleQuoted, s_whites)?;
         parser
@@ -258,7 +266,7 @@ fn s_double_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(),
         Ok(())
     }
 
-    fn line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    fn line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
         ns_double_char(parser)?;
         nb_ns_double_in_line(parser)
     }
@@ -274,7 +282,7 @@ fn s_double_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(),
     trailing_whites(parser)
 }
 
-fn nb_double_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn nb_double_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
     nb_ns_double_in_line(parser)?;
     s_double_next_line(parser, n)
 }
@@ -283,17 +291,17 @@ fn nb_double_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(
 // Single quoted
 /////////////////////////////
 
-fn c_single_quote<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_single_quote<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token_char(Token::SingleQuote, char::SINGLE_QUOTE)
 }
 
-fn c_quoted_quote<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_quoted_quote<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token(Token::EscapedQuote, |parser| parser.eat_str("''"))?;
     parser.value.push_char(parser.stream, '\'');
     Ok(())
 }
 
-fn nb_single_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn nb_single_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     if parser.is_char(char::SINGLE_QUOTE) {
         c_quoted_quote(parser)
     } else {
@@ -301,7 +309,7 @@ fn nb_single_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     }
 }
 
-fn ns_single_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn ns_single_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     if parser.is(char::space) {
         Err(())
     } else {
@@ -323,13 +331,13 @@ fn nb_single_text<'s, R: Receiver>(
     Ok(parser.end_value())
 }
 
-fn nb_single_one_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn nb_single_one_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     star!(parser, nb_single_char(parser));
     Ok(())
 }
 
-fn nb_ns_single_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    fn char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn nb_ns_single_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
+    fn char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
         let start = parser.offset();
         parser.token(Token::SingleQuoted, s_whites)?;
         parser
@@ -342,8 +350,8 @@ fn nb_ns_single_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     Ok(())
 }
 
-fn s_single_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    fn trailing_whites<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn s_single_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
+    fn trailing_whites<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
         let start = parser.offset();
         parser.token(Token::SingleQuoted, s_whites)?;
         parser
@@ -352,7 +360,7 @@ fn s_single_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(),
         Ok(())
     }
 
-    fn line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+    fn line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
         ns_single_char(parser)?;
         nb_ns_single_in_line(parser)
     }
@@ -368,7 +376,7 @@ fn s_single_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(),
     trailing_whites(parser)
 }
 
-fn nb_single_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn nb_single_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
     nb_ns_single_in_line(parser)?;
     s_single_next_line(parser, n)
 }
@@ -377,11 +385,11 @@ fn nb_single_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(
 // Plain
 /////////////////////////////
 
-fn ns_plain_safe<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
+fn ns_plain_safe<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ErrorKind> {
     parser.eat(|ch| char::plain_safe(ch, c))
 }
 
-fn ns_plain_char<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
+fn ns_plain_char<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ErrorKind> {
     let start = parser.offset();
     match parser.peek() {
         Some('#') => {
@@ -406,8 +414,8 @@ fn ns_plain_char<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), 
     Ok(())
 }
 
-fn nb_ns_plain_in_line<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
-    fn char<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
+fn nb_ns_plain_in_line<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ErrorKind> {
+    fn char<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ErrorKind> {
         let start = parser.offset();
         s_whites(parser)?;
         parser
@@ -420,14 +428,18 @@ fn nb_ns_plain_in_line<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Resul
     Ok(())
 }
 
-fn ns_plain_one_line<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
+fn ns_plain_one_line<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ErrorKind> {
     parser.token(Token::Scalar, |parser| {
         ns_plain_first(parser, c)?;
         nb_ns_plain_in_line(parser, c)
     })
 }
 
-fn s_ns_plain_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+fn s_ns_plain_next_line<R: Receiver>(
+    parser: &mut Parser<R>,
+    n: i32,
+    c: Context,
+) -> Result<(), ErrorKind> {
     s_flow_folded(parser, n)?;
     parser.token(Token::Scalar, |parser| {
         ns_plain_char(parser, c)?;
@@ -435,7 +447,11 @@ fn s_ns_plain_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context)
     })
 }
 
-fn ns_plain_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+fn ns_plain_multi_line<R: Receiver>(
+    parser: &mut Parser<R>,
+    n: i32,
+    c: Context,
+) -> Result<(), ErrorKind> {
     ns_plain_one_line(parser, c)?;
     star!(parser, s_ns_plain_next_line(parser, n, c));
     Ok(())
@@ -445,11 +461,11 @@ fn ns_plain_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) 
 // Literal
 /////////////////////////////
 
-fn c_literal<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_literal<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token_char(Token::Literal, char::LITERAL)
 }
 
-fn l_nb_literal_text<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn l_nb_literal_text<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
     star!(parser, l_empty(parser, n, Context::BlockIn));
     s_indent(parser, n)?;
     let start = parser.offset();
@@ -460,7 +476,7 @@ fn l_nb_literal_text<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), 
     Ok(())
 }
 
-fn b_nb_literal_next<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn b_nb_literal_next<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
     b_as_line_feed(parser)?;
     l_nb_literal_text(parser, n)
 }
@@ -470,7 +486,7 @@ fn l_literal_content<'s, R: Receiver>(
     n: i32,
     t: Chomping,
 ) -> Result<Cow<'s, str>, ()> {
-    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) -> Result<(), ()> {
+    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) -> Result<(), ErrorKind> {
         l_nb_literal_text(parser, n)?;
         star!(parser, b_nb_literal_next(parser, n));
         b_chomped_last(parser, t)
@@ -486,7 +502,7 @@ fn l_literal_content<'s, R: Receiver>(
 // Flow
 /////////////////////////////
 
-fn c_folded<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_folded<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token_char(Token::Folded, char::FOLDED)
 }
 
@@ -495,7 +511,7 @@ fn l_folded_content<'s, R: Receiver>(
     n: i32,
     t: Chomping,
 ) -> Result<Cow<'s, str>, ()> {
-    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) -> Result<(), ()> {
+    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) -> Result<(), ErrorKind> {
         l_nb_diff_lines(parser, n)?;
         b_chomped_last(parser, t)
     }
@@ -506,7 +522,7 @@ fn l_folded_content<'s, R: Receiver>(
     Ok(parser.end_value())
 }
 
-fn s_nb_folded_text<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn s_nb_folded_text<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
     s_indent(parser, n)?;
     let start = parser.offset();
     parser.token(Token::Scalar, |parser| {
@@ -520,8 +536,8 @@ fn s_nb_folded_text<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), (
     Ok(())
 }
 
-fn l_nb_folded_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn l_nb_folded_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
+    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
         b_l_folded(parser, n, Context::BlockIn)?;
         s_nb_folded_text(parser, n)
     }
@@ -531,7 +547,7 @@ fn l_nb_folded_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), 
     Ok(())
 }
 
-fn s_nb_spaced_text<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn s_nb_spaced_text<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
     s_indent(parser, n)?;
     let start = parser.offset();
     parser.token(Token::Scalar, |parser| {
@@ -545,14 +561,14 @@ fn s_nb_spaced_text<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), (
     Ok(())
 }
 
-fn b_l_spaced<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn b_l_spaced<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
     b_as_line_feed(parser)?;
     star!(parser, l_empty(parser, n, Context::BlockIn));
     Ok(())
 }
 
-fn l_nb_spaced_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn l_nb_spaced_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
+    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
         b_l_spaced(parser, n)?;
         s_nb_spaced_text(parser, n)
     }
@@ -562,7 +578,7 @@ fn l_nb_spaced_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), 
     Ok(())
 }
 
-fn l_nb_same_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn l_nb_same_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
     star!(parser, l_empty(parser, n, Context::BlockIn));
     alt!(
         parser,
@@ -571,8 +587,8 @@ fn l_nb_same_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()
     )
 }
 
-fn l_nb_diff_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn l_nb_diff_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
+    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
         b_as_line_feed(parser)?;
         l_nb_same_lines(parser, n)
     }
@@ -582,11 +598,11 @@ fn l_nb_diff_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()
     Ok(())
 }
 
-fn b_l_folded<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+fn b_l_folded<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ErrorKind> {
     alt!(parser, b_l_trimmed(parser, n, c), b_as_space(parser))
 }
 
-fn b_as_space<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn b_as_space<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token(Token::ScalarSpace, b_break)?;
     parser.value.push_char(parser.stream, ' ');
     Ok(())
@@ -654,18 +670,18 @@ fn c_chomping_indicator<R: Receiver>(parser: &mut Parser<R>) -> Result<Chomping,
 // Whitespace
 /////////////////////////////
 
-fn s_flow_folded<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn s_flow_folded<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
     question_fast!(parser, s_separate_in_line(parser));
     b_l_folded(parser, n, Context::FlowIn)?;
     s_flow_line_prefix(parser, n)
 }
 
-fn s_whites<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn s_whites<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     star_fast!(parser, s_white(parser));
     Ok(())
 }
 
-fn b_as_line_feed<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn b_as_line_feed<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     let start = parser.offset();
     parser.token(Token::ScalarBreak, b_break)?;
     if &parser.stream[start..parser.offset()] == "\n" {
@@ -678,19 +694,19 @@ fn b_as_line_feed<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     Ok(())
 }
 
-fn l_empty<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+fn l_empty<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ErrorKind> {
     if s_indent_less_or_equal(parser, n)? == n && matches!(c, Context::FlowIn | Context::FlowOut) {
         question_fast!(parser, s_separate_in_line(parser));
     }
     b_as_line_feed(parser)
 }
 
-fn b_l_trimmed<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+fn b_l_trimmed<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ErrorKind> {
     b_non_content(parser)?;
     plus!(parser, l_empty(parser, n, c))
 }
 
-fn b_chomped_last<R: Receiver>(parser: &mut Parser<R>, t: Chomping) -> Result<(), ()> {
+fn b_chomped_last<R: Receiver>(parser: &mut Parser<R>, t: Chomping) -> Result<(), ErrorKind> {
     if parser.is_end_of_input() {
         if matches!(t, Chomping::Clip | Chomping::Keep) {
             parser.value.push_char(parser.stream, '\n');
@@ -704,13 +720,17 @@ fn b_chomped_last<R: Receiver>(parser: &mut Parser<R>, t: Chomping) -> Result<()
     }
 }
 
-fn l_chomped_empty<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) -> Result<(), ()> {
+fn l_chomped_empty<R: Receiver>(
+    parser: &mut Parser<R>,
+    n: i32,
+    t: Chomping,
+) -> Result<(), ErrorKind> {
     let t = match t {
         Chomping::Strip | Chomping::Clip => Chomping::Strip,
         Chomping::Keep => Chomping::Keep,
     };
 
-    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) -> Result<(), ()> {
+    fn line<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) -> Result<(), ErrorKind> {
         if parser.is_end_of_input() {
             return Err(());
         }
@@ -724,8 +744,19 @@ fn l_chomped_empty<R: Receiver>(parser: &mut Parser<R>, n: i32, t: Chomping) -> 
     Ok(())
 }
 
-fn l_trail_comments<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    s_indent_less_than(parser, n)?;
+fn s_indent_less_than<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<i32, ()> {
+    parser.token(Token::Indent, |parser| {
+        for i in 0..(n - 1) {
+            if s_space(parser).is_err() {
+                return Ok(i);
+            }
+        }
+        Ok(n - 1)
+    })
+}
+
+fn l_trail_comments<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
+    s_indent_less_than(parser, n).map_err(|()| ErrorKind::InvalidIndent);
     c_nb_comment_text(parser)?;
     b_comment(parser)?;
     star!(parser, l_comment(parser));

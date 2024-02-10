@@ -38,7 +38,7 @@ pub(crate) enum DecodeErrorKind {
 
 #[derive(Debug, Clone)]
 pub(crate) struct Stream<'s> {
-    kind: StreamKind<'s>
+    kind: StreamKind<'s>,
 }
 
 #[derive(Debug, Clone)]
@@ -67,7 +67,12 @@ enum StreamKind<'s> {
 
 impl<'s> Stream<'s> {
     pub(crate) fn from_str(stream: &'s str) -> Self {
-        Stream { kind: StreamKind::Utf8 { stream, iter: stream.chars() } }
+        Stream {
+            kind: StreamKind::Utf8 {
+                stream,
+                iter: stream.chars(),
+            },
+        }
     }
 
     pub(crate) fn from_slice(stream: &'s [u8]) -> Result<Self, DecodeError> {
@@ -101,7 +106,7 @@ impl<'s> Stream<'s> {
                     return Err(DecodeError {
                         range: err.valid_up_to()..end,
                         kind: DecodeErrorKind::InvalidUtf8,
-                    })
+                    });
                 }
             },
         };

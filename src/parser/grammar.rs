@@ -1,6 +1,7 @@
 use alloc::borrow::{Cow, ToOwned};
 
 use crate::{
+    error::ErrorKind,
     parser::{char, Context, Diagnostic, Parser, Properties, State},
     CollectionStyle, Event, Location, Receiver, ScalarStyle, Span, Token,
 };
@@ -32,11 +33,11 @@ macro_rules! star_fast {
 macro_rules! plus {
     ($parser:expr, $production:ident($parser_param:ident $(, $p:expr)*)) => {
         match $production($parser $(, $p)*) {
-            Ok(()) => {
+            Ok(res) => {
                 star!($parser, $production(parser $(, $p)*));
-                Result::<(), ()>::Ok(())
+                Ok(res)
             },
-            Err(()) => Result::<(), ()>::Err(()),
+            Err(err) => Err(err),
         }
     };
 }
@@ -44,11 +45,11 @@ macro_rules! plus {
 macro_rules! plus_fast {
     ($parser:expr, $production:ident($parser_param:ident $(, $p:expr)*)) => {
         match $production($parser $(, $p)*) {
-            Ok(()) => {
+            Ok(res) => {
                 star_fast!($parser, $production(parser $(, $p)*));
-                Result::<(), ()>::Ok(())
+                Ok(res)
             },
-            Err(()) => Result::<(), ()>::Err(()),
+            Err(err) => Err(err),
         }
     };
 }
@@ -60,7 +61,7 @@ macro_rules! question {
             let res = $parser.with_rollback(|parser| $production(parser $(, $p)*));
             match res {
                 Ok(r) => Some(r),
-                Err(()) => {
+                Err(_) => {
                     debug_assert_eq!(start, $parser.location());
                     None
                 }
@@ -76,7 +77,7 @@ macro_rules! question_fast {
             let res = $production($parser $(, $p)*);
             match res {
                 Ok(r) => Some(r),
-                Err(()) => {
+                Err(_) => {
                     debug_assert_eq!(start, $parser.location());
                     None
                 }
@@ -93,13 +94,13 @@ macro_rules! alt {
             $(
                 match $parser.with_rollback(|parser| $production(parser $(, $p)*)) {
                     Ok(r) => break 'alt Ok(r),
-                    Err(()) => (),
+                    Err(_) => (),
                 }
 
                 debug_assert_eq!(start, $parser.location());
             )*
 
-            break 'alt Err(())
+            break 'alt Err(ErrorKind::Todo)
         }
     };
 }
@@ -107,47 +108,47 @@ macro_rules! alt {
 mod properties;
 mod scalar;
 
-fn c_byte_order_mark<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_byte_order_mark<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token_char(Token::ByteOrderMark, char::BYTE_ORDER_MARK)
 }
 
-fn c_sequence_entry<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_sequence_entry<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token_char(Token::SequenceEntry, char::SEQUENCE_ENTRY)
 }
 
-fn c_mapping_key<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_mapping_key<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token_char(Token::MappingKey, char::MAPPING_KEY)
 }
 
-fn c_mapping_value<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_mapping_value<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token_char(Token::MappingValue, char::MAPPING_VALUE)
 }
 
-fn c_collect_entry<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_collect_entry<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token_char(Token::CollectionEntry, char::COLLECTION_ENTRY)
 }
 
-fn c_sequence_start<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_sequence_start<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token_char(Token::SequenceStart, char::SEQUENCE_START)
 }
 
-fn c_sequence_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_sequence_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token_char(Token::SequenceEnd, char::SEQUENCE_END)
 }
 
-fn c_mapping_start<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_mapping_start<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token_char(Token::MappingStart, char::MAPPING_START)
 }
 
-fn c_mapping_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_mapping_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token_char(Token::MappingEnd, char::MAPPING_END)
 }
 
-fn c_comment<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_comment<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token_char(Token::Comment, char::COMMENT)
 }
 
-fn c_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token_char(Token::Directive, char::DIRECTIVE)
 }
 
@@ -155,11 +156,14 @@ fn nb_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     parser.eat(char::non_break)
 }
 
-fn b_break<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.eat_char('\r').or(parser.eat_char('\n'))
+fn b_break<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
+    parser
+        .eat_char('\r')
+        .or(parser.eat_char('\n'))
+        .map_err(|()| ErrorKind::ExpectedToken(Token::Break))
 }
 
-fn b_non_content<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn b_non_content<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token(Token::Break, b_break)
 }
 
@@ -183,23 +187,12 @@ fn ns_hex_digit<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     parser.eat(|ch| ch.is_ascii_hexdigit())
 }
 
-fn s_indent<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn s_indent<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
     parser.token(Token::Indent, |parser| {
         for _ in 0..n {
-            s_space(parser)?;
+            s_space(parser).map_err(|()| ErrorKind::ExpectedToken(Token::Indent))?;
         }
         Ok(())
-    })
-}
-
-fn s_indent_less_than<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<i32, ()> {
-    parser.token(Token::Indent, |parser| {
-        for i in 0..(n - 1) {
-            if s_space(parser).is_err() {
-                return Ok(i);
-            }
-        }
-        Ok(n - 1)
     })
 }
 
@@ -214,7 +207,7 @@ fn s_indent_less_or_equal<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result
     })
 }
 
-fn s_separate_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn s_separate_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     if parser.is(char::space) {
         parser.token(Token::Separator, |parser| {
             Ok(star_fast!(parser, s_white(parser)))
@@ -222,17 +215,17 @@ fn s_separate_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     } else if parser.is_start_of_line() {
         Ok(())
     } else {
-        Err(())
+        Err(ErrorKind::ExpectedToken(Token::Separator))
     }
 }
 
-fn s_flow_line_prefix<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn s_flow_line_prefix<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
     s_indent(parser, n)?;
     question_fast!(parser, s_separate_in_line(parser));
     Ok(())
 }
 
-fn c_nb_comment_text<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_nb_comment_text<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     c_comment(parser)?;
     parser.token(Token::CommentText, |parser| {
         star_fast!(parser, nb_char(parser));
@@ -240,22 +233,22 @@ fn c_nb_comment_text<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     })
 }
 
-fn b_comment<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn b_comment<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     if b_non_content(parser).is_ok() || parser.is_end_of_input() {
         Ok(())
     } else {
-        Err(())
+        Err(ErrorKind::ExpectedToken(Token::Break))
     }
 }
 
-fn s_b_comment<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn s_b_comment<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     if s_separate_in_line(parser).is_ok() && parser.peek() == Some(char::COMMENT) {
         c_nb_comment_text(parser)?;
     }
     b_comment(parser)
 }
 
-fn l_comment<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn l_comment<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     s_separate_in_line(parser)?;
     if parser.peek() == Some('#') {
         c_nb_comment_text(parser)?;
@@ -263,16 +256,16 @@ fn l_comment<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     b_comment(parser)
 }
 
-fn s_l_comments<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn s_l_comments<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     if question!(parser, s_b_comment(parser)).is_some() || parser.is_start_of_line() {
         star!(parser, l_comment(parser));
         Ok(())
     } else {
-        Err(())
+        Err(ErrorKind::ExpectedToken(Token::Separator))
     }
 }
 
-fn s_separate<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+fn s_separate<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ErrorKind> {
     match c {
         Context::BlockIn | Context::BlockOut | Context::FlowIn | Context::FlowOut => {
             s_separate_lines(parser, n)
@@ -281,16 +274,17 @@ fn s_separate<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result
     }
 }
 
-fn s_separate_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    fn comments<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+fn s_separate_lines<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
+    fn comments<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ErrorKind> {
         s_l_comments(parser)?;
         s_flow_line_prefix(parser, n)
     }
 
     alt!(parser, comments(parser, n), s_separate_in_line(parser))
+        .map_err(|_| ErrorKind::ExpectedToken(Token::Separator))
 }
 
-fn l_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn l_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     c_directive(parser)?;
     if parser.is_str("YAML ") {
         ns_yaml_directive(parser)?;
@@ -302,11 +296,11 @@ fn l_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     s_l_comments(parser)
 }
 
-fn ns_reserved_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    fn param<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn ns_reserved_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
+    fn param<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
         s_separate_in_line(parser)?;
         if parser.is_char(char::COMMENT) {
-            return Err(());
+            return Err(ErrorKind::ExpectedToken(Token::DirectiveParameter));
         }
         ns_directive_parameter(parser)
     }
@@ -316,45 +310,57 @@ fn ns_reserved_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> 
     Ok(())
 }
 
-fn ns_directive_name<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::DirectiveName, |parser| {
-        plus_fast!(parser, ns_char(parser))
-    })
+fn ns_directive_name<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
+    parser
+        .token(Token::DirectiveName, |parser| {
+            plus_fast!(parser, ns_char(parser))
+        })
+        .map_err(|()| ErrorKind::ExpectedToken(Token::DirectiveName))
 }
 
-fn ns_directive_parameter<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::DirectiveParameter, |parser| {
-        plus_fast!(parser, ns_char(parser))
-    })
+fn ns_directive_parameter<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
+    parser
+        .token(Token::DirectiveParameter, |parser| {
+            plus_fast!(parser, ns_char(parser))
+        })
+        .map_err(|()| ErrorKind::ExpectedToken(Token::DirectiveParameter))
 }
 
-fn ns_yaml_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn ns_yaml_directive<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     if parser.yaml_version.is_some() {
-        return Err(());
+        return Err(ErrorKind::DuplicateYamlVersion);
     }
 
-    parser.token(Token::DirectiveName, |parser| parser.eat_str("YAML"))?;
+    parser
+        .token(Token::DirectiveName, |parser| parser.eat_str("YAML"))
+        .map_err(|()| ErrorKind::ExpectedToken(Token::DirectiveName))?;
     s_separate_in_line(parser)?;
     ns_yaml_version(parser)
 }
 
-fn ns_yaml_version<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn ns_yaml_version<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     let start = parser.offset();
-    parser.token(Token::YamlVersion, |parser| {
-        plus_fast!(parser, ns_dec_digit(parser))?;
-        parser.eat_char('.')?;
-        plus_fast!(parser, ns_dec_digit(parser))
-    })?;
+    parser
+        .token(Token::YamlVersion, |parser| {
+            plus_fast!(parser, ns_dec_digit(parser))?;
+            parser.eat_char('.')?;
+            plus_fast!(parser, ns_dec_digit(parser))
+        })
+        .map_err(|()| ErrorKind::InvalidYamlVersion);
     let end = parser.offset();
     parser.yaml_version = Some(&parser.stream[start..end]);
     Ok(())
 }
 
-fn e_node<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn e_node<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     parser.token(Token::Empty, |_| Ok(()))
 }
 
-fn c_flow_sequence<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+fn c_flow_sequence<R: Receiver>(
+    parser: &mut Parser<R>,
+    n: i32,
+    c: Context,
+) -> Result<(), ErrorKind> {
     c_sequence_start(parser)?;
     question_fast!(parser, s_separate(parser, n, c));
     c_flow_sequence_remainder(parser, n, c)
@@ -364,7 +370,7 @@ fn c_flow_sequence_remainder<R: Receiver>(
     parser: &mut Parser<R>,
     n: i32,
     c: Context,
-) -> Result<(), ()> {
+) -> Result<(), ErrorKind> {
     question!(parser, ns_s_flow_seq_entries(parser, n, c.in_flow()));
     c_sequence_end(parser)
 }
@@ -373,7 +379,7 @@ fn ns_s_flow_seq_entries<R: Receiver>(
     parser: &mut Parser<R>,
     n: i32,
     c: Context,
-) -> Result<(), ()> {
+) -> Result<(), ErrorKind> {
     ns_flow_seq_entry(parser, n, c)?;
     question_fast!(parser, s_separate(parser, n, c));
     while question_fast!(parser, c_flow_collection_separator(parser, n, c)).is_some()
@@ -389,13 +395,17 @@ fn c_flow_collection_separator<R: Receiver>(
     parser: &mut Parser<R>,
     n: i32,
     c: Context,
-) -> Result<(), ()> {
+) -> Result<(), ErrorKind> {
     c_collect_entry(parser)?;
     question_fast!(parser, s_separate(parser, n, c));
     Ok(())
 }
 
-fn ns_flow_seq_entry<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+fn ns_flow_seq_entry<R: Receiver>(
+    parser: &mut Parser<R>,
+    n: i32,
+    c: Context,
+) -> Result<(), ErrorKind> {
     if ((parser.is_char(char::MAPPING_KEY) || parser.is_char(char::MAPPING_VALUE))
         && !parser.next_is(char::non_space))
         || parser.lookahead(ns_s_flow_map_implicit_key)
@@ -406,7 +416,7 @@ fn ns_flow_seq_entry<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) ->
     }
 }
 
-fn ns_s_flow_map_implicit_key<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn ns_s_flow_map_implicit_key<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     alt!(
         parser,
         c_s_implicit_json_key(parser, Context::FlowKey),
@@ -414,7 +424,11 @@ fn ns_s_flow_map_implicit_key<R: Receiver>(parser: &mut Parser<R>) -> Result<(),
     )
 }
 
-fn c_flow_mapping<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+fn c_flow_mapping<R: Receiver>(
+    parser: &mut Parser<R>,
+    n: i32,
+    c: Context,
+) -> Result<(), ErrorKind> {
     c_mapping_start(parser)?;
     c_flow_mapping_remainder(parser, n, c)
 }
@@ -423,7 +437,7 @@ fn c_flow_mapping_remainder<R: Receiver>(
     parser: &mut Parser<R>,
     n: i32,
     c: Context,
-) -> Result<(), ()> {
+) -> Result<(), ErrorKind> {
     question_fast!(parser, s_separate(parser, n, c));
     question!(parser, ns_s_flow_map_entries(parser, n, c.in_flow()));
     c_mapping_end(parser)
@@ -433,7 +447,7 @@ fn ns_s_flow_map_entries<R: Receiver>(
     parser: &mut Parser<R>,
     n: i32,
     c: Context,
-) -> Result<(), ()> {
+) -> Result<(), ErrorKind> {
     ns_flow_map_entry(parser, n, c)?;
     question_fast!(parser, s_separate(parser, n, c));
     while question_fast!(parser, c_flow_collection_separator(parser, n, c)).is_some()
@@ -448,7 +462,11 @@ fn ns_s_flow_map_entries<R: Receiver>(
     Ok(())
 }
 
-fn ns_flow_map_entry<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+fn ns_flow_map_entry<R: Receiver>(
+    parser: &mut Parser<R>,
+    n: i32,
+    c: Context,
+) -> Result<(), ErrorKind> {
     if parser.is_char(char::MAPPING_KEY) && !parser.next_is(char::non_space) {
         c_mapping_key(parser)?;
         s_separate(parser, n, c)?;
@@ -462,8 +480,8 @@ fn ns_flow_map_explicit_entry<R: Receiver>(
     parser: &mut Parser<R>,
     n: i32,
     c: Context,
-) -> Result<(), ()> {
-    fn empty<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+) -> Result<(), ErrorKind> {
+    fn empty<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
         e_node(parser)?;
         e_node(parser)
     }
@@ -479,7 +497,7 @@ fn ns_flow_map_implicit_entry<R: Receiver>(
     parser: &mut Parser<R>,
     n: i32,
     c: Context,
-) -> Result<(), ()> {
+) -> Result<(), ErrorKind> {
     alt!(
         parser,
         ns_flow_map_yaml_key_entry(parser, n, c),
@@ -492,8 +510,8 @@ fn ns_flow_map_yaml_key_entry<R: Receiver>(
     parser: &mut Parser<R>,
     n: i32,
     c: Context,
-) -> Result<(), ()> {
-    fn value<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+) -> Result<(), ErrorKind> {
+    fn value<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ErrorKind> {
         question_fast!(parser, s_separate(parser, n, c));
         c_ns_flow_map_separate_value(parser, n, c)
     }
@@ -506,7 +524,7 @@ fn c_ns_flow_map_empty_key_entry<R: Receiver>(
     parser: &mut Parser<R>,
     n: i32,
     c: Context,
-) -> Result<(), ()> {
+) -> Result<(), ErrorKind> {
     e_node(parser)?;
     c_ns_flow_map_separate_value(parser, n, c)
 }
@@ -515,15 +533,15 @@ fn c_ns_flow_map_separate_value<R: Receiver>(
     parser: &mut Parser<R>,
     n: i32,
     c: Context,
-) -> Result<(), ()> {
-    fn node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+) -> Result<(), ErrorKind> {
+    fn node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ErrorKind> {
         s_separate(parser, n, c)?;
         ns_flow_node(parser, n, c)
     }
 
     c_mapping_value(parser)?;
     if parser.is(|ch| char::plain_safe(ch, c)) {
-        return Err(());
+        return Err(ErrorKind::ExpectedToken(Token::Separator));
     }
     alt!(parser, node(parser, n, c), e_node(parser))
 }
@@ -532,8 +550,8 @@ fn c_ns_flow_map_json_key_entry<R: Receiver>(
     parser: &mut Parser<R>,
     n: i32,
     c: Context,
-) -> Result<(), ()> {
-    fn value<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+) -> Result<(), ErrorKind> {
+    fn value<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ErrorKind> {
         question_fast!(parser, s_separate(parser, n, c));
         c_ns_flow_map_adjacent_value(parser, n, c)
     }
@@ -546,8 +564,8 @@ fn c_ns_flow_map_adjacent_value<R: Receiver>(
     parser: &mut Parser<R>,
     n: i32,
     c: Context,
-) -> Result<(), ()> {
-    fn node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+) -> Result<(), ErrorKind> {
+    fn node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ErrorKind> {
         question_fast!(parser, s_separate(parser, n, c));
         ns_flow_node(parser, n, c)
     }
@@ -556,7 +574,7 @@ fn c_ns_flow_map_adjacent_value<R: Receiver>(
     alt!(parser, node(parser, n, c), e_node(parser))
 }
 
-fn ns_flow_pair<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+fn ns_flow_pair<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ErrorKind> {
     if parser.is_char(char::MAPPING_KEY) && !parser.next_is(char::non_space) {
         c_mapping_key(parser)?;
         s_separate(parser, n, c)?;
@@ -567,7 +585,11 @@ fn ns_flow_pair<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Resu
     Ok(())
 }
 
-fn ns_flow_pair_entry<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+fn ns_flow_pair_entry<R: Receiver>(
+    parser: &mut Parser<R>,
+    n: i32,
+    c: Context,
+) -> Result<(), ErrorKind> {
     alt!(
         parser,
         ns_flow_pair_yaml_key_entry(parser, n, c),
@@ -580,7 +602,7 @@ fn ns_flow_pair_yaml_key_entry<R: Receiver>(
     parser: &mut Parser<R>,
     n: i32,
     c: Context,
-) -> Result<(), ()> {
+) -> Result<(), ErrorKind> {
     ns_s_implicit_yaml_key(parser, Context::FlowKey)?;
     c_ns_flow_map_separate_value(parser, n, c)
 }
@@ -589,49 +611,62 @@ fn c_ns_flow_pair_json_key_entry<R: Receiver>(
     parser: &mut Parser<R>,
     n: i32,
     c: Context,
-) -> Result<(), ()> {
+) -> Result<(), ErrorKind> {
     c_s_implicit_json_key(parser, Context::FlowKey)?;
     c_ns_flow_map_adjacent_value(parser, n, c)
 }
 
-fn ns_s_implicit_yaml_key<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
-    parser.with_length_limit(1024, |parser| {
-        ns_flow_yaml_node(parser, 0, c)?;
-        question_fast!(parser, s_separate_in_line(parser));
-        if !parser.is_char(char::MAPPING_VALUE) {
-            return Err(());
-        }
-        Ok(())
-    })
+fn ns_s_implicit_yaml_key<R: Receiver>(
+    parser: &mut Parser<R>,
+    c: Context,
+) -> Result<(), ErrorKind> {
+    // todo length limit
+    ns_flow_yaml_node(parser, 0, c)?;
+    question_fast!(parser, s_separate_in_line(parser));
+    if !parser.is_char(char::MAPPING_VALUE) {
+        return Err(ErrorKind::ExpectedToken(Token::MappingValue));
+    }
+    Ok(())
 }
 
-fn c_s_implicit_json_key<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ()> {
-    parser.with_length_limit(1024, |parser| {
-        c_flow_json_node(parser, 0, c)?;
-        question_fast!(parser, s_separate_in_line(parser));
-        if !parser.is_char(char::MAPPING_VALUE) {
-            return Err(());
-        }
-        Ok(())
-    })
+fn c_s_implicit_json_key<R: Receiver>(parser: &mut Parser<R>, c: Context) -> Result<(), ErrorKind> {
+    // todo length limit
+    c_flow_json_node(parser, 0, c)?;
+    question_fast!(parser, s_separate_in_line(parser));
+    if !parser.is_char(char::MAPPING_VALUE) {
+        return Err(ErrorKind::ExpectedToken(Token::MappingValue));
+    }
+    Ok(())
 }
 
-fn ns_flow_yaml_content<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+fn ns_flow_yaml_content<R: Receiver>(
+    parser: &mut Parser<R>,
+    n: i32,
+    c: Context,
+) -> Result<(), ErrorKind> {
     scalar::ns_plain(parser, n, c)?;
     Ok(())
 }
 
-fn c_flow_json_content<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+fn c_flow_json_content<R: Receiver>(
+    parser: &mut Parser<R>,
+    n: i32,
+    c: Context,
+) -> Result<(), ErrorKind> {
     match parser.peek() {
         Some(char::SEQUENCE_START) => c_flow_sequence(parser, n, c),
         Some(char::MAPPING_START) => c_flow_mapping(parser, n, c),
         Some(char::SINGLE_QUOTE) => scalar::c_single_quoted(parser, n, c).map(drop),
         Some(char::DOUBLE_QUOTE) => scalar::c_double_quoted(parser, n, c).map(drop),
-        _ => Err(()),
+        _ => Err(ErrorKind::Todo),
     }
 }
 
-fn ns_flow_content<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+fn ns_flow_content<R: Receiver>(
+    parser: &mut Parser<R>,
+    n: i32,
+    c: Context,
+) -> Result<(), ErrorKind> {
     alt!(
         parser,
         ns_flow_yaml_content(parser, n, c),
@@ -639,18 +674,22 @@ fn ns_flow_content<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> R
     )
 }
 
-fn ns_flow_yaml_node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
-    fn alias<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn ns_flow_yaml_node<R: Receiver>(
+    parser: &mut Parser<R>,
+    n: i32,
+    c: Context,
+) -> Result<(), ErrorKind> {
+    fn alias<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
         properties::c_ns_alias_node(parser)?;
         Ok(())
     }
 
-    fn content<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    fn content<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ErrorKind> {
         s_separate(parser, n, c)?;
         ns_flow_content(parser, n, c)
     }
 
-    fn props<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+    fn props<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ErrorKind> {
         properties::c_ns_properties(parser, n, c)?;
         alt!(parser, content(parser, n, c), e_node(parser))
     }
@@ -663,7 +702,11 @@ fn ns_flow_yaml_node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) ->
     )
 }
 
-fn c_flow_json_node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+fn c_flow_json_node<R: Receiver>(
+    parser: &mut Parser<R>,
+    n: i32,
+    c: Context,
+) -> Result<(), ErrorKind> {
     if parser.is(|ch| matches!(ch, char::TAG | char::ANCHOR)) {
         properties::c_ns_properties(parser, n, c)?;
         s_separate(parser, n, c)?;
@@ -671,7 +714,7 @@ fn c_flow_json_node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> 
     c_flow_json_content(parser, n, c)
 }
 
-fn ns_flow_node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ()> {
+fn ns_flow_node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Result<(), ErrorKind> {
     match peek_flow_node(parser, false, n, c)? {
         NodeKind::Alias { .. } | NodeKind::Scalar { .. } => Ok(()),
         NodeKind::MappingStart {
@@ -698,20 +741,22 @@ fn ns_flow_node<R: Receiver>(parser: &mut Parser<R>, n: i32, c: Context) -> Resu
 fn s_ns_block_map_explicit_value_separator<R: Receiver>(
     parser: &mut Parser<R>,
     n: i32,
-) -> Result<(), ()> {
+) -> Result<(), ErrorKind> {
     s_indent(parser, n)?;
     c_block_map_implicit_value_separator(parser)
 }
 
-fn c_block_map_implicit_value_separator<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn c_block_map_implicit_value_separator<R: Receiver>(
+    parser: &mut Parser<R>,
+) -> Result<(), ErrorKind> {
     c_mapping_value(parser)?;
     if parser.is(char::non_space) {
-        return Err(());
+        return Err(ErrorKind::ExpectedToken(Token::Separator));
     }
     Ok(())
 }
 
-fn ns_s_block_map_implicit_key<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn ns_s_block_map_implicit_key<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     alt!(
         parser,
         c_s_implicit_json_key(parser, Context::BlockKey),
@@ -753,7 +798,7 @@ fn peek_block_node<'s, R: Receiver>(
     allow_empty: bool,
     n: i32,
     c: Context,
-) -> Result<NodeKind<'s>, ()> {
+) -> Result<NodeKind<'s>, ErrorKind> {
     if allow_compact {
         if let Some(kind) = question!(parser, peek_compact_collection(parser, n, c)) {
             return Ok(kind);
@@ -796,7 +841,7 @@ fn peek_block_node<'s, R: Receiver>(
         message: "invalid block node".to_owned(),
         span: Span::empty(parser.location()),
     });
-    Err(())
+    Err(ErrorKind::ExpectedBlockNode)
 }
 
 fn peek_compact_collection<'s, R: Receiver>(
@@ -806,7 +851,7 @@ fn peek_compact_collection<'s, R: Receiver>(
 ) -> Result<NodeKind<'s>, ()> {
     let m = parser.detect_compact_indent()?;
     let span = Span::empty(parser.location());
-    s_indent(parser, m)?;
+    s_indent(parser, m).expect("todo");
     if lookahead_is_block_sequence(parser) {
         Ok(NodeKind::SequenceStart {
             style: CollectionStyle::Block,
@@ -832,7 +877,7 @@ fn s_l_block_scalar<'s, R: Receiver>(
     parser: &mut Parser<'s, R>,
     n: i32,
     c: Context,
-) -> Result<(ScalarStyle, Properties<'s>, Cow<'s, str>, Span), ()> {
+) -> Result<(ScalarStyle, Properties<'s>, Cow<'s, str>, Span), ErrorKind> {
     s_separate(parser, n + 1, c)?;
     let start = parser.location();
     let props = if parser.is(|ch| matches!(ch, char::TAG | char::ANCHOR)) {
@@ -847,7 +892,7 @@ fn s_l_block_scalar<'s, R: Receiver>(
     } else if parser.is_char(char::FOLDED) {
         (ScalarStyle::Folded, scalar::c_l_folded(parser, n)?)
     } else {
-        return Err(());
+        return Err(ErrorKind::Todo);
     };
     let span = parser.span(start);
     Ok((style, props, value, span))
@@ -857,22 +902,22 @@ fn peek_s_l_block_collection<'s, R: Receiver>(
     parser: &mut Parser<'s, R>,
     n: i32,
     c: Context,
-) -> Result<NodeKind<'s>, ()> {
+) -> Result<NodeKind<'s>, ErrorKind> {
     fn props<'s, R: Receiver>(
         parser: &mut Parser<'s, R>,
         n: i32,
         c: Context,
-    ) -> Result<Properties<'s>, ()> {
+    ) -> Result<Properties<'s>, ErrorKind> {
         let props = properties::c_ns_properties(parser, n, c)?;
         s_l_comments(parser)?;
         Ok(props)
     }
-    fn anchor<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<Properties<'s>, ()> {
+    fn anchor<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<Properties<'s>, ErrorKind> {
         let anchor = properties::c_ns_anchor_property(parser)?;
         s_l_comments(parser)?;
         Ok((Some(anchor), None))
     }
-    fn tag<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<Properties<'s>, ()> {
+    fn tag<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<Properties<'s>, ErrorKind> {
         let tag = properties::c_ns_tag_property(parser)?;
         s_l_comments(parser)?;
         Ok((None, Some(tag)))
@@ -882,7 +927,7 @@ fn peek_s_l_block_collection<'s, R: Receiver>(
         parser: &mut Parser<'s, R>,
         n: i32,
         c: Context,
-    ) -> Result<(Location, Properties<'s>), ()> {
+    ) -> Result<(Location, Properties<'s>), ErrorKind> {
         s_separate(parser, n, c)?;
         let start = parser.location();
         let props = alt!(parser, props(state, n, c), anchor(state), tag(state))?;
@@ -901,7 +946,7 @@ fn peek_s_l_block_collection<'s, R: Receiver>(
     let start = start.unwrap_or_else(|| parser.location());
     if lookahead_is_block_sequence(parser) {
         if m <= 0 && c != Context::BlockOut {
-            return Err(());
+            return Err(ErrorKind::InvalidIndent);
         }
 
         Ok(NodeKind::SequenceStart {
@@ -913,7 +958,7 @@ fn peek_s_l_block_collection<'s, R: Receiver>(
         })
     } else if lookahead_is_block_mapping(parser) {
         if m <= 0 {
-            return Err(());
+            return Err(ErrorKind::InvalidIndent);
         }
 
         return Ok(NodeKind::MappingStart {
@@ -924,7 +969,7 @@ fn peek_s_l_block_collection<'s, R: Receiver>(
             context: c,
         });
     } else {
-        Err(())
+        Err(ErrorKind::ExpectedBlockNode)
     }
 }
 
@@ -942,7 +987,7 @@ fn peek_flow_in_block<'s, R: Receiver>(
     parser: &mut Parser<'s, R>,
     n: i32,
     c: Context,
-) -> Result<NodeKind<'s>, ()> {
+) -> Result<NodeKind<'s>, ErrorKind> {
     s_separate(parser, n, c)?;
     let kind = peek_flow_node(parser, false, n, c)?;
     if matches!(kind, NodeKind::Scalar { .. } | NodeKind::Alias { .. }) {
@@ -956,7 +1001,7 @@ fn peek_flow_node<'s, R: Receiver>(
     allow_empty: bool,
     n: i32,
     c: Context,
-) -> Result<NodeKind<'s>, ()> {
+) -> Result<NodeKind<'s>, ErrorKind> {
     if parser.is_char(char::ALIAS) {
         let (value, span) = properties::c_ns_alias_node(parser)?;
         return Ok(NodeKind::Alias { value, span });
@@ -1043,7 +1088,7 @@ fn peek_flow_node<'s, R: Receiver>(
             span,
         })
     } else {
-        Err(())
+        Err(ErrorKind::ExpectedFlowNode)
     }
 }
 
@@ -1056,7 +1101,7 @@ fn lookahead_is_maybe_separated_char<R: Receiver>(
 ) -> bool {
     if separated {
         parser.lookahead(|parser| {
-            s_separate(parser, n, c)?;
+            s_separate(parser, n, c).map_err(|_| ())?;
             parser.eat_char(ch)
         })
     } else {
@@ -1078,27 +1123,31 @@ fn lookahead_is_maybe_separated_plain<R: Receiver>(
     })
 }
 
-fn l_document_prefix<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
+fn l_document_prefix<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
     question_fast!(parser, c_byte_order_mark(parser));
     star!(parser, l_comment(parser));
     Ok(())
 }
 
-fn c_directives_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::DirectivesEnd, |parser| parser.eat_str("---"))
+fn c_directives_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
+    parser
+        .token(Token::DirectivesEnd, |parser| parser.eat_str("---"))
+        .map_err(|()| ErrorKind::ExpectedToken(Token::DirectivesEnd))
 }
 
-fn c_document_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    parser.token(Token::DocumentEnd, |parser| {
-        parser.eat_str("...")?;
-        if parser.is(char::non_space) {
-            return Err(());
-        }
-        Ok(())
-    })
+fn c_document_end<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ErrorKind> {
+    parser
+        .token(Token::DocumentEnd, |parser| {
+            parser.eat_str("...")?;
+            if parser.is(char::non_space) {
+                return Err(());
+            }
+            Ok(())
+        })
+        .map_err(|()| ErrorKind::ExpectedToken(Token::DocumentEnd))
 }
 
-fn l_document_suffix<R: Receiver>(parser: &mut Parser<R>) -> Result<Span, ()> {
+fn l_document_suffix<R: Receiver>(parser: &mut Parser<R>) -> Result<Span, ErrorKind> {
     let start = parser.location();
     c_document_end(parser)?;
     let span = parser.span(start);
@@ -1109,10 +1158,10 @@ fn l_document_suffix<R: Receiver>(parser: &mut Parser<R>) -> Result<Span, ()> {
 fn nb_document_prefix<R: Receiver>(
     parser: &mut Parser<R>,
     terminated: bool,
-) -> Result<Option<(bool, Span)>, ()> {
+) -> Result<Option<(bool, Span)>, ErrorKind> {
     let start = parser.location();
     if parser.is_char(char::DIRECTIVE) && !terminated {
-        return Err(());
+        return Err(ErrorKind::ExpectedDocumentEndBeforeDirectives);
     }
     if parser.is_char(char::DIRECTIVE)
         || (parser.is_str("---")
@@ -1143,7 +1192,7 @@ fn nb_document_prefix<R: Receiver>(
 fn find_next_document<R: Receiver>(
     parser: &mut Parser<R>,
     mut terminated: bool,
-) -> Result<Option<(bool, Span)>, ()> {
+) -> Result<Option<(bool, Span)>, ErrorKind> {
     loop {
         l_document_prefix(parser)?;
         match nb_document_prefix(parser, terminated)? {
@@ -1159,7 +1208,7 @@ fn find_next_document<R: Receiver>(
                             message: "invalid document".to_owned(),
                             span: Span::empty(parser.location()),
                         });
-                        return Err(());
+                        return Err(ErrorKind::Todo);
                     }
                 } else {
                     continue;
@@ -1171,7 +1220,7 @@ fn find_next_document<R: Receiver>(
 
 fn lookahead_l_bare_document<R: Receiver>(parser: &mut Parser<R>) -> bool {
     parser.lookahead(|parser| {
-        s_separate_lines(parser, 0)?;
+        s_separate_lines(parser, 0).map_err(|_| ())?;
         if parser.is_end_of_document() || parser.is_end_of_input() {
             Err(())
         } else {
@@ -1185,7 +1234,7 @@ pub(super) fn event_flow_node<'s, R: Receiver>(
     allow_empty: bool,
     n: i32,
     c: Context,
-) -> Result<(Event<'s>, Span), ()> {
+) -> Result<(Event<'s>, Span), ErrorKind> {
     match peek_flow_node(parser, allow_empty, n, c)? {
         NodeKind::Alias { value, span } => Ok((Event::Alias { value }, span)),
         NodeKind::Scalar {
@@ -1241,7 +1290,7 @@ pub(super) fn event_block_node<'s, R: Receiver>(
     allow_empty: bool,
     n: i32,
     c: Context,
-) -> Result<(Event<'s>, Span), ()> {
+) -> Result<(Event<'s>, Span), ErrorKind> {
     match peek_block_node(parser, allow_compact, allow_empty, n, c)? {
         NodeKind::Alias { value, span } => Ok((Event::Alias { value }, span)),
         NodeKind::Scalar {
@@ -1293,7 +1342,7 @@ pub(super) fn event_block_node<'s, R: Receiver>(
 
 pub(super) fn event_empty_node<'s, R: Receiver>(
     parser: &mut Parser<'s, R>,
-) -> Result<(Event<'s>, Span), ()> {
+) -> Result<(Event<'s>, Span), ErrorKind> {
     e_node(parser)?;
     return Ok((
         Event::Scalar {
@@ -1306,7 +1355,9 @@ pub(super) fn event_empty_node<'s, R: Receiver>(
     ));
 }
 
-pub(super) fn event<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<(Event<'s>, Span), ()> {
+pub(super) fn event<'s, R: Receiver>(
+    parser: &mut Parser<'s, R>,
+) -> Result<(Event<'s>, Span), ErrorKind> {
     match parser.state() {
         State::Stream => {
             parser.replace_state(State::Document {
@@ -1374,7 +1425,7 @@ pub(super) fn event<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<(Even
             CollectionStyle::Block => {
                 if first
                     || parser.lookahead(|parser| {
-                        s_indent(parser, indent)?;
+                        s_indent(parser, indent).map_err(|_| ())?;
                         if lookahead_is_block_sequence(parser) {
                             Ok(())
                         } else {
@@ -1479,7 +1530,7 @@ pub(super) fn event<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<(Even
 
                     if first
                         || parser.lookahead(|parser| {
-                            s_indent(parser, indent)?;
+                            s_indent(parser, indent).map_err(|_| ())?;
                             if lookahead_is_block_mapping(parser) {
                                 Ok(())
                             } else {
@@ -1512,7 +1563,7 @@ pub(super) fn event<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<(Even
                         if explicit {
                             c_mapping_key(parser)?;
                             if parser.is(char::non_space) {
-                                return Err(());
+                                return Err(ErrorKind::ExpectedToken(Token::Separator));
                             }
 
                             event_block_node(parser, true, true, indent, Context::BlockOut)
@@ -1668,7 +1719,7 @@ pub(super) fn event<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<(Even
                 question_fast!(parser, s_separate(parser, indent, context));
                 c_mapping_value(parser)?;
                 if !allow_adjacent && parser.is(|ch| char::plain_safe(ch, context)) {
-                    return Err(());
+                    return Err(ErrorKind::ExpectedToken(Token::Separator));
                 }
 
                 if parser.lookahead(|parser| {

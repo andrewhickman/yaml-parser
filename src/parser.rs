@@ -4,7 +4,9 @@ mod grammar;
 use alloc::{borrow::Cow, collections::BTreeMap, string::String, vec::Vec};
 use core::{fmt, mem, ops::Range, str::Chars, unreachable};
 
-use crate::{CollectionStyle, DefaultReceiver, Event, Location, Receiver, Span, Token};
+use crate::{
+    error::ErrorKind, CollectionStyle, DefaultReceiver, Event, Location, Receiver, Span, Token,
+};
 
 /// An iterator over events encountered while parsing a YAML stream.
 pub struct Parser<'t, R = DefaultReceiver> {
@@ -24,7 +26,6 @@ pub struct Parser<'t, R = DefaultReceiver> {
     line_offset: usize,
 
     in_document: bool,
-    length_limit: Option<usize>,
 
     #[cfg(debug_assertions)]
     peek_count: u32,
@@ -127,7 +128,6 @@ impl<'t> Parser<'t, DefaultReceiver> {
             tags: BTreeMap::new(),
             receiver: DefaultReceiver,
             in_document: false,
-            length_limit: None,
             alt_depth: 0,
             line_number: 0,
             line_offset: 0,
@@ -151,7 +151,6 @@ impl<'s, R> Parser<'s, R> {
             tags: self.tags,
             receiver,
             in_document: self.in_document,
-            length_limit: self.length_limit,
             alt_depth: self.alt_depth,
             line_number: self.line_number,
             line_offset: self.line_offset,
@@ -199,7 +198,7 @@ where
             for diag in self.diagnostics.drain(..) {
                 self.receiver.diagnostic(&diag.message, diag.span);
             }
-            Some(res)
+            Some(res.map_err(drop))
         }
     }
 }
@@ -295,14 +294,16 @@ where
         }
     }
 
-    fn with_rollback<T>(&mut self, mut f: impl FnMut(&mut Self) -> Result<T, ()>) -> Result<T, ()> {
+    fn with_rollback<T, E>(
+        &mut self,
+        mut f: impl FnMut(&mut Self) -> Result<T, E>,
+    ) -> Result<T, E> {
         let events_len = self.tokens.len();
         let diagnostics_len = self.diagnostics.len();
         let value = self.value.clone();
         let offset = self.offset();
         let line_number = self.line_number;
         let line_offset = self.line_offset;
-        let length_limit = self.length_limit;
 
         self.alt_depth += 1;
         let res = f(self);
@@ -318,22 +319,21 @@ where
 
                 Ok(r)
             }
-            Err(()) => {
+            Err(err) => {
                 self.iter = self.stream[offset..].chars();
                 self.tokens.truncate(events_len);
                 self.diagnostics.truncate(diagnostics_len);
                 self.value = value;
                 self.line_number = line_number;
                 self.line_offset = line_offset;
-                self.length_limit = length_limit;
-                Err(())
+                Err(err)
             }
         }
     }
 
-    fn lookahead<T>(&mut self, mut f: impl FnMut(&mut Self) -> Result<T, ()>) -> bool {
+    fn lookahead<T, E>(&mut self, mut f: impl FnMut(&mut Self) -> Result<T, E>) -> bool {
         let mut result: Option<bool> = None;
-        self.with_rollback::<()>(|parser| {
+        self.with_rollback::<(), ()>(|parser| {
             result = Some(f(parser).is_ok());
             Err(())
         })
@@ -341,45 +341,22 @@ where
         result.unwrap()
     }
 
-    fn with_length_limit(
-        &mut self,
-        max_len: usize,
-        mut f: impl FnMut(&mut Self) -> Result<(), ()>,
-    ) -> Result<(), ()> {
-        let prev_length_limit = self.length_limit;
-        self.length_limit = Some(match prev_length_limit {
-            None => max_len,
-            Some(prev) => prev.min(max_len),
-        });
-        let res = f(self);
-        self.length_limit = match prev_length_limit {
-            None => None,
-            Some(prev) => Some(prev - (max_len - self.length_limit.unwrap())),
-        };
-        res
-    }
-
-    fn token<T>(
+    fn token<T, E>(
         &mut self,
         token: Token,
-        mut f: impl FnMut(&mut Self) -> Result<T, ()>,
-    ) -> Result<T, ()> {
+        mut f: impl FnMut(&mut Self) -> Result<T, E>,
+    ) -> Result<T, E> {
         let start = self.location();
-
-        let res = f(self);
-
-        match res {
-            Ok(value) => {
-                self.queue(token, self.span(start));
-                Ok(value)
-            }
-            Err(()) => Err(()),
-        }
+        let res = f(self)?;
+        self.queue(token, self.span(start));
+        Ok(res)
     }
 
-    fn token_char(&mut self, token: Token, ch: char) -> Result<(), ()> {
+    fn token_char(&mut self, token: Token, ch: char) -> Result<(), ErrorKind> {
         let start = self.location();
-        self.eat_char(ch)?;
+        if self.eat_char(ch).is_err() {
+            return Err(ErrorKind::ExpectedToken(token));
+        }
         self.queue(token, self.span(start));
         Ok(())
     }
@@ -447,11 +424,7 @@ where
     }
 
     fn is_str(&self, s: &str) -> bool {
-        if let Some(length_limit) = self.length_limit {
-            s.chars().count() < length_limit && self.iter.as_str().starts_with(s)
-        } else {
-            self.iter.as_str().starts_with(s)
-        }
+        self.iter.as_str().starts_with(s)
     }
 
     fn is_start_of_line(&self) -> bool {
@@ -492,10 +465,6 @@ where
             panic!("detected infinite loop in parser");
         }
 
-        if matches!(self.length_limit, Some(limit) if n > limit) {
-            return None;
-        }
-
         if self.in_document && self.is_end_of_document() {
             return None;
         }
@@ -511,11 +480,6 @@ where
         #[cfg(debug_assertions)]
         {
             self.peek_count = 0;
-        }
-
-        if let Some(limit) = &mut self.length_limit {
-            debug_assert!(*limit != 0);
-            *limit -= 1;
         }
 
         let ch = self.iter.next().expect("called bump at end of input");
