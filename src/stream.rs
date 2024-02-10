@@ -19,14 +19,8 @@ pub enum Encoding {
     Utf32Le,
 }
 
-#[derive(Debug, Clone)]
-pub(crate) struct DecodeError {
-    kind: DecodeErrorKind,
-    range: Range<usize>,
-}
-
 #[derive(Debug, Copy, Clone)]
-pub(crate) enum DecodeErrorKind {
+pub(crate) enum DecodeError {
     InvalidUtf8,
     InvalidUtf16,
     InvalidUtf32,
@@ -72,7 +66,7 @@ impl<'s> Stream<'s> {
         }
     }
 
-    pub(crate) fn from_slice(stream: &'s [u8]) -> Result<Self, DecodeError> {
+    pub(crate) fn from_slice(stream: &'s [u8]) -> Result<Self, (DecodeError, usize)> {
         let kind = match stream {
             [0x00, 0x00, 0xfe, 0xff, ..] | [0x00, 0x00, 0x00, _, ..] => StreamKind::Utf32Be {
                 index: 0,
@@ -95,16 +89,7 @@ impl<'s> Stream<'s> {
                     stream,
                     iter: stream.chars(),
                 },
-                Err(err) => {
-                    let end = match err.error_len() {
-                        Some(len) => err.valid_up_to() + len,
-                        None => stream.len(),
-                    };
-                    return Err(DecodeError {
-                        range: err.valid_up_to()..end,
-                        kind: DecodeErrorKind::InvalidUtf8,
-                    });
-                }
+                Err(err) => return Err((DecodeError::InvalidLength, err.valid_up_to()))
             },
         };
 
@@ -128,6 +113,17 @@ impl<'s> Stream<'s> {
             | StreamKind::Utf16Le { index, .. }
             | StreamKind::Utf32Be { index, .. }
             | StreamKind::Utf32Le { index, .. } => *index,
+        }
+    }
+
+    pub(crate) fn prev(&self) -> Option<char> {
+        let index = self.index();
+        match &self.kind {
+            StreamKind::Utf8 { stream, iter } => todo!(),
+            StreamKind::Utf16Be { index, iter } => todo!(),
+            StreamKind::Utf16Le { index, iter } => todo!(),
+            StreamKind::Utf32Be { index, iter } => todo!(),
+            StreamKind::Utf32Le { index, iter } => todo!(),
         }
     }
 
@@ -185,18 +181,15 @@ macro_rules! int_iter {
         }
 
         impl<'s> $name<'s> {
-            fn new(stream: &'s [u8]) -> Result<Self, DecodeError> {
+            fn new(stream: &'s [u8]) -> Result<Self, (DecodeError, usize)> {
                 let rem = stream.len() % $len;
                 if rem == 0 {
                     Ok($name {
                         chunks: stream.chunks_exact($len),
                     })
                 } else {
-                    let range = (stream.len() - rem)..stream.len();
-                    Err(DecodeError {
-                        range,
-                        kind: DecodeErrorKind::InvalidLength,
-                    })
+                    let index = stream.len() - rem;
+                    Err((DecodeError::InvalidLength, index))
                 }
             }
         }
@@ -206,6 +199,13 @@ macro_rules! int_iter {
 
             fn next(&mut self) -> Option<Self::Item> {
                 match self.chunks.next() {
+                    Some(chunk) => Some($from(chunk.try_into().unwrap())),
+                    None => None,
+                }
+            }
+
+            fn nth(&mut self, n: usize) -> Option<Self::Item> {
+                match self.chunks.nth(n) {
                     Some(chunk) => Some($from(chunk.try_into().unwrap())),
                     None => None,
                 }
@@ -230,7 +230,7 @@ fn next_utf16(
         }
         Some(Err(_)) => Some(Err(DecodeError {
             range: *index..(*index + 2),
-            kind: DecodeErrorKind::InvalidUtf16,
+            kind: DecodeError::InvalidUtf16,
         })),
         None => None,
     }
@@ -248,7 +248,7 @@ fn next_utf32(
             }
             Err(_) => Some(Err(DecodeError {
                 range: *index..(*index + 4),
-                kind: DecodeErrorKind::InvalidUtf32,
+                kind: DecodeError::InvalidUtf32,
             })),
         },
         None => None,
@@ -271,7 +271,7 @@ impl DecodeError {
         }
     }
 
-    pub(crate) fn kind(&self) -> DecodeErrorKind {
+    pub(crate) fn kind(&self) -> DecodeError {
         self.kind
     }
 }
