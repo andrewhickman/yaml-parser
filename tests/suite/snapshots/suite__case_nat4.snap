@@ -72,13 +72,6 @@ expression: tokens
   end:
     line: 2
     column: 2
-- token: SingleQuoted
-  start:
-    line: 2
-    column: 2
-  end:
-    line: 2
-    column: 2
 - token: SingleQuote
   start:
     line: 2
@@ -153,13 +146,6 @@ expression: tokens
   start:
     line: 4
     column: 1
-  end:
-    line: 4
-    column: 2
-- token: SingleQuoted
-  start:
-    line: 4
-    column: 2
   end:
     line: 4
     column: 2
@@ -394,13 +380,6 @@ expression: tokens
   end:
     line: 11
     column: 2
-- token: SingleQuoted
-  start:
-    line: 11
-    column: 2
-  end:
-    line: 11
-    column: 2
 - token: SingleQuote
   start:
     line: 11
@@ -580,13 +559,6 @@ expression: tokens
   start:
     line: 18
     column: 1
-  end:
-    line: 18
-    column: 2
-- token: SingleQuoted
-  start:
-    line: 18
-    column: 2
   end:
     line: 18
     column: 2

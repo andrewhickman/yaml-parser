@@ -165,15 +165,6 @@ fn ns_esc_hex<R: Receiver>(parser: &mut Parser<R>, initial: char, len: u32) -> R
     }
 }
 
-fn nb_json<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    let start = parser.offset();
-    parser.eat(char::json)?;
-    parser
-        .value
-        .push_range(parser.stream, start..parser.offset());
-    Ok(())
-}
-
 fn c_double_quote<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     parser.token_char(Token::DoubleQuote, char::DOUBLE_QUOTE)
 }
@@ -259,84 +250,56 @@ fn c_quoted_quote<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
     Ok(())
 }
 
-fn nb_single_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    if parser.is_char(char::SINGLE_QUOTE) {
-        c_quoted_quote(parser)
-    } else {
-        parser.token(Token::SingleQuoted, nb_json)
-    }
-}
-
-fn ns_single_char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    if parser.is(char::space) {
-        Err(())
-    } else {
-        nb_single_char(parser)
-    }
-}
-
 fn nb_single_text<'s, R: Receiver>(
     parser: &mut Parser<'s, R>,
     n: i32,
     c: Context,
 ) -> Result<Cow<'s, str>, ()> {
     parser.begin_value();
-    match c {
-        Context::BlockKey | Context::FlowKey => nb_single_one_line(parser)?,
-        Context::FlowIn | Context::FlowOut => nb_single_multi_line(parser, n)?,
-        Context::BlockIn | Context::BlockOut => unimplemented!(),
-    };
-    Ok(parser.end_value())
-}
-
-fn nb_single_one_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    star!(parser, nb_single_char(parser));
-    Ok(())
-}
-
-fn nb_ns_single_in_line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-    fn char<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-        let start = parser.offset();
-        parser.token(Token::SingleQuoted, s_whites)?;
-        parser
-            .value
-            .push_range(parser.stream, start..parser.offset());
-        ns_single_char(parser)
-    }
-
-    star!(parser, char(parser));
-    Ok(())
-}
-
-fn s_single_next_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    fn trailing_whites<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-        let start = parser.offset();
-        parser.token(Token::SingleQuoted, s_whites)?;
-        parser
-            .value
-            .push_range(parser.stream, start..parser.offset());
-        Ok(())
-    }
-
-    fn line<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
-        ns_single_char(parser)?;
-        nb_ns_single_in_line(parser)
-    }
-
+    let mut span = Span::empty(parser.location());
     loop {
-        if question!(parser, s_flow_folded(parser, n)).is_none() {
-            break;
-        }
-        if question!(parser, line(parser)).is_none() {
-            break;
+        match parser.peek() {
+            Some(char::SINGLE_QUOTE) if parser.peek_next() == Some(char::SINGLE_QUOTE) => {
+                span.end = parser.location();
+                if !span.is_empty() {
+                    parser.queue(Token::SingleQuoted, span);
+                    parser.value.push_range(parser.stream, span.range());
+                }
+                c_quoted_quote(parser)?;
+                span = Span::empty(parser.location());
+            }
+            Some(char::SINGLE_QUOTE) => {
+                span.end = parser.location();
+                if !span.is_empty() {
+                    parser.queue(Token::SingleQuoted, span);
+                    parser.value.push_range(parser.stream, span.range());
+                }
+                break
+            }
+            Some(' ' | '\t') => parser.bump(),
+            Some(ch) if char::json(ch) => {
+                parser.bump();
+                span.end = parser.location();
+            }
+            Some('\r' | '\n') => {
+                if matches!(c, Context::BlockKey | Context::FlowKey) {
+                    return Err(());
+                }
+                if !span.is_empty() {
+                    parser.queue(Token::SingleQuoted, span);
+                    parser.value.push_range(parser.stream, span.range());
+                }
+                if span.end != parser.location() {
+                    parser.queue(Token::Separator, parser.span(span.end));
+                }
+                b_l_folded(parser, n, Context::FlowIn)?;
+                s_flow_line_prefix(parser, n)?;
+                span = Span::empty(parser.location());
+            }
+            _ => return Err(()),
         }
     }
-    trailing_whites(parser)
-}
-
-fn nb_single_multi_line<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
-    nb_ns_single_in_line(parser)?;
-    s_single_next_line(parser, n)
+    Ok(parser.end_value())
 }
 
 /////////////////////////////
