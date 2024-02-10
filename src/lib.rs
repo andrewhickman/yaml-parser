@@ -6,12 +6,17 @@
 
 extern crate alloc;
 
+mod char;
+mod cursor;
 mod error;
 mod event;
+mod grammar;
 mod parser;
+mod stream;
 
 pub use self::{
     error::Error,
     event::{CollectionStyle, Event, ScalarStyle},
-    parser::{Encoding, Location, Parser, Span, Token},
+    parser::{Location, Parser, Span, Token},
+    stream::Encoding,
 };

@@ -1,4 +1,4 @@
-use super::Context;
+use crate::parser::Context;
 
 pub(super) const BYTE_ORDER_MARK: char = '\u{feff}';
 

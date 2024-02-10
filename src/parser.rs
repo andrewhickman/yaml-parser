@@ -1,14 +1,6 @@
-mod char;
-mod cursor;
-mod decode;
-mod grammar;
-
 use core::ops::Range;
 
 use crate::{Error, Event};
-
-pub(crate) use self::decode::DecodeError;
-pub use self::decode::Encoding;
 
 /// An iterator over events encountered while parsing a YAML document.
 pub struct Parser<'s> {
@@ -127,20 +119,13 @@ pub struct Location {
 }
 
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
-enum Context {
+pub(crate) enum Context {
     BlockIn,
     BlockOut,
     BlockKey,
     FlowIn,
     FlowOut,
     FlowKey,
-}
-
-#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
-enum Chomping {
-    Strip,
-    Clip,
-    Keep,
 }
 
 impl<'s> Parser<'s> {

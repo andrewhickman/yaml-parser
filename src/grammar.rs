@@ -1,3 +1,6 @@
+use crate::cursor::Cursor;
+
+mod scalar;
 
 enum State {
     /// Parsing a stream, looking for directives or document start markers.
@@ -30,6 +33,6 @@ enum State {
     Scalar,
 }
 
-pub fn production<'s, S>(cursor: Cursor<S> /* parser/state/n/c? */) {
+pub fn production<'s>(cursor: Cursor /* parser/state/n/c? */) {
 
 }
