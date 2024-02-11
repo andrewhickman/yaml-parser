@@ -1,19 +1,23 @@
-use core::fmt::{self, Display};
+use core::fmt;
 
-use crate::{cursor::Cursor, grammar::State, Error, Event, Location, Span};
+use crate::{
+    cursor::Cursor,
+    grammar::{self, State},
+    Error, Event, Location, Span,
+};
 
 /// An iterator over events encountered while parsing a YAML document.
 #[derive(Debug, Clone)]
 pub struct Parser<'s, R = DefaultReceiver> {
     cursor: Cursor<'s>,
     receiver: R,
-    state: State,
+    state: Vec<State>,
 }
 
 /// A handler for diagnostics and tokens in a YAML stream.
 pub trait Receiver {
-    /// Called when a diagnostic error message is emitted.
-    fn diagnostic(&mut self, message: &dyn Display, span: Span) {
+    /// Called when a warning message is emitted.
+    fn warning(&mut self, message: &dyn fmt::Display, span: Span) {
         let _ = (message, span);
     }
 
@@ -161,7 +165,7 @@ where
     type Item = Result<(Event<'s>, Span), Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        todo!()
+        grammar::event(&mut self.state, &mut self.cursor).transpose()
     }
 }
 
@@ -175,8 +179,8 @@ impl<'r, R> Receiver for &'r mut R
 where
     R: Receiver,
 {
-    fn diagnostic(&mut self, message: &dyn Display, span: Span) {
-        (*self).diagnostic(message, span)
+    fn warning(&mut self, message: &dyn fmt::Display, span: Span) {
+        (*self).warning(message, span)
     }
 
     fn token(&mut self, token: Token, span: Span) {

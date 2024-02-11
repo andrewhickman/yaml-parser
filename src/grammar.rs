@@ -1,11 +1,12 @@
-use crate::{cursor::Cursor, stream::DecodeError, Error, Event};
+use core::f32::consts::PI;
+
+use crate::{cursor::Cursor, stream::DecodeError, Error, Event, Location, Span};
 
 mod scalar;
 
 #[derive(Debug, Clone)]
 pub(crate) enum State {
     Stream,
-    DecodeError(DecodeError),
     Document {
         prev_terminated: bool,
     },
@@ -67,6 +68,69 @@ pub(crate) enum Context {
     FlowKey,
 }
 
-pub fn event<'s>(state: &mut Vec<State>, cursor: Cursor) -> Result<Option<Event<'s>>, Error> {
-    todo!()
+pub(crate) fn event<'s>(
+    states: &mut Vec<State>,
+    cursor: &mut Cursor<'s>,
+) -> Result<Option<(Event<'s>, Span)>, Error> {
+    let Some(state) = states.pop() else {
+        return Ok(None);
+    };
+
+    let event = match state {
+        State::Stream => stream_start(states, cursor)?,
+        State::Document { prev_terminated } => todo!(),
+        State::DocumentNode {
+            allow_empty,
+            allow_compact,
+            indent,
+            context,
+        } => todo!(),
+        State::DocumentEnd => todo!(),
+        State::BlockSequence {
+            indent,
+            context,
+            first,
+        } => todo!(),
+        State::FlowSequence {
+            indent,
+            context,
+            first,
+        } => todo!(),
+        State::BlockMapping {
+            indent,
+            context,
+            first,
+        } => todo!(),
+        State::FlowMapping {
+            indent,
+            context,
+            first,
+        } => todo!(),
+        State::BlockMappingValue {
+            explicit,
+            indent,
+            context,
+        } => todo!(),
+        State::FlowMappingValue {
+            allow_adjacent,
+            allow_empty,
+            indent,
+            context,
+        } => todo!(),
+        State::FlowPair { indent, context } => todo!(),
+        State::FlowPairEnd { indent, context } => todo!(),
+    };
+
+    Ok(Some(event))
+}
+
+fn stream_start<'s>(states: &mut Vec<State>, cursor: &mut Cursor) -> Result<(Event<'s>, Span), Error> {
+    let encoding = cursor.encoding()?;
+    let span = cursor.empty_span();
+
+    states.push(State::Document {
+        prev_terminated: true,
+    });
+
+    Ok((Event::StreamStart { encoding }, span))
 }

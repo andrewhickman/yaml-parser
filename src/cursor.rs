@@ -1,6 +1,9 @@
 use core::{fmt, ops::Range};
 
-use crate::stream::{DecodeError, Stream};
+use crate::{
+    stream::{DecodeError, Stream},
+    Encoding, Error,
+};
 
 /// A range of characters within a source file.
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
@@ -83,11 +86,19 @@ impl<'s> Cursor<'s> {
         }
     }
 
+    pub(crate) fn encoding(&self) -> Result<Encoding, Error> {
+        self.stream.encoding().map_err(|err| self.decode_error(err))
+    }
+
     pub(crate) fn span(&self, start: Location) -> Span {
         Span {
             start,
             end: self.location(),
         }
+    }
+
+    pub(crate) fn empty_span(&self) -> Span {
+        Span::empty(self.location())
     }
 
     pub(crate) fn enter_document(&mut self) {
@@ -208,6 +219,17 @@ impl<'s> Cursor<'s> {
             self.line_number += 1;
             self.line_index = self.stream.index();
         }
+    }
+
+    fn decode_error(&self, err: DecodeError) -> Error {
+        Error::decode(
+            err.kind(),
+            Location {
+                index: err.index(),
+                line: self.line_number,
+                column: err.index() - self.line_index,
+            },
+        )
     }
 }
 

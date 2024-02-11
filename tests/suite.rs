@@ -32,7 +32,7 @@ struct DiagnosticSer {
     end: SpanSer,
 }
 
-fn format_event(text: &str, event: Event, span: Span) -> String {
+fn format_event(stream: &str, event: Event, span: Span) -> String {
     match event {
         Event::StreamStart { .. } => "+STR".to_owned(),
         Event::StreamEnd => "-STR".to_owned(),
@@ -47,7 +47,7 @@ fn format_event(text: &str, event: Event, span: Span) -> String {
             if span.is_empty() {
                 "-DOC".to_owned()
             } else {
-                format!("-DOC {}", &text[span.range()])
+                format!("-DOC {}", &stream[span.range()])
             }
         }
         Event::MappingStart { style, anchor, tag } => {
@@ -156,7 +156,7 @@ impl Receiver for TestReceiver {
         self.tokens.push(TokenSer { token, start, end });
     }
 
-    fn diagnostic(&mut self, message: &dyn std::fmt::Display, span: Span) {
+    fn warning(&mut self, message: &dyn std::fmt::Display, span: Span) {
         self.diagnostics.push(DiagnosticSer {
             message: message.to_string(),
             start: SpanSer {
@@ -206,21 +206,37 @@ fn load(name: &str) -> (String, Vec<String>) {
     (yaml, expected_events)
 }
 
-fn parse(text: &str) -> Result<(Vec<String>, Vec<TokenSer>), Vec<DiagnosticSer>> {
+fn parse(stream: &str) -> Result<(Vec<String>, Vec<TokenSer>), Vec<DiagnosticSer>> {
     let mut receiver = TestReceiver {
         diagnostics: Vec::new(),
         tokens: Vec::new(),
     };
 
     let mut events = Vec::new();
-    for event in Parser::from_str(text).with_receiver(&mut receiver) {
+    for event in Parser::from_str(stream).with_receiver(&mut receiver) {
         match event {
             Ok((event, span)) => {
-                let event = format_event(text, event, span);
+                let event = format_event(stream, event, span);
                 println!("{} {}", span.len(), event);
                 events.push(event);
             }
-            Err(err) => return Err(receiver.diagnostics),
+            Err(err) => {
+                let span = err.span();
+                receiver.diagnostics.push(DiagnosticSer {
+                    message: err.to_string(),
+                    start: SpanSer {
+                        index: span.start.index,
+                        line: span.start.line,
+                        column: span.start.column,
+                    },
+                    end: SpanSer {
+                        index: span.end.index,
+                        line: span.end.line,
+                        column: span.end.column,
+                    },
+                });
+                return Err(receiver.diagnostics);
+            }
         }
     }
 
@@ -229,7 +245,7 @@ fn parse(text: &str) -> Result<(Vec<String>, Vec<TokenSer>), Vec<DiagnosticSer>>
         for window in receiver.tokens.windows(2) {
             assert_eq!(window[0].end, window[1].start);
         }
-        assert_eq!(receiver.tokens.last().unwrap().end.index, text.len());
+        assert_eq!(receiver.tokens.last().unwrap().end.index, stream.len());
     }
 
     Ok((events, receiver.tokens))

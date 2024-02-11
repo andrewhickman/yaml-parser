@@ -30,7 +30,7 @@ pub(crate) struct DecodeError {
 }
 
 #[derive(Debug, Copy, Clone)]
-enum DecodeErrorKind {
+pub(crate) enum DecodeErrorKind {
     InvalidUtf8,
     InvalidUtf16,
     InvalidUtf32,
@@ -44,6 +44,7 @@ pub(crate) struct Stream<'s> {
 
 #[derive(Clone)]
 enum StreamKind<'s> {
+    Error(DecodeError),
     Utf8 {
         stream: &'s str,
         iter: Chars<'s>,
@@ -111,19 +112,21 @@ impl<'s> Stream<'s> {
         Ok(Stream { kind })
     }
 
-    pub(crate) fn encoding(&self) -> Encoding {
+    pub(crate) fn encoding(&self) -> Result<Encoding, DecodeError> {
         match self.kind {
-            StreamKind::Utf8 { .. } => Encoding::Utf8,
-            StreamKind::Utf16Be { .. } => Encoding::Utf16Be,
-            StreamKind::Utf16Le { .. } => Encoding::Utf16Le,
-            StreamKind::Utf32Be { .. } => Encoding::Utf32Be,
-            StreamKind::Utf32Le { .. } => Encoding::Utf32Le,
+            StreamKind::Error(err) => Err(err),
+            StreamKind::Utf8 { .. } => Ok(Encoding::Utf8),
+            StreamKind::Utf16Be { .. } => Ok(Encoding::Utf16Be),
+            StreamKind::Utf16Le { .. } => Ok(Encoding::Utf16Le),
+            StreamKind::Utf32Be { .. } => Ok(Encoding::Utf32Be),
+            StreamKind::Utf32Le { .. } => Ok(Encoding::Utf32Le),
         }
     }
 
     pub(crate) fn index(&self) -> usize {
         match &self.kind {
-            StreamKind::Utf8 { stream: text, iter } => text.len() - iter.as_str().len(),
+            StreamKind::Error(err) => err.index(),
+            StreamKind::Utf8 { stream, iter } => stream.len() - iter.as_str().len(),
             StreamKind::Utf16Be { index, .. }
             | StreamKind::Utf16Le { index, .. }
             | StreamKind::Utf32Be { index, .. }
@@ -133,6 +136,7 @@ impl<'s> Stream<'s> {
 
     pub(crate) fn next(&mut self) -> Result<Option<char>, DecodeError> {
         match &mut self.kind {
+            StreamKind::Error(err) => Err(*err),
             StreamKind::Utf8 { iter, .. } => Ok(iter.next()),
             StreamKind::Utf16Be { iter, index } => next_utf16(iter, index),
             StreamKind::Utf16Le { iter, index } => next_utf16(iter, index),
@@ -254,5 +258,15 @@ fn next_utf32(
             }),
         },
         None => Ok(None),
+    }
+}
+
+impl DecodeError {
+    pub(crate) fn index(&self) -> usize {
+        self.index
+    }
+
+    pub(crate) fn kind(&self) -> DecodeErrorKind {
+        self.kind
     }
 }
