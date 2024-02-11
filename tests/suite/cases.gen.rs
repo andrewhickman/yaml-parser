@@ -403,5 +403,6 @@ case!(case_zxt5, "yaml-test-suite/ZXT5", fail: true);
 case!(case_2wsf_00, "tests/suite/data/2WSF/00", fail: true);
 case!(case_2wsf_01, "tests/suite/data/2WSF/01", fail: true);
 case!(case_gldz, "tests/suite/data/GLDZ");
+case!(case_qmwa, "tests/suite/data/QMWA", fail: true);
 case!(case_r10v_01, "tests/suite/data/R10V/01");
 case!(case_r10v_02, "tests/suite/data/R10V/02");

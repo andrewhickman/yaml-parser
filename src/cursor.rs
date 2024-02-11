@@ -188,7 +188,7 @@ impl<'s> Cursor<'s> {
     pub(crate) fn peek_nth(&self, n: usize) -> Result<Option<char>, DecodeError> {
         #[cfg(debug_assertions)]
         if self.peek_count > 1000 {
-            panic!("detected infinite loop in parser");
+            panic!("infinite loop in parser");
         }
 
         if self.in_document && self.is_end_of_document()? {
