@@ -1,4 +1,4 @@
-use core::fmt;
+use core::{fmt, iter::FusedIterator};
 
 use alloc::collections::VecDeque;
 
@@ -15,7 +15,7 @@ pub struct Parser<'s, R = DefaultReceiver> {
     cursor: Cursor<'s>,
     receiver: R,
     state: Vec<State>,
-    buffer: VecDeque<(Event<'s>, Span)>,
+    buffer: VecDeque<Buffered<'s>>,
 }
 
 /// A handler for diagnostics and tokens in a YAML stream.
@@ -122,6 +122,18 @@ pub enum Token {
     DocumentEnd,
 }
 
+pub(crate) struct Buffer<'s> {
+    buffered: Vec<Buffered<'s>>,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) enum Buffered<'s> {
+    Event { event: Event<'s>, span: Span },
+    Error { error: Error },
+    Token { token: Token, span: Span },
+    Warning { span: Span },
+}
+
 impl<'s> Parser<'s> {
     /// Creates a YAML parser from an `&str`.
     #[allow(clippy::should_implement_trait)]
@@ -137,11 +149,14 @@ impl<'s> Parser<'s> {
     }
 
     fn from_stream(stream: Stream<'s>) -> Self {
+        let mut state = Vec::with_capacity(16);
+        state.push(State::Stream);
+
         Parser {
             cursor: Cursor::new(stream),
             receiver: DefaultReceiver,
-            state: Vec::new(),
-            buffer: VecDeque::new(),
+            state,
+            buffer: VecDeque::with_capacity(16),
         }
     }
 
@@ -180,9 +195,20 @@ where
     type Item = Result<(Event<'s>, Span), Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        grammar::event(&mut self.state, &mut self.cursor).transpose()
+        grammar::event(&mut self.state, &mut self.buffer, &mut self.cursor);
+        while let Some(buffered) = self.buffer.pop_front() {
+            match buffered {
+                Buffered::Event { event, span } => return Some(Ok((event, span))),
+                Buffered::Error { error } => return Some(Err(error)),
+                Buffered::Token { token, span } => self.receiver.token(token, span),
+                Buffered::Warning { span } => self.receiver.warning(&todo!(), span),
+            }
+        }
+        None
     }
 }
+
+impl<'s, R> FusedIterator for Parser<'s, R> where R: Receiver {}
 
 /// The default implementation of [`Receiver`] which does nothing.
 #[derive(Debug, Copy, Clone)]

@@ -1,6 +1,8 @@
 use core::f32::consts::PI;
 
-use crate::{cursor::Cursor, stream::DecodeError, Error, Event, Location, Span};
+use alloc::collections::VecDeque;
+
+use crate::{cursor::Cursor, parser::Buffered, stream::DecodeError, Error, Event, Location, Span};
 
 mod scalar;
 
@@ -70,14 +72,15 @@ pub(crate) enum Context {
 
 pub(crate) fn event<'s>(
     states: &mut Vec<State>,
+    buffer: &mut VecDeque<Buffered<'s>>,
     cursor: &mut Cursor<'s>,
-) -> Result<Option<(Event<'s>, Span)>, Error> {
+) {
     let Some(state) = states.pop() else {
-        return Ok(None);
+        return;
     };
 
-    let event = match state {
-        State::Stream => stream_start(states, cursor)?,
+    match state {
+        State::Stream => stream_start(states, buffer, cursor),
         State::Document { prev_terminated } => todo!(),
         State::DocumentNode {
             allow_empty,
@@ -119,21 +122,26 @@ pub(crate) fn event<'s>(
         } => todo!(),
         State::FlowPair { indent, context } => todo!(),
         State::FlowPairEnd { indent, context } => todo!(),
-    };
-
-    Ok(Some(event))
+    }
 }
 
 fn stream_start<'s>(
     states: &mut Vec<State>,
+    buffer: &mut VecDeque<Buffered<'s>>,
     cursor: &mut Cursor,
-) -> Result<(Event<'s>, Span), Error> {
-    let encoding = cursor.encoding()?;
+) {
+    let encoding = match cursor.encoding() {
+        Ok(encoding) => encoding,
+        Err(error) => return buffer.push_back(Buffered::Error { error }),
+    };
     let span = cursor.empty_span();
 
     states.push(State::Document {
         prev_terminated: true,
     });
 
-    Ok((Event::StreamStart { encoding }, span))
+    buffer.push_back(Buffered::Event {
+        event: Event::StreamStart { encoding },
+        span,
+    });
 }

@@ -196,15 +196,13 @@ macro_rules! int_iter {
 
         impl<'s> $name<'s> {
             fn new(stream: &'s [u8]) -> Result<Self, DecodeError> {
-                let rem = stream.len() % $len;
-                if rem == 0 {
-                    Ok($name {
-                        chunks: stream.chunks_exact($len),
-                    })
+                let chunks = stream.chunks_exact($len);
+                if chunks.remainder().is_empty() {
+                    Ok($name { chunks })
                 } else {
                     Err(DecodeError {
                         kind: DecodeErrorKind::InvalidLength,
-                        index: stream.len() - rem,
+                        index: stream.len() - chunks.remainder().len(),
                     })
                 }
             }
