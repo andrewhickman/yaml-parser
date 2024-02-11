@@ -1,8 +1,11 @@
 use core::fmt;
 
+use alloc::collections::VecDeque;
+
 use crate::{
     cursor::Cursor,
     grammar::{self, State},
+    stream::Stream,
     Error, Event, Location, Span,
 };
 
@@ -12,6 +15,7 @@ pub struct Parser<'s, R = DefaultReceiver> {
     cursor: Cursor<'s>,
     receiver: R,
     state: Vec<State>,
+    buffer: VecDeque<(Event<'s>, Span)>,
 }
 
 /// A handler for diagnostics and tokens in a YAML stream.
@@ -120,15 +124,25 @@ pub enum Token {
 
 impl<'s> Parser<'s> {
     /// Creates a YAML parser from an `&str`.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(stream: &'s str) -> Self {
-        todo!()
+        Parser::from_stream(Stream::from_str(stream))
     }
 
     /// Creates a YAML parser from an `&[u8]`.
     ///
     /// The character encoding of the stream will be detected from the initial bytes.
     pub fn from_slice(stream: &'s [u8]) -> Self {
-        todo!()
+        Parser::from_stream(Stream::from_slice(stream))
+    }
+
+    fn from_stream(stream: Stream<'s>) -> Self {
+        Parser {
+            cursor: Cursor::new(stream),
+            receiver: DefaultReceiver,
+            state: Vec::new(),
+            buffer: VecDeque::new(),
+        }
     }
 
     /// Overrides the [`Receiver`] implementation for handling token and diagnostic events.
@@ -137,6 +151,7 @@ impl<'s> Parser<'s> {
             cursor: self.cursor,
             receiver,
             state: self.state,
+            buffer: self.buffer,
         }
     }
 }

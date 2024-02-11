@@ -124,7 +124,10 @@ pub(crate) fn event<'s>(
     Ok(Some(event))
 }
 
-fn stream_start<'s>(states: &mut Vec<State>, cursor: &mut Cursor) -> Result<(Event<'s>, Span), Error> {
+fn stream_start<'s>(
+    states: &mut Vec<State>,
+    cursor: &mut Cursor,
+) -> Result<(Event<'s>, Span), Error> {
     let encoding = cursor.encoding()?;
     let span = cursor.empty_span();
 

@@ -1,12 +1,9 @@
 use core::{
     char::{DecodeUtf16, DecodeUtf16Error},
     fmt::{self, Write},
-    ops::Range,
     slice::ChunksExact,
     str::Chars,
 };
-
-use crate::{Location, Span};
 
 /// The encoding of a YAML stream.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -77,7 +74,13 @@ impl<'s> Stream<'s> {
         }
     }
 
-    pub(crate) fn from_slice(stream: &'s [u8]) -> Result<Self, DecodeError> {
+    pub(crate) fn from_slice(stream: &'s [u8]) -> Self {
+        Stream::try_from_slice(stream).unwrap_or_else(|err| Stream {
+            kind: StreamKind::Error(err),
+        })
+    }
+
+    fn try_from_slice(stream: &'s [u8]) -> Result<Self, DecodeError> {
         let kind = match stream {
             [0x00, 0x00, 0xfe, 0xff, ..] | [0x00, 0x00, 0x00, _, ..] => StreamKind::Utf32Be {
                 index: 0,
