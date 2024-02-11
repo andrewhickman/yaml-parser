@@ -1,5 +1,9 @@
 use core::{
-    char::{DecodeUtf16, DecodeUtf16Error}, fmt::{self, Write}, ops::Range, slice::ChunksExact, str::Chars
+    char::{DecodeUtf16, DecodeUtf16Error},
+    fmt::{self, Write},
+    ops::Range,
+    slice::ChunksExact,
+    str::Chars,
 };
 
 use crate::{Location, Span};
@@ -20,7 +24,13 @@ pub enum Encoding {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub(crate) enum DecodeError {
+pub(crate) struct DecodeError {
+    kind: DecodeErrorKind,
+    index: usize,
+}
+
+#[derive(Debug, Copy, Clone)]
+enum DecodeErrorKind {
     InvalidUtf8,
     InvalidUtf16,
     InvalidUtf32,
@@ -66,7 +76,7 @@ impl<'s> Stream<'s> {
         }
     }
 
-    pub(crate) fn from_slice(stream: &'s [u8]) -> Result<Self, (DecodeError, usize)> {
+    pub(crate) fn from_slice(stream: &'s [u8]) -> Result<Self, DecodeError> {
         let kind = match stream {
             [0x00, 0x00, 0xfe, 0xff, ..] | [0x00, 0x00, 0x00, _, ..] => StreamKind::Utf32Be {
                 index: 0,
@@ -89,7 +99,12 @@ impl<'s> Stream<'s> {
                     stream,
                     iter: stream.chars(),
                 },
-                Err(err) => return Err((DecodeError::InvalidLength, err.valid_up_to()))
+                Err(err) => {
+                    return Err(DecodeError {
+                        kind: DecodeErrorKind::InvalidLength,
+                        index: err.valid_up_to(),
+                    })
+                }
             },
         };
 
@@ -116,15 +131,21 @@ impl<'s> Stream<'s> {
         }
     }
 
-    pub(crate) fn prev(&self) -> Option<char> {
-        let index = self.index();
-        match &self.kind {
-            StreamKind::Utf8 { stream, iter } => todo!(),
-            StreamKind::Utf16Be { index, iter } => todo!(),
-            StreamKind::Utf16Le { index, iter } => todo!(),
-            StreamKind::Utf32Be { index, iter } => todo!(),
-            StreamKind::Utf32Le { index, iter } => todo!(),
+    pub(crate) fn next(&mut self) -> Result<Option<char>, DecodeError> {
+        match &mut self.kind {
+            StreamKind::Utf8 { iter, .. } => Ok(iter.next()),
+            StreamKind::Utf16Be { iter, index } => next_utf16(iter, index),
+            StreamKind::Utf16Le { iter, index } => next_utf16(iter, index),
+            StreamKind::Utf32Be { iter, index } => next_utf32(iter, index),
+            StreamKind::Utf32Le { iter, index } => next_utf32(iter, index),
         }
+    }
+
+    pub(crate) fn nth(&mut self, n: usize) -> Result<Option<char>, DecodeError> {
+        for _ in 0..n {
+            self.next()?;
+        }
+        self.next()
     }
 
     pub(crate) fn as_str(&self) -> Option<&'s str> {
@@ -141,35 +162,21 @@ impl<'s> fmt::Debug for Stream<'s> {
         let mut iter = self.clone();
         for _ in 0..64 {
             match iter.next() {
-                Some(Ok('\'')) => f.write_char('\'')?,
-                Some(Ok(ch)) => fmt::Display::fmt(&ch.escape_debug(), f)?,
-                Some(Err(_)) => {
+                Ok(Some('\'')) => f.write_char('\'')?,
+                Ok(Some(ch)) => fmt::Display::fmt(&ch.escape_debug(), f)?,
+                Err(_) => {
                     f.write_char(char::REPLACEMENT_CHARACTER)?;
                     break;
                 }
-                None => {
+                Ok(None) => {
                     break;
                 }
             }
         }
-        if iter.next().is_some() {
+        if iter.next().is_ok_and(|ch| ch.is_some()) {
             f.write_char('…')?;
         }
         f.write_char('"')
-    }
-}
-
-impl<'s> Iterator for Stream<'s> {
-    type Item = Result<char, DecodeError>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match &mut self.kind {
-            StreamKind::Utf8 { iter, .. } => iter.next().map(Ok),
-            StreamKind::Utf16Be { iter, index } => next_utf16(iter, index),
-            StreamKind::Utf16Le { iter, index } => next_utf16(iter, index),
-            StreamKind::Utf32Be { iter, index } => next_utf32(iter, index),
-            StreamKind::Utf32Le { iter, index } => next_utf32(iter, index),
-        }
     }
 }
 
@@ -181,15 +188,17 @@ macro_rules! int_iter {
         }
 
         impl<'s> $name<'s> {
-            fn new(stream: &'s [u8]) -> Result<Self, (DecodeError, usize)> {
+            fn new(stream: &'s [u8]) -> Result<Self, DecodeError> {
                 let rem = stream.len() % $len;
                 if rem == 0 {
                     Ok($name {
                         chunks: stream.chunks_exact($len),
                     })
                 } else {
-                    let index = stream.len() - rem;
-                    Err((DecodeError::InvalidLength, index))
+                    Err(DecodeError {
+                        kind: DecodeErrorKind::InvalidLength,
+                        index: stream.len() - rem,
+                    })
                 }
             }
         }
@@ -199,13 +208,6 @@ macro_rules! int_iter {
 
             fn next(&mut self) -> Option<Self::Item> {
                 match self.chunks.next() {
-                    Some(chunk) => Some($from(chunk.try_into().unwrap())),
-                    None => None,
-                }
-            }
-
-            fn nth(&mut self, n: usize) -> Option<Self::Item> {
-                match self.chunks.nth(n) {
                     Some(chunk) => Some($from(chunk.try_into().unwrap())),
                     None => None,
                 }
@@ -222,56 +224,35 @@ int_iter!(U32LeIter, u32, 2, u32::from_le_bytes);
 fn next_utf16(
     iter: &mut impl Iterator<Item = Result<char, DecodeUtf16Error>>,
     index: &mut usize,
-) -> Option<Result<char, DecodeError>> {
+) -> Result<Option<char>, DecodeError> {
     match iter.next() {
         Some(Ok(ch)) => {
             *index += ch.len_utf16();
-            Some(Ok(ch))
+            Ok(Some(ch))
         }
-        Some(Err(_)) => Some(Err(DecodeError {
-            range: *index..(*index + 2),
-            kind: DecodeError::InvalidUtf16,
-        })),
-        None => None,
+        None => Ok(None),
+        Some(Err(_)) => Err(DecodeError {
+            kind: DecodeErrorKind::InvalidUtf16,
+            index: *index,
+        }),
     }
 }
 
 fn next_utf32(
     iter: &mut impl Iterator<Item = u32>,
     index: &mut usize,
-) -> Option<Result<char, DecodeError>> {
+) -> Result<Option<char>, DecodeError> {
     match iter.next() {
         Some(i) => match char::try_from(i) {
             Ok(ch) => {
                 *index += 4;
-                Some(Ok(ch))
+                Ok(Some(ch))
             }
-            Err(_) => Some(Err(DecodeError {
-                range: *index..(*index + 4),
-                kind: DecodeError::InvalidUtf32,
-            })),
+            Err(_) => Err(DecodeError {
+                kind: DecodeErrorKind::InvalidUtf32,
+                index: *index,
+            }),
         },
-        None => None,
-    }
-}
-
-impl DecodeError {
-    pub(crate) fn span(&self) -> Span {
-        Span {
-            start: Location {
-                index: self.range.start,
-                line: 0,
-                column: 0,
-            },
-            end: Location {
-                index: self.range.end,
-                line: 0,
-                column: 0,
-            },
-        }
-    }
-
-    pub(crate) fn kind(&self) -> DecodeError {
-        self.kind
+        None => Ok(None),
     }
 }

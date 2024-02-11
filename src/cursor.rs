@@ -27,6 +27,7 @@ pub(crate) struct Cursor<'s> {
     stream: Stream<'s>,
     line_number: usize,
     line_index: usize,
+    in_document: bool,
     #[cfg(debug_assertions)]
     peek_count: usize,
 }
@@ -67,6 +68,7 @@ impl<'s> Cursor<'s> {
             stream,
             line_number: 0,
             line_index: 0,
+            in_document: false,
             #[cfg(debug_assertions)]
             peek_count: 0,
         }
@@ -81,113 +83,123 @@ impl<'s> Cursor<'s> {
         }
     }
 
-    fn eat(&mut self, pred: impl Fn(char) -> bool) -> Result<(), ()> {
-        if self.is(pred) {
-            self.bump();
-            Ok(())
-        } else {
-            Err(())
-        }
-    }
-
-    fn eat_char(&mut self, ch: char) -> Result<(), ()> {
-        if self.is_char(ch) {
-            self.bump();
-            Ok(())
-        } else {
-            Err(())
-        }
-    }
-
-    fn eat_str(&mut self, s: &str) -> Result<(), ()> {
-        if self.is_str(s) {
-            for _ in s.chars() {
-                self.bump();
-            }
-            Ok(())
-        } else {
-            Err(())
-        }
-    }
-
-    fn next_is(&self, pred: impl Fn(char) -> bool) -> bool {
-        matches!(self.peek_next(), Some(ch) if pred(ch))
-    }
-
-    fn prev_is(&self, pred: impl Fn(char) -> bool) -> bool {
-        matches!(self.peek_prev(), Some(ch) if pred(ch))
-    }
-
-    fn is(&mut self, pred: impl Fn(char) -> bool) -> bool {
-        matches!(self.peek(), Some(ch) if pred(ch))
-    }
-
-    fn is_char(&mut self, ch: char) -> bool {
-        self.peek() == Some(ch)
-    }
-
-    fn is_str(&self, s: &str) -> bool {
-        self.iter.as_str().starts_with(s)
-    }
-
-    fn is_start_of_line(&self) -> bool {
-        self.line_offset == self.offset()
-    }
-
-    fn is_end_of_document(&self) -> bool {
-        self.is_start_of_line()
-            && (self.is_str("---") || self.is_str("..."))
-            && matches!(
-                self.iter.clone().nth(3),
-                None | Some('\r' | '\n' | '\t' | ' ')
-            )
-    }
-
-    fn is_end_of_input(&self) -> bool {
-        self.iter.as_str().is_empty()
-    }
-
-    fn span(&self, start: Location) -> Span {
+    pub(crate) fn span(&self, start: Location) -> Span {
         Span {
             start,
             end: self.location(),
         }
     }
 
-    fn peek(&mut self) -> Option<char> {
+    pub(crate) fn enter_document(&mut self) {
+        self.in_document = true;
+    }
+
+    pub(crate) fn exit_document(&mut self) {
+        self.in_document = true;
+    }
+
+    pub(crate) fn eat(&mut self, pred: impl Fn(char) -> bool) -> Result<bool, DecodeError> {
+        if self.is(pred)? {
+            self.bump();
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    pub(crate) fn eat_char(&mut self, ch: char) -> Result<bool, DecodeError> {
+        if self.is_char(ch)? {
+            self.bump();
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    pub(crate) fn eat_str(&mut self, s: &str) -> Result<bool, DecodeError> {
+        if self.is_str(s)? {
+            for _ in s.chars() {
+                self.bump();
+            }
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
+    pub(crate) fn next_is(&self, pred: impl Fn(char) -> bool) -> Result<bool, DecodeError> {
+        Ok(matches!(self.peek_next()?, Some(ch) if pred(ch)))
+    }
+
+    pub(crate) fn is(&mut self, pred: impl Fn(char) -> bool) -> Result<bool, DecodeError> {
+        Ok(matches!(self.peek()?, Some(ch) if pred(ch)))
+    }
+
+    pub(crate) fn is_char(&mut self, ch: char) -> Result<bool, DecodeError> {
+        Ok(self.peek()? == Some(ch))
+    }
+
+    pub(crate) fn is_str(&self, s: &str) -> Result<bool, DecodeError> {
+        let mut iter = self.stream.clone();
+        for ch in s.chars() {
+            if iter.next()? != Some(ch) {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
+    pub(crate) fn is_start_of_line(&self) -> bool {
+        self.line_index == self.stream.index()
+    }
+
+    pub(crate) fn is_end_of_document(&self) -> Result<bool, DecodeError> {
+        Ok(self.is_start_of_line()
+            && (self.is_str("---")? || self.is_str("...")?)
+            && matches!(
+                self.stream.clone().nth(3)?,
+                None | Some('\r' | '\n' | '\t' | ' ')
+            ))
+    }
+
+    pub(crate) fn is_end_of_input(&self) -> Result<bool, DecodeError> {
+        Ok(self.peek()?.is_none())
+    }
+
+    pub(crate) fn peek(&self) -> Result<Option<char>, DecodeError> {
         self.peek_nth(0)
     }
 
-    fn peek_next(&self) -> Option<char> {
+    pub(crate) fn peek_next(&self) -> Result<Option<char>, DecodeError> {
         self.peek_nth(1)
     }
 
-    fn peek_nth(&self, n: usize) -> Result<Option<char>, DecodeError> {
+    pub(crate) fn peek_nth(&self, n: usize) -> Result<Option<char>, DecodeError> {
         #[cfg(debug_assertions)]
         if self.peek_count > 1000 {
             panic!("detected infinite loop in parser");
         }
 
-        if self.in_document && self.is_end_of_document() {
-            return None;
+        if self.in_document && self.is_end_of_document()? {
+            return Ok(None);
         }
 
         self.stream.clone().nth(n)
     }
 
-    fn peek_prev(&self) -> Option<char> {
-        self.stream[..self.offset()].chars().last()
-    }
-
-    fn bump(&mut self) {
+    pub(crate) fn bump(&mut self) {
         #[cfg(debug_assertions)]
         {
             self.peek_count = 0;
         }
 
-        let ch = self.stream.next().expect("called bump at end of input").expect("called bump after encoding error");
+        let ch = self
+            .stream
+            .next()
+            .expect("called bump at end of input")
+            .expect("called bump after encoding error");
         let is_break = match ch {
-            '\r' if !self.is_char('\n') => true,
+            '\r' if !matches!(self.is_char('\n'), Ok(true)) => true,
             '\n' => true,
             _ => false,
         };
