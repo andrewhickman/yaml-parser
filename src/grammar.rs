@@ -1,12 +1,13 @@
-use core::f32::consts::PI;
-
-use alloc::collections::VecDeque;
-
-use crate::{cursor::Cursor, parser::Buffered, stream::DecodeError, Error, Event, Location, Span};
-
+mod document;
+mod event;
 mod scalar;
+mod trivia;
 
-#[derive(Debug, Clone)]
+use crate::{cursor::Cursor, Error, Receiver, Token};
+
+pub(crate) use self::event::event;
+
+#[derive(Debug, Copy, Clone)]
 pub(crate) enum State {
     Stream,
     Document {
@@ -70,78 +71,18 @@ pub(crate) enum Context {
     FlowKey,
 }
 
-pub(crate) fn event<'s>(
-    states: &mut Vec<State>,
-    buffer: &mut VecDeque<Buffered<'s>>,
+fn token_char<'s>(
     cursor: &mut Cursor<'s>,
-) {
-    let Some(state) = states.pop() else {
-        return;
-    };
-
-    match state {
-        State::Stream => stream_start(states, buffer, cursor),
-        State::Document { prev_terminated } => todo!(),
-        State::DocumentNode {
-            allow_empty,
-            allow_compact,
-            indent,
-            context,
-        } => todo!(),
-        State::DocumentEnd => todo!(),
-        State::BlockSequence {
-            indent,
-            context,
-            first,
-        } => todo!(),
-        State::FlowSequence {
-            indent,
-            context,
-            first,
-        } => todo!(),
-        State::BlockMapping {
-            indent,
-            context,
-            first,
-        } => todo!(),
-        State::FlowMapping {
-            indent,
-            context,
-            first,
-        } => todo!(),
-        State::BlockMappingValue {
-            explicit,
-            indent,
-            context,
-        } => todo!(),
-        State::FlowMappingValue {
-            allow_adjacent,
-            allow_empty,
-            indent,
-            context,
-        } => todo!(),
-        State::FlowPair { indent, context } => todo!(),
-        State::FlowPairEnd { indent, context } => todo!(),
+    receiver: &mut impl Receiver,
+    token: Token,
+    ch: char,
+) -> Result<bool, Error> {
+    if cursor.is_char(ch)? {
+        let start = cursor.location();
+        cursor.bump();
+        receiver.token(token, cursor.span(start));
+        Ok(true)
+    } else {
+        Ok(false)
     }
-}
-
-fn stream_start<'s>(
-    states: &mut Vec<State>,
-    buffer: &mut VecDeque<Buffered<'s>>,
-    cursor: &mut Cursor,
-) {
-    let encoding = match cursor.encoding() {
-        Ok(encoding) => encoding,
-        Err(error) => return buffer.push_back(Buffered::Error { error }),
-    };
-    let span = cursor.empty_span();
-
-    states.push(State::Document {
-        prev_terminated: true,
-    });
-
-    buffer.push_back(Buffered::Event {
-        event: Event::StreamStart { encoding },
-        span,
-    });
 }

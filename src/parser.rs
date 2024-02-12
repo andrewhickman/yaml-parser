@@ -15,7 +15,7 @@ pub struct Parser<'s, R = DefaultReceiver> {
     cursor: Cursor<'s>,
     receiver: R,
     state: Vec<State>,
-    buffer: VecDeque<Buffered<'s>>,
+    buffer: Buffer<'s>,
 }
 
 /// A handler for diagnostics and tokens in a YAML stream.
@@ -122,8 +122,9 @@ pub enum Token {
     DocumentEnd,
 }
 
+#[derive(Default, Clone)]
 pub(crate) struct Buffer<'s> {
-    buffered: Vec<Buffered<'s>>,
+    buffer: VecDeque<Buffered<'s>>,
 }
 
 #[derive(Debug, Clone)]
@@ -131,7 +132,7 @@ pub(crate) enum Buffered<'s> {
     Event { event: Event<'s>, span: Span },
     Error { error: Error },
     Token { token: Token, span: Span },
-    Warning { span: Span },
+    Warning { message: String, span: Span },
 }
 
 impl<'s> Parser<'s> {
@@ -156,7 +157,7 @@ impl<'s> Parser<'s> {
             cursor: Cursor::new(stream),
             receiver: DefaultReceiver,
             state,
-            buffer: VecDeque::with_capacity(16),
+            buffer: Buffer::default(),
         }
     }
 
@@ -195,15 +196,22 @@ where
     type Item = Result<(Event<'s>, Span), Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        grammar::event(&mut self.state, &mut self.buffer, &mut self.cursor);
-        while let Some(buffered) = self.buffer.pop_front() {
+        for buffered in self.buffer.by_ref() {
             match buffered {
                 Buffered::Event { event, span } => return Some(Ok((event, span))),
                 Buffered::Error { error } => return Some(Err(error)),
                 Buffered::Token { token, span } => self.receiver.token(token, span),
-                Buffered::Warning { span } => self.receiver.warning(&todo!(), span),
+                Buffered::Warning { message, span } => {
+                    self.receiver.warning(&message.as_str(), span)
+                }
             }
         }
+        grammar::event(
+            &mut self.cursor,
+            &mut self.receiver,
+            &mut self.buffer,
+            &mut self.state,
+        );
         None
     }
 }
@@ -226,5 +234,57 @@ where
 
     fn token(&mut self, token: Token, span: Span) {
         (*self).token(token, span)
+    }
+}
+
+impl<'s> Buffer<'s> {
+    pub(crate) fn event(&mut self, event: Event<'s>, span: Span) {
+        self.buffer.push_back(Buffered::Event { event, span })
+    }
+
+    pub(crate) fn error(&mut self, error: Error) {
+        self.buffer.push_back(Buffered::Error { error })
+    }
+
+    pub(crate) fn peek_token(&mut self) -> Option<(Token, Span)> {
+        match self.buffer.front() {
+            Some(&Buffered::Token { token, span }) => Some((token, span)),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn pop(&mut self) {
+        self.buffer.pop_front();
+    }
+
+    pub(crate) fn len(&mut self) -> usize {
+        self.buffer.len()
+    }
+}
+
+impl<'s> Iterator for Buffer<'s> {
+    type Item = Buffered<'s>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.buffer.pop_front()
+    }
+}
+
+impl<'s> Receiver for Buffer<'s> {
+    fn warning(&mut self, message: &dyn fmt::Display, span: Span) {
+        self.buffer.push_back(Buffered::Warning {
+            message: message.to_string(),
+            span,
+        });
+    }
+
+    fn token(&mut self, token: Token, span: Span) {
+        self.buffer.push_back(Buffered::Token { token, span });
+    }
+}
+
+impl<'s> fmt::Debug for Buffer<'s> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.buffer.fmt(f)
     }
 }

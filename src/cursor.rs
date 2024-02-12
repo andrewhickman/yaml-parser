@@ -109,7 +109,7 @@ impl<'s> Cursor<'s> {
         self.in_document = true;
     }
 
-    pub(crate) fn eat(&mut self, pred: impl Fn(char) -> bool) -> Result<bool, DecodeError> {
+    pub(crate) fn eat(&mut self, pred: impl Fn(char) -> bool) -> Result<bool, Error> {
         if self.is(pred)? {
             self.bump();
             Ok(true)
@@ -118,7 +118,7 @@ impl<'s> Cursor<'s> {
         }
     }
 
-    pub(crate) fn eat_char(&mut self, ch: char) -> Result<bool, DecodeError> {
+    pub(crate) fn eat_char(&mut self, ch: char) -> Result<bool, Error> {
         if self.is_char(ch)? {
             self.bump();
             Ok(true)
@@ -127,7 +127,7 @@ impl<'s> Cursor<'s> {
         }
     }
 
-    pub(crate) fn eat_str(&mut self, s: &str) -> Result<bool, DecodeError> {
+    pub(crate) fn eat_str(&mut self, s: &str) -> Result<bool, Error> {
         if self.is_str(s)? {
             for _ in s.chars() {
                 self.bump();
@@ -138,23 +138,25 @@ impl<'s> Cursor<'s> {
         }
     }
 
-    pub(crate) fn next_is(&self, pred: impl Fn(char) -> bool) -> Result<bool, DecodeError> {
+    pub(crate) fn next_is(&self, pred: impl Fn(char) -> bool) -> Result<bool, Error> {
         Ok(matches!(self.peek_next()?, Some(ch) if pred(ch)))
     }
 
-    pub(crate) fn is(&mut self, pred: impl Fn(char) -> bool) -> Result<bool, DecodeError> {
+    pub(crate) fn is(&mut self, pred: impl Fn(char) -> bool) -> Result<bool, Error> {
         Ok(matches!(self.peek()?, Some(ch) if pred(ch)))
     }
 
-    pub(crate) fn is_char(&mut self, ch: char) -> Result<bool, DecodeError> {
+    pub(crate) fn is_char(&mut self, ch: char) -> Result<bool, Error> {
         Ok(self.peek()? == Some(ch))
     }
 
-    pub(crate) fn is_str(&self, s: &str) -> Result<bool, DecodeError> {
+    pub(crate) fn is_str(&self, s: &str) -> Result<bool, Error> {
         let mut iter = self.stream.clone();
-        for ch in s.chars() {
-            if iter.next()? != Some(ch) {
-                return Ok(false);
+        for expected in s.chars() {
+            match iter.next() {
+                Ok(Some(ch)) if ch == expected => continue,
+                Ok(_) => return Ok(false),
+                Err(err) => return Err(self.decode_error(err)),
             }
         }
         Ok(true)
@@ -164,28 +166,31 @@ impl<'s> Cursor<'s> {
         self.line_index == self.stream.index()
     }
 
-    pub(crate) fn is_end_of_document(&self) -> Result<bool, DecodeError> {
+    pub(crate) fn is_end_of_document(&self) -> Result<bool, Error> {
         Ok(self.is_start_of_line()
             && (self.is_str("---")? || self.is_str("...")?)
             && matches!(
-                self.stream.clone().nth(3)?,
+                self.stream
+                    .clone()
+                    .nth(3)
+                    .map_err(|err| self.decode_error(err))?,
                 None | Some('\r' | '\n' | '\t' | ' ')
             ))
     }
 
-    pub(crate) fn is_end_of_input(&self) -> Result<bool, DecodeError> {
+    pub(crate) fn is_end_of_input(&self) -> Result<bool, Error> {
         Ok(self.peek()?.is_none())
     }
 
-    pub(crate) fn peek(&self) -> Result<Option<char>, DecodeError> {
+    pub(crate) fn peek(&self) -> Result<Option<char>, Error> {
         self.peek_nth(0)
     }
 
-    pub(crate) fn peek_next(&self) -> Result<Option<char>, DecodeError> {
+    pub(crate) fn peek_next(&self) -> Result<Option<char>, Error> {
         self.peek_nth(1)
     }
 
-    pub(crate) fn peek_nth(&self, n: usize) -> Result<Option<char>, DecodeError> {
+    pub(crate) fn peek_nth(&self, n: usize) -> Result<Option<char>, Error> {
         #[cfg(debug_assertions)]
         if self.peek_count > 1000 {
             panic!("infinite loop in parser");
@@ -195,7 +200,10 @@ impl<'s> Cursor<'s> {
             return Ok(None);
         }
 
-        self.stream.clone().nth(n)
+        self.stream
+            .clone()
+            .nth(n)
+            .map_err(|err| self.decode_error(err))
     }
 
     pub(crate) fn bump(&mut self) {
