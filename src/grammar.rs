@@ -3,12 +3,13 @@ mod event;
 mod scalar;
 mod trivia;
 
-use crate::{cursor::Cursor, Error, Receiver, Token};
+use crate::{cursor::Cursor, Diagnostic, Receiver, Token};
 
 pub(crate) use self::event::event;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub(crate) enum State {
+    Error(Diagnostic),
     Stream,
     Document {
         prev_terminated: bool,
@@ -71,12 +72,12 @@ pub(crate) enum Context {
     FlowKey,
 }
 
-fn token_char<'s>(
+fn try_token_char<'s>(
     cursor: &mut Cursor<'s>,
     receiver: &mut impl Receiver,
     token: Token,
     ch: char,
-) -> Result<bool, Error> {
+) -> Result<bool, Diagnostic> {
     if cursor.is_char(ch)? {
         let start = cursor.location();
         cursor.bump();

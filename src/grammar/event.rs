@@ -1,8 +1,10 @@
 use crate::{
+    char,
     cursor::Cursor,
+    diag::DiagnosticKind,
     grammar::{document, State},
     parser::Buffer,
-    Error, Event, Receiver, Span,
+    Diagnostic, Event, Receiver, Span,
 };
 
 pub(crate) fn event<'s>(
@@ -10,14 +12,17 @@ pub(crate) fn event<'s>(
     receiver: &mut impl Receiver,
     buffer: &mut Buffer<'s>,
     states: &mut Vec<State>,
-) -> Option<Result<(Event<'s>, Span), Error>> {
+) -> Option<Result<(Event<'s>, Span), Diagnostic>> {
     let Some(state) = states.pop() else {
         return None;
     };
 
     let res = match state {
+        State::Error(err) => Err(err),
         State::Stream => stream(cursor, states),
-        State::Document { prev_terminated } => document(cursor, receiver, buffer, states, prev_terminated),
+        State::Document { prev_terminated } => {
+            document(cursor, receiver, buffer, states, prev_terminated)
+        }
         State::DocumentNode {
             allow_empty,
             allow_compact,
@@ -70,18 +75,17 @@ pub(crate) fn event<'s>(
 fn stream<'s>(
     cursor: &mut Cursor<'s>,
     states: &mut Vec<State>,
-) -> Result<(Event<'s>, Span), Error> {
-    let encoding = match cursor.encoding() {
-        Ok(encoding) => encoding,
-        Err(error) => return Err(error),
-    };
-    let span = cursor.empty_span();
-
+) -> Result<(Event<'s>, Span), Diagnostic> {
     states.push(State::Document {
         prev_terminated: true,
     });
 
-    Ok((Event::StreamStart { encoding }, span))
+    Ok((
+        Event::StreamStart {
+            encoding: cursor.encoding(),
+        },
+        cursor.empty_span(),
+    ))
 }
 
 fn document<'s>(
@@ -90,11 +94,11 @@ fn document<'s>(
     buffer: &mut Buffer<'s>,
     states: &mut Vec<State>,
     prev_terminated: bool,
-) -> Result<(Event<'s>, Span), Error> {
+) -> Result<(Event<'s>, Span), Diagnostic> {
     cursor.enter_document();
 
     loop {
-        document::prefix(cursor, receiver, buffer)?;
+        document::prefix(cursor, receiver, prev_terminated)?;
     }
 
     todo!()

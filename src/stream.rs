@@ -41,7 +41,6 @@ pub(crate) struct Stream<'s> {
 
 #[derive(Clone)]
 enum StreamKind<'s> {
-    Error(DecodeError),
     Utf8 {
         stream: &'s str,
         iter: Chars<'s>,
@@ -74,13 +73,7 @@ impl<'s> Stream<'s> {
         }
     }
 
-    pub(crate) fn from_slice(stream: &'s [u8]) -> Self {
-        Stream::try_from_slice(stream).unwrap_or_else(|err| Stream {
-            kind: StreamKind::Error(err),
-        })
-    }
-
-    fn try_from_slice(stream: &'s [u8]) -> Result<Self, DecodeError> {
+    pub(crate) fn from_slice(stream: &'s [u8]) -> Result<Stream<'_>, DecodeError> {
         let kind = match stream {
             [0x00, 0x00, 0xfe, 0xff, ..] | [0x00, 0x00, 0x00, _, ..] => StreamKind::Utf32Be {
                 index: 0,
@@ -115,20 +108,18 @@ impl<'s> Stream<'s> {
         Ok(Stream { kind })
     }
 
-    pub(crate) fn encoding(&self) -> Result<Encoding, DecodeError> {
+    pub(crate) fn encoding(&self) -> Encoding {
         match self.kind {
-            StreamKind::Error(err) => Err(err),
-            StreamKind::Utf8 { .. } => Ok(Encoding::Utf8),
-            StreamKind::Utf16Be { .. } => Ok(Encoding::Utf16Be),
-            StreamKind::Utf16Le { .. } => Ok(Encoding::Utf16Le),
-            StreamKind::Utf32Be { .. } => Ok(Encoding::Utf32Be),
-            StreamKind::Utf32Le { .. } => Ok(Encoding::Utf32Le),
+            StreamKind::Utf8 { .. } => Encoding::Utf8,
+            StreamKind::Utf16Be { .. } => Encoding::Utf16Be,
+            StreamKind::Utf16Le { .. } => Encoding::Utf16Le,
+            StreamKind::Utf32Be { .. } => Encoding::Utf32Be,
+            StreamKind::Utf32Le { .. } => Encoding::Utf32Le,
         }
     }
 
     pub(crate) fn index(&self) -> usize {
         match &self.kind {
-            StreamKind::Error(err) => err.index(),
             StreamKind::Utf8 { stream, iter } => stream.len() - iter.as_str().len(),
             StreamKind::Utf16Be { index, .. }
             | StreamKind::Utf16Le { index, .. }
@@ -139,7 +130,6 @@ impl<'s> Stream<'s> {
 
     pub(crate) fn next(&mut self) -> Result<Option<char>, DecodeError> {
         match &mut self.kind {
-            StreamKind::Error(err) => Err(*err),
             StreamKind::Utf8 { iter, .. } => Ok(iter.next()),
             StreamKind::Utf16Be { iter, index } => next_utf16(iter, index),
             StreamKind::Utf16Le { iter, index } => next_utf16(iter, index),

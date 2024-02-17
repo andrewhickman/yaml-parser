@@ -1,12 +1,13 @@
-use core::{fmt, ops::Range};
+use core::{fmt, ops::Range, str::Utf8Error};
 
 use crate::{
+    char,
     stream::{DecodeError, Stream},
-    Encoding, Error,
+    Diagnostic, Encoding,
 };
 
 /// A range of characters within a source file.
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Default, Debug, Hash, Eq, PartialEq)]
 pub struct Span {
     /// The start of the span (inclusive).
     pub start: Location,
@@ -15,7 +16,7 @@ pub struct Span {
 }
 
 /// The position of a character in a source file.
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
+#[derive(Copy, Clone, Default, Debug, Hash, Eq, PartialEq)]
 pub struct Location {
     /// The byte offset of the character.
     pub index: usize,
@@ -30,6 +31,8 @@ pub(crate) struct Cursor<'s> {
     stream: Stream<'s>,
     line_number: usize,
     line_index: usize,
+    indent: Option<u32>,
+    separated: bool,
     in_document: bool,
     #[cfg(debug_assertions)]
     peek_count: usize,
@@ -71,6 +74,8 @@ impl<'s> Cursor<'s> {
             stream,
             line_number: 0,
             line_index: 0,
+            indent: Some(0),
+            separated: true,
             in_document: false,
             #[cfg(debug_assertions)]
             peek_count: 0,
@@ -86,15 +91,12 @@ impl<'s> Cursor<'s> {
         }
     }
 
-    pub(crate) fn encoding(&self) -> Result<Encoding, Error> {
-        self.stream.encoding().map_err(|err| self.decode_error(err))
+    pub(crate) fn encoding(&self) -> Encoding {
+        self.stream.encoding()
     }
 
     pub(crate) fn span(&self, start: Location) -> Span {
-        Span {
-            start,
-            end: self.location(),
-        }
+        Span::new(start, self.location())
     }
 
     pub(crate) fn empty_span(&self) -> Span {
@@ -109,7 +111,7 @@ impl<'s> Cursor<'s> {
         self.in_document = true;
     }
 
-    pub(crate) fn eat(&mut self, pred: impl Fn(char) -> bool) -> Result<bool, Error> {
+    pub(crate) fn eat(&mut self, pred: impl Fn(char) -> bool) -> Result<bool, Diagnostic> {
         if self.is(pred)? {
             self.bump();
             Ok(true)
@@ -118,7 +120,7 @@ impl<'s> Cursor<'s> {
         }
     }
 
-    pub(crate) fn eat_char(&mut self, ch: char) -> Result<bool, Error> {
+    pub(crate) fn eat_char(&mut self, ch: char) -> Result<bool, Diagnostic> {
         if self.is_char(ch)? {
             self.bump();
             Ok(true)
@@ -127,7 +129,7 @@ impl<'s> Cursor<'s> {
         }
     }
 
-    pub(crate) fn eat_str(&mut self, s: &str) -> Result<bool, Error> {
+    pub(crate) fn eat_str(&mut self, s: &str) -> Result<bool, Diagnostic> {
         if self.is_str(s)? {
             for _ in s.chars() {
                 self.bump();
@@ -138,19 +140,19 @@ impl<'s> Cursor<'s> {
         }
     }
 
-    pub(crate) fn next_is(&self, pred: impl Fn(char) -> bool) -> Result<bool, Error> {
+    pub(crate) fn next_is(&self, pred: impl Fn(char) -> bool) -> Result<bool, Diagnostic> {
         Ok(matches!(self.peek_next()?, Some(ch) if pred(ch)))
     }
 
-    pub(crate) fn is(&mut self, pred: impl Fn(char) -> bool) -> Result<bool, Error> {
+    pub(crate) fn is(&mut self, pred: impl Fn(char) -> bool) -> Result<bool, Diagnostic> {
         Ok(matches!(self.peek()?, Some(ch) if pred(ch)))
     }
 
-    pub(crate) fn is_char(&mut self, ch: char) -> Result<bool, Error> {
+    pub(crate) fn is_char(&mut self, ch: char) -> Result<bool, Diagnostic> {
         Ok(self.peek()? == Some(ch))
     }
 
-    pub(crate) fn is_str(&self, s: &str) -> Result<bool, Error> {
+    pub(crate) fn is_str(&self, s: &str) -> Result<bool, Diagnostic> {
         let mut iter = self.stream.clone();
         for expected in s.chars() {
             match iter.next() {
@@ -163,10 +165,18 @@ impl<'s> Cursor<'s> {
     }
 
     pub(crate) fn is_start_of_line(&self) -> bool {
-        self.line_index == self.stream.index()
+        self.indent == Some(0)
     }
 
-    pub(crate) fn is_end_of_document(&self) -> Result<bool, Error> {
+    pub(crate) fn is_separated(&self) -> bool {
+        self.separated
+    }
+
+    pub(crate) fn indent(&self) -> Option<u32> {
+        self.indent
+    }
+
+    pub(crate) fn is_end_of_document(&self) -> Result<bool, Diagnostic> {
         Ok(self.is_start_of_line()
             && (self.is_str("---")? || self.is_str("...")?)
             && matches!(
@@ -178,19 +188,19 @@ impl<'s> Cursor<'s> {
             ))
     }
 
-    pub(crate) fn is_end_of_input(&self) -> Result<bool, Error> {
+    pub(crate) fn is_end_of_input(&self) -> Result<bool, Diagnostic> {
         Ok(self.peek()?.is_none())
     }
 
-    pub(crate) fn peek(&self) -> Result<Option<char>, Error> {
+    pub(crate) fn peek(&self) -> Result<Option<char>, Diagnostic> {
         self.peek_nth(0)
     }
 
-    pub(crate) fn peek_next(&self) -> Result<Option<char>, Error> {
+    pub(crate) fn peek_next(&self) -> Result<Option<char>, Diagnostic> {
         self.peek_nth(1)
     }
 
-    pub(crate) fn peek_nth(&self, n: usize) -> Result<Option<char>, Error> {
+    pub(crate) fn peek_nth(&self, n: usize) -> Result<Option<char>, Diagnostic> {
         #[cfg(debug_assertions)]
         if self.peek_count > 1000 {
             panic!("infinite loop in parser");
@@ -217,20 +227,27 @@ impl<'s> Cursor<'s> {
             .next()
             .expect("called bump at end of input")
             .expect("called bump after encoding error");
-        let is_break = match ch {
-            '\r' if !matches!(self.is_char('\n'), Ok(true)) => true,
-            '\n' => true,
-            _ => false,
-        };
 
+        let is_break = ch == '\n' || (ch == '\r' && !matches!(self.is_char('\n'), Ok(true)));
         if is_break {
             self.line_number += 1;
             self.line_index = self.stream.index();
+            self.indent = Some(0);
+            self.separated = true;
+        } else if let Some(indent) = &mut self.indent {
+            if ch == ' ' {
+                *indent += 1;
+            } else {
+                self.indent = None;
+            }
         }
+
+        self.separated =
+            is_break || char::space(ch) || (self.separated && ch == char::BYTE_ORDER_MARK);
     }
 
-    fn decode_error(&self, err: DecodeError) -> Error {
-        Error::decode(
+    fn decode_error(&self, err: DecodeError) -> Diagnostic {
+        Diagnostic::decode(
             err.kind(),
             Location {
                 index: err.index(),
@@ -238,6 +255,12 @@ impl<'s> Cursor<'s> {
                 column: err.index() - self.line_index,
             },
         )
+    }
+}
+
+impl<'s> Default for Cursor<'s> {
+    fn default() -> Self {
+        Cursor::new(Stream::from_str(""))
     }
 }
 

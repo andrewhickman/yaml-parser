@@ -4,9 +4,10 @@ use alloc::collections::VecDeque;
 
 use crate::{
     cursor::Cursor,
+    diag::Severity,
     grammar::{self, State},
-    stream::Stream,
-    Error, Event, Location, Span,
+    stream::{DecodeError, Stream},
+    Diagnostic, Event, Location, Span,
 };
 
 /// An iterator over events encountered while parsing a YAML document.
@@ -21,8 +22,8 @@ pub struct Parser<'s, R = DefaultReceiver> {
 /// A handler for diagnostics and tokens in a YAML stream.
 pub trait Receiver {
     /// Called when a warning message is emitted.
-    fn warning(&mut self, message: &dyn fmt::Display, span: Span) {
-        let _ = (message, span);
+    fn diagnostic(&mut self, diagnostic: Diagnostic) {
+        let _ = diagnostic;
     }
 
     /// Called for every token of the input stream. The stream may be reconstructed by joining the returned tokens.
@@ -56,10 +57,8 @@ pub enum Token {
     MappingStart,
     /// A `}` token.
     MappingEnd,
-    /// A `#` token.
+    /// A line comment, beginning with a '#' character.
     Comment,
-    /// The body of a comment.
-    CommentText,
     /// A `&` token.
     Anchor,
     /// The name of an anchor on an anchor property of a node, or an alias node.
@@ -130,16 +129,15 @@ pub(crate) struct Buffer<'s> {
 #[derive(Debug, Clone)]
 pub(crate) enum Buffered<'s> {
     Event { event: Event<'s>, span: Span },
-    Error { error: Error },
+    Diagnostic { diag: Diagnostic },
     Token { token: Token, span: Span },
-    Warning { message: String, span: Span },
 }
 
 impl<'s> Parser<'s> {
     /// Creates a YAML parser from an `&str`.
     #[allow(clippy::should_implement_trait)]
     pub fn from_str(stream: &'s str) -> Self {
-        Parser::from_stream(Stream::from_str(stream))
+        Parser::from_stream(Ok(Stream::from_str(stream)))
     }
 
     /// Creates a YAML parser from an `&[u8]`.
@@ -149,12 +147,29 @@ impl<'s> Parser<'s> {
         Parser::from_stream(Stream::from_slice(stream))
     }
 
-    fn from_stream(stream: Stream<'s>) -> Self {
+    fn from_stream(stream: Result<Stream<'s>, DecodeError>) -> Self {
         let mut state = Vec::with_capacity(16);
-        state.push(State::Stream);
+
+        let cursor = match stream {
+            Ok(stream) => {
+                state.push(State::Stream);
+                Cursor::new(stream)
+            }
+            Err(err) => {
+                state.push(State::Error(Diagnostic::decode(
+                    err.kind(),
+                    Location {
+                        index: err.index(),
+                        line: 0,
+                        column: err.index(),
+                    },
+                )));
+                Cursor::default()
+            }
+        };
 
         Parser {
-            cursor: Cursor::new(stream),
+            cursor,
             receiver: DefaultReceiver,
             state,
             buffer: Buffer::default(),
@@ -193,17 +208,19 @@ impl<'s, R> Iterator for Parser<'s, R>
 where
     R: Receiver,
 {
-    type Item = Result<(Event<'s>, Span), Error>;
+    type Item = Result<(Event<'s>, Span), Diagnostic>;
 
     fn next(&mut self) -> Option<Self::Item> {
         for buffered in self.buffer.by_ref() {
             match buffered {
                 Buffered::Event { event, span } => return Some(Ok((event, span))),
-                Buffered::Error { error } => return Some(Err(error)),
-                Buffered::Token { token, span } => self.receiver.token(token, span),
-                Buffered::Warning { message, span } => {
-                    self.receiver.warning(&message.as_str(), span)
+                Buffered::Diagnostic { diag } => {
+                    self.receiver.diagnostic(diag.clone());
+                    if diag.severity() == Severity::Error {
+                        return Some(Err(diag));
+                    }
                 }
+                Buffered::Token { token, span } => self.receiver.token(token, span),
             }
         }
         grammar::event(
@@ -211,8 +228,7 @@ where
             &mut self.receiver,
             &mut self.buffer,
             &mut self.state,
-        );
-        None
+        )
     }
 }
 
@@ -228,8 +244,8 @@ impl<'r, R> Receiver for &'r mut R
 where
     R: Receiver,
 {
-    fn warning(&mut self, message: &dyn fmt::Display, span: Span) {
-        (*self).warning(message, span)
+    fn diagnostic(&mut self, diagnostic: Diagnostic) {
+        (*self).diagnostic(diagnostic)
     }
 
     fn token(&mut self, token: Token, span: Span) {
@@ -242,8 +258,8 @@ impl<'s> Buffer<'s> {
         self.buffer.push_back(Buffered::Event { event, span })
     }
 
-    pub(crate) fn error(&mut self, error: Error) {
-        self.buffer.push_back(Buffered::Error { error })
+    pub(crate) fn error(&mut self, error: Diagnostic) {
+        self.buffer.push_back(Buffered::Diagnostic { diag: error })
     }
 
     pub(crate) fn peek_token(&mut self) -> Option<(Token, Span)> {
@@ -271,11 +287,8 @@ impl<'s> Iterator for Buffer<'s> {
 }
 
 impl<'s> Receiver for Buffer<'s> {
-    fn warning(&mut self, message: &dyn fmt::Display, span: Span) {
-        self.buffer.push_back(Buffered::Warning {
-            message: message.to_string(),
-            span,
-        });
+    fn diagnostic(&mut self, diag: Diagnostic) {
+        self.buffer.push_back(Buffered::Diagnostic { diag });
     }
 
     fn token(&mut self, token: Token, span: Span) {

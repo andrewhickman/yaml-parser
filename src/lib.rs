@@ -8,7 +8,7 @@ extern crate alloc;
 
 mod char;
 mod cursor;
-mod error;
+mod diag;
 mod event;
 mod grammar;
 mod parser;
@@ -16,7 +16,7 @@ mod stream;
 
 pub use self::{
     cursor::{Location, Span},
-    error::Error,
+    diag::Diagnostic,
     event::{CollectionStyle, Event, ScalarStyle},
     parser::{Parser, Receiver, Token},
     stream::Encoding,

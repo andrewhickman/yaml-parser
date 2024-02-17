@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 use insta::assert_yaml_snapshot;
 use serde::Serialize;
-use yaml_parser::{CollectionStyle, Event, Parser, Receiver, ScalarStyle, Span, Token};
+use yaml_parser::{CollectionStyle, Diagnostic, Event, Parser, Receiver, ScalarStyle, Span, Token};
 
 #[derive(Default)]
 struct TestReceiver {
@@ -156,18 +156,18 @@ impl Receiver for TestReceiver {
         self.tokens.push(TokenSer { token, start, end });
     }
 
-    fn warning(&mut self, message: &dyn std::fmt::Display, span: Span) {
+    fn diagnostic(&mut self, diag: Diagnostic) {
         self.diagnostics.push(DiagnosticSer {
-            message: message.to_string(),
+            message: diag.to_string(),
             start: SpanSer {
-                index: span.start.index,
-                line: span.start.line,
-                column: span.start.column,
+                index: diag.span().start.index,
+                line: diag.span().start.line,
+                column: diag.span().start.column,
             },
             end: SpanSer {
-                index: span.end.index,
-                line: span.end.line,
-                column: span.end.column,
+                index: diag.span().end.index,
+                line: diag.span().end.line,
+                column: diag.span().end.column,
             },
         })
     }
