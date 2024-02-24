@@ -40,6 +40,10 @@ pub(super) fn word(ch: char) -> bool {
     ch.is_ascii_alphanumeric() || ch == '-'
 }
 
+pub(super) fn dec_digit(ch: char) -> bool {
+    ch.is_ascii_digit()
+}
+
 pub(super) fn indicator(ch: char) -> bool {
     matches!(
         ch,

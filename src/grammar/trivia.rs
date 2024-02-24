@@ -1,7 +1,7 @@
-use crate::{char, cursor::Cursor, Diagnostic, Receiver, Span, Token};
+use crate::{char, cursor::Cursor, diag::Expected, Diagnostic, Receiver, Span, Token};
 
 pub(super) fn try_line_break(
-    cursor: &mut Cursor<'_>,
+    cursor: &mut Cursor,
     receiver: &mut impl Receiver,
 ) -> Result<Option<Span>, Diagnostic> {
     let start = cursor.location();
@@ -16,7 +16,7 @@ pub(super) fn try_line_break(
 }
 
 pub(super) fn comment_lines(
-    cursor: &mut Cursor<'_>,
+    cursor: &mut Cursor,
     receiver: &mut impl Receiver,
 ) -> Result<(), Diagnostic> {
     loop {
@@ -32,7 +32,7 @@ pub(super) fn comment_lines(
 }
 
 pub(super) fn comment_text(
-    cursor: &mut Cursor<'_>,
+    cursor: &mut Cursor,
     receiver: &mut impl Receiver,
 ) -> Result<(), Diagnostic> {
     let start = cursor.location();
@@ -49,13 +49,13 @@ pub(super) fn comment_text(
         } else if cursor.is(char::non_break)? {
             cursor.bump();
         } else {
-            return Err(Diagnostic::invalid_char(cursor));
+            return Err(Diagnostic::expected(Expected::Printable, cursor));
         }
     }
 }
 
 pub(super) fn separate_in_line(
-    cursor: &mut Cursor<'_>,
+    cursor: &mut Cursor,
     receiver: &mut impl Receiver,
 ) -> Result<(), Diagnostic> {
     if try_separate_in_line(cursor, receiver)? {
@@ -66,7 +66,7 @@ pub(super) fn separate_in_line(
 }
 
 pub(super) fn try_separate_in_line(
-    cursor: &mut Cursor<'_>,
+    cursor: &mut Cursor,
     receiver: &mut impl Receiver,
 ) -> Result<bool, Diagnostic> {
     if cursor.is(char::space)? {

@@ -7,6 +7,7 @@
 extern crate alloc;
 
 mod char;
+mod cow;
 mod cursor;
 mod diag;
 mod event;

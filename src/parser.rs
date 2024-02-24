@@ -35,6 +35,8 @@ pub trait Receiver {
 /// A token type in a YAML stream.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Token {
+    /// A part of the YAML stream which could not be parsed due to an error.
+    Error,
     /// Identation whitespace at the start of a line,
     Indent,
     /// Whitespace separating tokens.

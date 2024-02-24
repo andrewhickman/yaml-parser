@@ -1,4 +1,4 @@
-use core::{fmt, ops::Range, str::Utf8Error};
+use core::{fmt, ops::Range, sync::atomic::Ordering};
 
 use crate::{
     char,
@@ -26,7 +26,6 @@ pub struct Location {
     pub column: usize,
 }
 
-#[derive(Clone)]
 pub(crate) struct Cursor<'s> {
     stream: Stream<'s>,
     line_number: usize,
@@ -34,8 +33,8 @@ pub(crate) struct Cursor<'s> {
     indent: Option<u32>,
     separated: bool,
     in_document: bool,
-    #[cfg(debug_assertions)]
-    peek_count: usize,
+    #[cfg(all(feature = "std", debug_assertions))]
+    peek_count: std::sync::atomic::AtomicU32,
 }
 
 impl Span {
@@ -77,8 +76,8 @@ impl<'s> Cursor<'s> {
             indent: Some(0),
             separated: true,
             in_document: false,
-            #[cfg(debug_assertions)]
-            peek_count: 0,
+            #[cfg(all(feature = "std", debug_assertions))]
+            peek_count: std::sync::atomic::AtomicU32::new(0),
         }
     }
 
@@ -95,8 +94,23 @@ impl<'s> Cursor<'s> {
         self.stream.encoding()
     }
 
+    pub(crate) fn as_str(&self) -> Option<&'s str> {
+        self.stream.as_str()
+    }
+
+    pub(crate) fn index(&self) -> usize {
+        self.stream.index()
+    }
+
     pub(crate) fn span(&self, start: Location) -> Span {
         Span::new(start, self.location())
+    }
+
+    pub(crate) fn next_span(&self) -> Span {
+        let start = self.location();
+        let mut cursor = self.clone();
+        let _ = cursor.eat(|_| true);
+        cursor.span(start)
     }
 
     pub(crate) fn empty_span(&self) -> Span {
@@ -140,15 +154,25 @@ impl<'s> Cursor<'s> {
         }
     }
 
+    pub(crate) fn eat_while(
+        &mut self,
+        pred: impl Fn(char) -> bool + Clone,
+    ) -> Result<(), Diagnostic> {
+        while self.is(pred.clone())? {
+            self.bump();
+        }
+        Ok(())
+    }
+
     pub(crate) fn next_is(&self, pred: impl Fn(char) -> bool) -> Result<bool, Diagnostic> {
         Ok(matches!(self.peek_next()?, Some(ch) if pred(ch)))
     }
 
-    pub(crate) fn is(&mut self, pred: impl Fn(char) -> bool) -> Result<bool, Diagnostic> {
+    pub(crate) fn is(&self, pred: impl Fn(char) -> bool) -> Result<bool, Diagnostic> {
         Ok(matches!(self.peek()?, Some(ch) if pred(ch)))
     }
 
-    pub(crate) fn is_char(&mut self, ch: char) -> Result<bool, Diagnostic> {
+    pub(crate) fn is_char(&self, ch: char) -> Result<bool, Diagnostic> {
         Ok(self.peek()? == Some(ch))
     }
 
@@ -188,7 +212,7 @@ impl<'s> Cursor<'s> {
             ))
     }
 
-    pub(crate) fn is_end_of_input(&self) -> Result<bool, Diagnostic> {
+    pub(crate) fn is_end_of_stream(&self) -> Result<bool, Diagnostic> {
         Ok(self.peek()?.is_none())
     }
 
@@ -202,7 +226,7 @@ impl<'s> Cursor<'s> {
 
     pub(crate) fn peek_nth(&self, n: usize) -> Result<Option<char>, Diagnostic> {
         #[cfg(debug_assertions)]
-        if self.peek_count > 1000 {
+        if self.peek_count.fetch_add(1, Ordering::Relaxed) > 1000 {
             panic!("infinite loop in parser");
         }
 
@@ -216,10 +240,10 @@ impl<'s> Cursor<'s> {
             .map_err(|err| self.decode_error(err))
     }
 
-    pub(crate) fn bump(&mut self) {
+    pub(crate) fn bump(&mut self) -> char {
         #[cfg(debug_assertions)]
         {
-            self.peek_count = 0;
+            *self.peek_count.get_mut() = 0;
         }
 
         let ch = self
@@ -244,6 +268,8 @@ impl<'s> Cursor<'s> {
 
         self.separated =
             is_break || char::space(ch) || (self.separated && ch == char::BYTE_ORDER_MARK);
+
+        ch
     }
 
     fn decode_error(&self, err: DecodeError) -> Diagnostic {
@@ -255,6 +281,23 @@ impl<'s> Cursor<'s> {
                 column: err.index() - self.line_index,
             },
         )
+    }
+}
+
+impl<'s> Clone for Cursor<'s> {
+    fn clone(&self) -> Self {
+        Self {
+            stream: self.stream.clone(),
+            line_number: self.line_number.clone(),
+            line_index: self.line_index.clone(),
+            indent: self.indent.clone(),
+            separated: self.separated.clone(),
+            in_document: self.in_document.clone(),
+            #[cfg(all(feature = "std", debug_assertions))]
+            peek_count: std::sync::atomic::AtomicU32::new(
+                self.peek_count.load(std::sync::atomic::Ordering::Relaxed),
+            ),
+        }
     }
 }
 
