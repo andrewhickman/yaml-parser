@@ -19,7 +19,7 @@ fn prefix_unterminated<'s>(
 }
 
 #[test]
-fn document_directive() {
+fn test_prefix() {
     assert_yaml_snapshot!(parse(prefix, ""));
     assert_yaml_snapshot!(parse(prefix, "\u{feff}"));
     assert_yaml_snapshot!(parse(prefix, " "));
@@ -31,4 +31,10 @@ fn document_directive() {
     assert_yaml_snapshot!(parse(prefix, "\u{feff} # comment"));
     assert_yaml_snapshot!(parse(prefix, "\u{feff}\t# comment"));
     assert_yaml_snapshot!(parse(prefix, "\u{feff}\t \t# comment"));
+    assert_yaml_snapshot!(parse(prefix, "\u{feff}\t \t# comment\r"));
+    assert_yaml_snapshot!(parse(prefix, "\u{feff}\t \t# comment\n"));
+    assert_yaml_snapshot!(parse(prefix, "\u{feff}\t \t# comment\r\n"));
+    assert_yaml_snapshot!(parse(prefix, "\u{feff}\t \t# comment\n \n"));
+    assert_yaml_snapshot!(parse(prefix, "\u{feff}\t \t# comment\n#line\n"));
+    assert_yaml_snapshot!(parse(prefix, "\u{feff}\t \t# comment\n #line\n"));
 }

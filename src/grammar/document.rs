@@ -197,8 +197,8 @@ fn reserved_directive<'s>(
     Ok(())
 }
 
-fn try_directive_param<'s>(
-    cursor: &mut Cursor<'s>,
+fn try_directive_param(
+    cursor: &mut Cursor<'_>,
     receiver: &mut (impl Receiver + ?Sized),
 ) -> Result<Option<Span>, Diagnostic> {
     if trivia::try_separate_in_line(cursor, receiver)?

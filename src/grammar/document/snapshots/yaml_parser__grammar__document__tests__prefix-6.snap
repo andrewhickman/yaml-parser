@@ -1,0 +1,30 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix, \"\\t# comment\")"
+---
+- token: separator
+  stream: "\t"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
+- token: comment
+  stream: "# comment"
+  span:
+    start:
+      index: 1
+      line: 0
+      column: 1
+    end:
+      index: 10
+      line: 0
+      column: 10
+- value:
+    version: ~
+    tags: {}
+

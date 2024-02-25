@@ -290,11 +290,11 @@ impl<'s> Clone for Cursor<'s> {
     fn clone(&self) -> Self {
         Self {
             stream: self.stream.clone(),
-            line_number: self.line_number.clone(),
-            line_index: self.line_index.clone(),
-            indent: self.indent.clone(),
-            separated: self.separated.clone(),
-            in_document: self.in_document.clone(),
+            line_number: self.line_number,
+            line_index: self.line_index,
+            indent: self.indent,
+            separated: self.separated,
+            in_document: self.in_document,
             #[cfg(all(feature = "std", debug_assertions))]
             peek_count: std::sync::atomic::AtomicU32::new(
                 self.peek_count.load(std::sync::atomic::Ordering::Relaxed),

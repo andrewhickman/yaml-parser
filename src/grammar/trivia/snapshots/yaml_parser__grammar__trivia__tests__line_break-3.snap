@@ -1,0 +1,17 @@
+---
+source: src/grammar/trivia/tests.rs
+expression: "parse(non_content_break, \"\\r\\n\")"
+---
+- token: break
+  stream: "\r\n"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 2
+      line: 1
+      column: 0
+- value: ~
+

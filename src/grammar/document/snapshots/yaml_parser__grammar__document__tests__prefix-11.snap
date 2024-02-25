@@ -1,8 +1,9 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"\\u{feff}\\t# comment\")"
+expression: "parse(prefix, \"\\u{feff}\\t \\t# comment\")"
 ---
 - token: byte_order_mark
+  stream: ﻿
   span:
     start:
       index: 0
@@ -13,25 +14,27 @@ expression: "parse(prefix, \"\\u{feff}\\t# comment\")"
       line: 0
       column: 3
 - token: separator
+  stream: "\t \t"
   span:
     start:
       index: 3
       line: 0
       column: 3
     end:
-      index: 4
+      index: 6
       line: 0
-      column: 4
+      column: 6
 - token: comment
+  stream: "# comment"
   span:
     start:
-      index: 4
+      index: 6
       line: 0
-      column: 4
+      column: 6
     end:
-      index: 13
+      index: 15
       line: 0
-      column: 13
+      column: 15
 - value:
     version: ~
     tags: {}

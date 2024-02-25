@@ -3,7 +3,31 @@ mod tests;
 
 use crate::{char, cursor::Cursor, diag::Expected, Diagnostic, Receiver, Span, Token};
 
-pub(super) fn try_line_break(cursor: &mut Cursor) -> Result<bool, Diagnostic> {
+pub(super) fn try_non_content_break(
+    cursor: &mut Cursor,
+    receiver: &mut (impl Receiver + ?Sized),
+) -> Result<bool, Diagnostic> {
+    let start = cursor.location();
+    if try_break(cursor)? {
+        receiver.token(Token::Break, cursor.span(start));
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
+pub(super) fn non_content_break(
+    cursor: &mut Cursor,
+    receiver: &mut (impl Receiver + ?Sized),
+) -> Result<(), Diagnostic> {
+    if try_non_content_break(cursor, receiver)? {
+        Ok(())
+    } else {
+        Err(Diagnostic::expected_token(Token::Break, cursor))
+    }
+}
+
+fn try_break(cursor: &mut Cursor) -> Result<bool, Diagnostic> {
     if cursor.eat_char('\r')? {
         cursor.eat_char('\n')?;
         Ok(true)
@@ -24,7 +48,7 @@ pub(super) fn comment_lines(
         }
         if cursor.is_char(char::COMMENT)? {
             comment_text(cursor, receiver)?;
-        } else if try_line_break(cursor)? || cursor.is_end_of_input()? {
+        } else if try_non_content_break(cursor, receiver)? || cursor.is_end_of_input()? {
             return Ok(());
         }
     }
@@ -40,13 +64,9 @@ pub(super) fn comment_text(
     }
     cursor.eat_while(char::non_break)?;
 
-    let end = cursor.location();
-    receiver.token(Token::Comment, Span::new(start, end));
+    receiver.token(Token::Comment, cursor.span(start));
 
-    if try_line_break(cursor)? {
-        receiver.token(Token::Break, cursor.span(end));
-        Ok(())
-    } else if cursor.is_end_of_input()? {
+    if try_non_content_break(cursor, receiver)? || cursor.is_end_of_input()? {
         Ok(())
     } else {
         Err(Diagnostic::expected(Expected::Printable, cursor))

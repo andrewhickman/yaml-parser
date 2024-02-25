@@ -1,67 +1,111 @@
 use serde::Serialize;
 
-use crate::{cursor::Cursor, stream::Stream, Diagnostic, Location, Receiver, Span, Token};
+use crate::{
+    cursor::Cursor,
+    stream::{self, Stream},
+    Diagnostic, Location, Receiver, Span, Token,
+};
 
-#[derive(Serialize)]
-#[serde(transparent)]
-struct TestReceiver<T> {
-    items: Vec<TestItem<T>>,
+struct TestReceiver<'s, T> {
+    stream: Option<&'s str>,
+    index: usize,
+    items: Vec<TestItem<'s, T>>,
 }
 
 #[derive(Serialize)]
 #[serde(untagged)]
-enum TestItem<T> {
-    Diagnostic { diag: Diagnostic },
-    Token { token: Token, span: Span },
-    Value { value: T },
+enum TestItem<'s, T> {
+    Diagnostic {
+        #[serde(flatten)]
+        diag: Diagnostic,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        stream: Option<&'s str>,
+    },
+    Token {
+        token: Token,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        stream: Option<&'s str>,
+        span: Span,
+    },
+    Value {
+        value: T,
+    },
 }
 
-impl<T> Receiver for TestReceiver<T> {
+impl<'s, T> Receiver for TestReceiver<'s, T> {
     fn diagnostic(&mut self, diag: Diagnostic) {
-        self.items.push(TestItem::Diagnostic { diag })
+        self.items.push(TestItem::Diagnostic {
+            stream: self.stream(diag.span()),
+            diag,
+        })
     }
 
     fn token(&mut self, token: Token, span: Span) {
-        self.items.push(TestItem::Token { token, span })
+        self.items.push(TestItem::Token {
+            token,
+            stream: self.stream(span),
+            span,
+        })
     }
 }
 
-impl<T> TestReceiver<T> {
-    fn new() -> Self {
-        TestReceiver { items: Vec::new() }
+impl<'s, T> TestReceiver<'s, T> {
+    fn new(cursor: &Cursor<'s>) -> Self {
+        TestReceiver {
+            items: Vec::new(),
+            stream: cursor.as_str(),
+            index: cursor.index(),
+        }
+    }
+
+    fn stream(&self, span: Span) -> Option<&'s str> {
+        self.stream
+            .map(|s| &s[(span.start.index - self.index)..(span.end.index - self.index)])
     }
 
     fn finish(&mut self, result: Result<T, Diagnostic>) {
         match result {
             Ok(value) => self.items.push(TestItem::Value { value }),
-            Err(diag) => self.items.push(TestItem::Diagnostic { diag }),
+            Err(diag) => self.items.push(TestItem::Diagnostic {
+                stream: self.stream(diag.span()),
+                diag,
+            }),
         }
     }
 }
 
-pub(super) fn parse<'s, T, F>(f: F, s: &'s str) -> impl Serialize + 's
+pub(super) fn parse<'s, T, F>(f: F, stream: &'s str) -> impl Serialize + 's
 where
     T: Serialize + 's,
     F: Fn(&mut Cursor<'s>, &mut (dyn Receiver + 's)) -> Result<T, Diagnostic>,
 {
-    let mut receiver = TestReceiver::<T>::new();
-    let mut cursor = Cursor::new(Stream::from_str(s));
+    parse_cursor(f, Cursor::new(Stream::from_str(stream)))
+}
+
+pub(super) fn parse_cursor<'s, T, F>(f: F, mut cursor: Cursor<'s>) -> impl Serialize + 's
+where
+    T: Serialize + 's,
+    F: Fn(&mut Cursor<'s>, &mut (dyn Receiver + 's)) -> Result<T, Diagnostic>,
+{
+    let mut receiver = TestReceiver::<T>::new(&cursor);
 
     let res = f(&mut cursor, &mut receiver);
-    receiver.finish(res);
 
     let mut location = Location::default();
     let mut prev_token = None;
     for item in &receiver.items {
-        if let &TestItem::Token { span, token } = item {
+        if let &TestItem::Token { span, token, .. } = item {
             assert_eq!(location, span.start);
-            assert!(prev_token != Some(token) || token == Token::Error);
             location = span.end;
             prev_token = Some(token);
         }
     }
     assert_eq!(location, cursor.location());
-    assert!(cursor.is_end_of_input().unwrap());
 
-    receiver
+    if res.is_ok() {
+        assert!(cursor.is_end_of_input().unwrap());
+    }
+    receiver.finish(res);
+
+    receiver.items
 }

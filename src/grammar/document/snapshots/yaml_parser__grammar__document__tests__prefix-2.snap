@@ -1,17 +1,18 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"# comment\")"
+expression: "parse(prefix, \"\\u{feff}\")"
 ---
-- token: comment
+- token: byte_order_mark
+  stream: ﻿
   span:
     start:
       index: 0
       line: 0
       column: 0
     end:
-      index: 9
+      index: 3
       line: 0
-      column: 9
+      column: 3
 - value:
     version: ~
     tags: {}
