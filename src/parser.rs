@@ -22,8 +22,8 @@ pub struct Parser<'s, R = DefaultReceiver> {
 /// A handler for diagnostics and tokens in a YAML stream.
 pub trait Receiver {
     /// Called when a warning message is emitted.
-    fn diagnostic(&mut self, diagnostic: Diagnostic) {
-        let _ = diagnostic;
+    fn diagnostic(&mut self, diag: Diagnostic) {
+        let _ = diag;
     }
 
     /// Called for every token of the input stream. The stream may be reconstructed by joining the returned tokens.
@@ -34,6 +34,7 @@ pub trait Receiver {
 
 /// A token type in a YAML stream.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(test, derive(serde::Serialize), serde(rename_all = "snake_case"))]
 pub enum Token {
     /// A part of the YAML stream which could not be parsed due to an error.
     Error,

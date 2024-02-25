@@ -7,6 +7,7 @@ use core::{
 
 /// The encoding of a YAML stream.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(test, derive(serde::Serialize), serde(rename_all = "lowercase"))]
 pub enum Encoding {
     /// UTF-8 encoding.
     Utf8,

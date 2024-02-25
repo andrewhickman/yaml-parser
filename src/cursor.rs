@@ -8,6 +8,7 @@ use crate::{
 
 /// A range of characters within a source file.
 #[derive(Copy, Clone, Default, Debug, Hash, Eq, PartialEq)]
+#[cfg_attr(test, derive(serde::Serialize))]
 pub struct Span {
     /// The start of the span (inclusive).
     pub start: Location,
@@ -17,6 +18,7 @@ pub struct Span {
 
 /// The position of a character in a source file.
 #[derive(Copy, Clone, Default, Debug, Hash, Eq, PartialEq)]
+#[cfg_attr(test, derive(serde::Serialize))]
 pub struct Location {
     /// The byte offset of the character.
     pub index: usize,
@@ -212,7 +214,7 @@ impl<'s> Cursor<'s> {
             ))
     }
 
-    pub(crate) fn is_end_of_stream(&self) -> Result<bool, Diagnostic> {
+    pub(crate) fn is_end_of_input(&self) -> Result<bool, Diagnostic> {
         Ok(self.peek()?.is_none())
     }
 

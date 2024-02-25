@@ -17,6 +17,7 @@ pub struct Diagnostic {
 
 /// The severity of a [`Diagnostic`].
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(test, derive(serde::Serialize), serde(rename_all = "lowercase"))]
 pub enum Severity {
     /// An error caused by an invalid YAML stream.
     Error,
@@ -28,7 +29,6 @@ pub enum Severity {
 pub(crate) enum DiagnosticKind {
     Decode(DecodeErrorKind),
     Expected(Expected, Option<char>),
-    ExpectedChar(char),
     DirectiveAfterUnterminatedDocument,
     DirectiveNotAtStartOfLine,
     UnknownDirective(Box<String>),
@@ -89,16 +89,13 @@ impl Diagnostic {
     }
 
     pub(crate) fn is_recoverable(&self) -> bool {
-        match self.kind {
-            DiagnosticKind::Decode(_) => false,
-            _ => true,
-        }
+        !matches!(self.kind, DiagnosticKind::Decode(_))
     }
 }
 
 impl fmt::Display for Diagnostic {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        todo!()
+        write!(f, "{:?}", self)
     }
 }
 
@@ -109,4 +106,20 @@ impl std::error::Error for Diagnostic {}
 #[test]
 fn size_of_diag() {
     assert_eq!(std::mem::size_of::<Diagnostic>(), 64);
+}
+
+#[cfg(test)]
+impl serde::Serialize for Diagnostic {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeStruct;
+
+        let mut s = serializer.serialize_struct("Diagnostic", 3)?;
+        s.serialize_field("severity", &self.severity())?;
+        s.serialize_field("message", &format_args!("{}", self))?;
+        s.serialize_field("span", &self.span())?;
+        s.end()
+    }
 }

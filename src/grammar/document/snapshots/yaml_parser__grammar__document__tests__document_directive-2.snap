@@ -1,0 +1,18 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix, \"\\u{feff}\")"
+---
+- token: byte_order_mark
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 3
+      line: 0
+      column: 3
+- value:
+    version: ~
+    tags: {}
+

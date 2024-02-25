@@ -1,0 +1,18 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix, \" \")"
+---
+- token: separator
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
+- value:
+    version: ~
+    tags: {}
+

@@ -4,6 +4,7 @@ use crate::Encoding;
 
 /// An event encountered while parsing a YAML stream.
 #[derive(Clone, Debug)]
+#[cfg_attr(test, derive(serde::Serialize), serde(tag = "event"))]
 pub enum Event<'s> {
     /// Emitted at the start of parsing a YAML stream.
     StreamStart {
@@ -61,6 +62,7 @@ pub enum Event<'s> {
 
 /// The presentation style of a sequence or mapping node.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(test, derive(serde::Serialize), serde(rename_all = "lowercase"))]
 pub enum CollectionStyle {
     /// A block-style collection:
     ///
@@ -78,6 +80,7 @@ pub enum CollectionStyle {
 
 /// The presentation style of a scalar node.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(test, derive(serde::Serialize), serde(rename_all = "lowercase"))]
 pub enum ScalarStyle {
     /// A plain scalar: `value`.
     Plain,

@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 use alloc::{borrow::Cow, collections::BTreeMap};
 
 use crate::{
@@ -5,14 +8,14 @@ use crate::{
     cow::CowBuilder,
     cursor::Cursor,
     diag::{DiagnosticKind, Expected},
-    grammar::{recover, token_char, trivia::try_line_break},
-    parser::Buffer,
+    grammar::{recover, token_char},
     Diagnostic, Receiver, Span, Token,
 };
 
 use super::{trivia, try_token_char};
 
 #[derive(Default)]
+#[cfg_attr(test, derive(serde::Serialize), serde(rename_all = "lowercase"))]
 pub(super) struct Document<'s> {
     version: Option<Cow<'s, str>>,
     tags: BTreeMap<Cow<'s, str>, Cow<'s, str>>,
@@ -20,7 +23,7 @@ pub(super) struct Document<'s> {
 
 pub(super) fn prefix<'s>(
     cursor: &mut Cursor<'s>,
-    receiver: &mut impl Receiver,
+    receiver: &mut (impl Receiver + ?Sized),
     prev_terminated: bool,
 ) -> Result<Document<'s>, Diagnostic> {
     try_token_char(
@@ -65,7 +68,7 @@ pub(super) fn prefix<'s>(
 
 fn directive<'s>(
     cursor: &mut Cursor<'s>,
-    receiver: &mut impl Receiver,
+    receiver: &mut (impl Receiver + ?Sized),
     document: &mut Document<'s>,
 ) -> Result<(), Diagnostic> {
     if cursor.is(char::non_space)? {
@@ -90,7 +93,7 @@ fn directive<'s>(
 
 fn yaml_directive<'s>(
     cursor: &mut Cursor<'s>,
-    receiver: &mut impl Receiver,
+    receiver: &mut (impl Receiver + ?Sized),
     document: &mut Document<'s>,
     name_span: Span,
 ) -> Result<(), Diagnostic> {
@@ -170,7 +173,7 @@ fn yaml_version_part<'s>(
 
 fn tag_directive<'s>(
     cursor: &mut Cursor<'s>,
-    receiver: &mut impl Receiver,
+    receiver: &mut (impl Receiver + ?Sized),
     document: &mut Document<'s>,
 ) -> Result<(), Diagnostic> {
     trivia::separate_in_line(cursor, receiver)?;
@@ -180,7 +183,7 @@ fn tag_directive<'s>(
 
 fn reserved_directive<'s>(
     cursor: &mut Cursor<'s>,
-    receiver: &mut impl Receiver,
+    receiver: &mut (impl Receiver + ?Sized),
     name: Cow<'s, str>,
     name_span: Span,
 ) -> Result<(), Diagnostic> {
@@ -196,7 +199,7 @@ fn reserved_directive<'s>(
 
 fn try_directive_param<'s>(
     cursor: &mut Cursor<'s>,
-    receiver: &mut impl Receiver,
+    receiver: &mut (impl Receiver + ?Sized),
 ) -> Result<Option<Span>, Diagnostic> {
     if trivia::try_separate_in_line(cursor, receiver)?
         && cursor.is(char::non_space)?

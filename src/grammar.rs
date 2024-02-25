@@ -1,9 +1,11 @@
 mod document;
 mod event;
 mod scalar;
+#[cfg(test)]
+mod tests;
 mod trivia;
 
-use crate::{cursor::Cursor, Diagnostic, Location, Receiver, Span, Token};
+use crate::{cursor::Cursor, Diagnostic, Receiver, Span, Token};
 
 pub(crate) use self::event::event;
 
@@ -74,7 +76,7 @@ pub(crate) enum Context {
 
 fn try_token_char(
     cursor: &mut Cursor,
-    receiver: &mut impl Receiver,
+    receiver: &mut (impl Receiver + ?Sized),
     token: Token,
     ch: char,
 ) -> Result<bool, Diagnostic> {
@@ -90,7 +92,7 @@ fn try_token_char(
 
 fn token_char(
     cursor: &mut Cursor,
-    receiver: &mut impl Receiver,
+    receiver: &mut (impl Receiver + ?Sized),
     token: Token,
     ch: char,
 ) -> Result<(), Diagnostic> {
@@ -105,7 +107,7 @@ fn token_char(
 
 fn token(
     cursor: &mut Cursor,
-    receiver: &mut impl Receiver,
+    receiver: &mut (impl Receiver + ?Sized),
     token: Token,
     pred: impl Fn(char) -> bool + Clone,
 ) -> Result<Span, Diagnostic> {
@@ -118,14 +120,14 @@ fn token(
 
 fn recover(
     cursor: &mut Cursor,
-    receiver: &mut impl Receiver,
+    receiver: &mut (impl Receiver + ?Sized),
     diag: Diagnostic,
     pred: impl Fn(&Cursor) -> Result<bool, Diagnostic>,
 ) -> Result<(), Diagnostic> {
     if diag.is_recoverable() {
         receiver.diagnostic(diag.clone());
 
-        while !pred(cursor)? && !cursor.is_end_of_stream()? {
+        while !pred(cursor)? && !cursor.is_end_of_input()? {
             cursor.bump();
         }
         let span = cursor.span(diag.span().start);

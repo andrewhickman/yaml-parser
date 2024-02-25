@@ -9,7 +9,7 @@ use crate::{
 
 pub(crate) fn event<'s>(
     cursor: &mut Cursor<'s>,
-    receiver: &mut impl Receiver,
+    receiver: &mut (impl Receiver + ?Sized),
     buffer: &mut Buffer<'s>,
     states: &mut Vec<State>,
 ) -> Option<Result<(Event<'s>, Span), Diagnostic>> {
@@ -90,7 +90,7 @@ fn stream<'s>(
 
 fn document<'s>(
     cursor: &mut Cursor<'s>,
-    receiver: &mut impl Receiver,
+    receiver: &mut (impl Receiver + ?Sized),
     buffer: &mut Buffer<'s>,
     states: &mut Vec<State>,
     prev_terminated: bool,

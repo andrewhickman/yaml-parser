@@ -1,7 +1,4 @@
-use core::{
-    fmt,
-    ops::{Index, Range},
-};
+use core::{fmt, ops::Range};
 
 use alloc::borrow::Cow;
 
