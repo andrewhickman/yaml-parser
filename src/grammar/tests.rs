@@ -30,6 +30,11 @@ enum TestItem<'s, T> {
     Value {
         value: T,
     },
+    Remainder {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        remainder: Option<&'s str>,
+        span: Span,
+    },
 }
 
 impl<'s, T> Receiver for TestReceiver<'s, T> {
@@ -101,11 +106,20 @@ where
         }
     }
     assert_eq!(location, cursor.location());
-
-    if res.is_ok() {
-        assert!(cursor.is_end_of_input().unwrap());
-    }
     receiver.finish(res);
+
+    if !cursor.is_end_of_input().unwrap() {
+        let start = cursor.location();
+        let remainder = cursor.as_str();
+        while !cursor.is_end_of_input().unwrap() {
+            cursor.bump();
+        }
+
+        receiver.items.push(TestItem::Remainder {
+            remainder,
+            span: cursor.span(start),
+        });
+    }
 
     receiver.items
 }

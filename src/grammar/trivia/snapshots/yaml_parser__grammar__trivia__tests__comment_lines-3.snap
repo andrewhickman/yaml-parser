@@ -1,0 +1,17 @@
+---
+source: src/grammar/trivia/tests.rs
+expression: "parse(comment_lines, \"\\n\")"
+---
+- token: break
+  stream: "\n"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 1
+      column: 0
+- value: ~
+

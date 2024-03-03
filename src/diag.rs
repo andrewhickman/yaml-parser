@@ -3,7 +3,10 @@
 use core::fmt;
 
 use crate::{
-    cursor::{Cursor, Span}, stream::DecodeError, Encoding, Location, Token, char
+    char,
+    cursor::{Cursor, Span},
+    stream::DecodeError,
+    Encoding, Location, Token,
 };
 
 /// An error or warning encountered while parsing a YAML document.
@@ -94,10 +97,23 @@ impl Diagnostic {
 impl fmt::Display for Diagnostic {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.kind {
-            DiagnosticKind::Decode(encoding) => write!(f, "invalid {:?} at position {}", encoding, self.span.start.index),
-            DiagnosticKind::Expected(expected, None) => write!(f, "expected {}, but reached end of input", expected),
-            DiagnosticKind::Expected(expected, Some(found)) if !char::printable(*found) => write!(f, "expected {}, but found non-printable character '{}'", expected, found.escape_debug()),
-            DiagnosticKind::Expected(expected, Some(found)) => write!(f, "expected {}, but found '{}'", expected, found),
+            DiagnosticKind::Decode(encoding) => write!(
+                f,
+                "invalid {:?} at position {}",
+                encoding, self.span.start.index
+            ),
+            DiagnosticKind::Expected(expected, None) => {
+                write!(f, "expected {}, but reached end of input", expected)
+            }
+            DiagnosticKind::Expected(expected, Some(found)) if !char::printable(*found) => write!(
+                f,
+                "expected {}, but found non-printable character '{}'",
+                expected,
+                found.escape_debug()
+            ),
+            DiagnosticKind::Expected(expected, Some(found)) => {
+                write!(f, "expected {}, but found '{}'", expected, found)
+            }
             DiagnosticKind::DirectiveAfterUnterminatedDocument => todo!(),
             DiagnosticKind::DirectiveNotAtStartOfLine => todo!(),
             DiagnosticKind::UnknownDirective(_) => todo!(),

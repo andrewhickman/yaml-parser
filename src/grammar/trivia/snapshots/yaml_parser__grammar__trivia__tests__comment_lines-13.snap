@@ -1,0 +1,105 @@
+---
+source: src/grammar/trivia/tests.rs
+expression: "parse(comment_lines, \"  # one\\r\\n# two\\n\\t#three\\r   \")"
+---
+- token: separator
+  stream: "  "
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 2
+      line: 0
+      column: 2
+- token: comment
+  stream: "# one"
+  span:
+    start:
+      index: 2
+      line: 0
+      column: 2
+    end:
+      index: 7
+      line: 0
+      column: 7
+- token: break
+  stream: "\r\n"
+  span:
+    start:
+      index: 7
+      line: 0
+      column: 7
+    end:
+      index: 9
+      line: 1
+      column: 0
+- token: comment
+  stream: "# two"
+  span:
+    start:
+      index: 9
+      line: 1
+      column: 0
+    end:
+      index: 14
+      line: 1
+      column: 5
+- token: break
+  stream: "\n"
+  span:
+    start:
+      index: 14
+      line: 1
+      column: 5
+    end:
+      index: 15
+      line: 2
+      column: 0
+- token: separator
+  stream: "\t"
+  span:
+    start:
+      index: 15
+      line: 2
+      column: 0
+    end:
+      index: 16
+      line: 2
+      column: 1
+- token: comment
+  stream: "#three"
+  span:
+    start:
+      index: 16
+      line: 2
+      column: 1
+    end:
+      index: 22
+      line: 2
+      column: 7
+- token: break
+  stream: "\r"
+  span:
+    start:
+      index: 22
+      line: 2
+      column: 7
+    end:
+      index: 23
+      line: 3
+      column: 0
+- token: separator
+  stream: "   "
+  span:
+    start:
+      index: 23
+      line: 3
+      column: 0
+    end:
+      index: 26
+      line: 3
+      column: 3
+- value: ~
+

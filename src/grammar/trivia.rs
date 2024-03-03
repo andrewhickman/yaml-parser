@@ -3,6 +3,8 @@ mod tests;
 
 use crate::{char, cursor::Cursor, diag::Expected, Diagnostic, Receiver, Span, Token};
 
+use super::recover;
+
 pub(super) fn try_non_content_break(
     cursor: &mut Cursor,
     receiver: &mut (impl Receiver + ?Sized),
@@ -42,16 +44,15 @@ pub(super) fn comment_lines(
     cursor: &mut Cursor,
     receiver: &mut (impl Receiver + ?Sized),
 ) -> Result<(), Diagnostic> {
-    loop {
-        if !try_separate_in_line(cursor, receiver)? {
-            return Ok(());
-        }
+    while try_separate_in_line(cursor, receiver)? {
         if cursor.is_char(char::COMMENT)? {
             comment_text(cursor, receiver)?;
-        } else if try_non_content_break(cursor, receiver)? || cursor.is_end_of_input()? {
-            return Ok(());
+        } else if !try_non_content_break(cursor, receiver)? || cursor.is_end_of_input()? {
+            break;
         }
     }
+
+    Ok(())
 }
 
 pub(super) fn comment_text(
@@ -69,7 +70,14 @@ pub(super) fn comment_text(
     if try_non_content_break(cursor, receiver)? || cursor.is_end_of_input()? {
         Ok(())
     } else {
-        Err(Diagnostic::expected(Expected::Printable, cursor))
+        recover(
+            cursor,
+            receiver,
+            Diagnostic::expected(Expected::Printable, cursor),
+            |cursor| cursor.is(char::r#break),
+        )?;
+        try_non_content_break(cursor, receiver)?;
+        Ok(())
     }
 }
 

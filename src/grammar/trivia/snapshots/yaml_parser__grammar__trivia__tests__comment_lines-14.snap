@@ -1,0 +1,40 @@
+---
+source: src/grammar/trivia/tests.rs
+expression: "parse(comment_lines, \"# comment\\0\")"
+---
+- token: comment
+  stream: "# comment"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 9
+      line: 0
+      column: 9
+- severity: error
+  message: "expected a printable character, but found non-printable character '\\0'"
+  span:
+    start:
+      index: 9
+      line: 0
+      column: 9
+    end:
+      index: 9
+      line: 0
+      column: 9
+  stream: ""
+- token: error
+  stream: "\u0000"
+  span:
+    start:
+      index: 9
+      line: 0
+      column: 9
+    end:
+      index: 10
+      line: 0
+      column: 10
+- value: ~
+

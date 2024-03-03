@@ -1,0 +1,17 @@
+---
+source: src/grammar/trivia/tests.rs
+expression: "parse(comment_lines, \"# comment\")"
+---
+- token: comment
+  stream: "# comment"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 9
+      line: 0
+      column: 9
+- value: ~
+

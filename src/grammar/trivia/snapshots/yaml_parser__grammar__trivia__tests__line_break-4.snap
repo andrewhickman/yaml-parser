@@ -3,7 +3,7 @@ source: src/grammar/trivia/tests.rs
 expression: "parse(non_content_break, \"\\0\")"
 ---
 - severity: error
-  message: "expected a line break, but found non-printable char '\\0'"
+  message: "expected a line break, but found non-printable character '\\0'"
   span:
     start:
       index: 0
@@ -14,4 +14,14 @@ expression: "parse(non_content_break, \"\\0\")"
       line: 0
       column: 0
   stream: ""
+- remainder: "\u0000"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
 

@@ -1,0 +1,83 @@
+---
+source: src/grammar/trivia/tests.rs
+expression: "parse(comment_lines, \"\\t\\r\\n\\n\\r\\r\\n\\r\\r\")"
+---
+- token: separator
+  stream: "\t"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
+- token: break
+  stream: "\r\n"
+  span:
+    start:
+      index: 1
+      line: 0
+      column: 1
+    end:
+      index: 3
+      line: 1
+      column: 0
+- token: break
+  stream: "\n"
+  span:
+    start:
+      index: 3
+      line: 1
+      column: 0
+    end:
+      index: 4
+      line: 2
+      column: 0
+- token: break
+  stream: "\r"
+  span:
+    start:
+      index: 4
+      line: 2
+      column: 0
+    end:
+      index: 5
+      line: 3
+      column: 0
+- token: break
+  stream: "\r\n"
+  span:
+    start:
+      index: 5
+      line: 3
+      column: 0
+    end:
+      index: 7
+      line: 4
+      column: 0
+- token: break
+  stream: "\r"
+  span:
+    start:
+      index: 7
+      line: 4
+      column: 0
+    end:
+      index: 8
+      line: 5
+      column: 0
+- token: break
+  stream: "\r"
+  span:
+    start:
+      index: 8
+      line: 5
+      column: 0
+    end:
+      index: 9
+      line: 6
+      column: 0
+- value: ~
+
