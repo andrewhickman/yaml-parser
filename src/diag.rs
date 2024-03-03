@@ -3,9 +3,7 @@
 use core::fmt;
 
 use crate::{
-    cursor::{Cursor, Span},
-    stream::DecodeErrorKind,
-    Location, Token,
+    cursor::{Cursor, Span}, stream::DecodeError, Encoding, Location, Token, char
 };
 
 /// An error or warning encountered while parsing a YAML document.
@@ -27,7 +25,7 @@ pub enum Severity {
 
 #[derive(Debug, Clone)]
 pub(crate) enum DiagnosticKind {
-    Decode(DecodeErrorKind),
+    Decode(Encoding),
     Expected(Expected, Option<char>),
     DirectiveAfterUnterminatedDocument,
     DirectiveNotAtStartOfLine,
@@ -67,9 +65,9 @@ impl Diagnostic {
         Diagnostic { kind, span }
     }
 
-    pub(crate) fn decode(err: DecodeErrorKind, location: Location) -> Diagnostic {
+    pub(crate) fn decode(encoding: Encoding, location: Location) -> Diagnostic {
         Diagnostic {
-            kind: DiagnosticKind::Decode(err),
+            kind: DiagnosticKind::Decode(encoding),
             span: Span::empty(location),
         }
     }
@@ -95,7 +93,33 @@ impl Diagnostic {
 
 impl fmt::Display for Diagnostic {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self)
+        match &self.kind {
+            DiagnosticKind::Decode(encoding) => write!(f, "invalid {:?} at position {}", encoding, self.span.start.index),
+            DiagnosticKind::Expected(expected, None) => write!(f, "expected {}, but reached end of input", expected),
+            DiagnosticKind::Expected(expected, Some(found)) if !char::printable(*found) => write!(f, "expected {}, but found non-printable character '{}'", expected, found.escape_debug()),
+            DiagnosticKind::Expected(expected, Some(found)) => write!(f, "expected {}, but found '{}'", expected, found),
+            DiagnosticKind::DirectiveAfterUnterminatedDocument => todo!(),
+            DiagnosticKind::DirectiveNotAtStartOfLine => todo!(),
+            DiagnosticKind::UnknownDirective(_) => todo!(),
+            DiagnosticKind::DuplicateYamlDirective => todo!(),
+            DiagnosticKind::UnknownMinorVersion => todo!(),
+            DiagnosticKind::UnknownMajorVersion => todo!(),
+            DiagnosticKind::VersionOverflow => todo!(),
+            DiagnosticKind::UnexpectedDiagnosticParameter => todo!(),
+        }
+    }
+}
+
+impl fmt::Display for Expected {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Expected::Token(Token::Separator) => write!(f, "whitespace"),
+            Expected::Token(Token::Break) => write!(f, "a line break"),
+            Expected::Token(_) => unimplemented!(),
+            Expected::Char(ch) => write!(f, "'{}'", ch),
+            Expected::Printable => write!(f, "a printable character"),
+            Expected::DecimalDigit => write!(f, "a decimal digit (0-9)"),
+        }
     }
 }
 

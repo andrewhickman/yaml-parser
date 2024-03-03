@@ -3,7 +3,7 @@ source: src/grammar/trivia/tests.rs
 expression: "parse(non_content_break, \"\\0\")"
 ---
 - severity: error
-  message: "Diagnostic { span: Span { start: Location { index: 0, line: 0, column: 0 }, end: Location { index: 0, line: 0, column: 0 } }, kind: Expected(Token(Break), Some('\\0')) }"
+  message: "expected a line break, but found non-printable char '\\0'"
   span:
     start:
       index: 0

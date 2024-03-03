@@ -276,7 +276,7 @@ impl<'s> Cursor<'s> {
 
     fn decode_error(&self, err: DecodeError) -> Diagnostic {
         Diagnostic::decode(
-            err.kind(),
+            err.encoding(),
             Location {
                 index: err.index(),
                 line: self.line_number,

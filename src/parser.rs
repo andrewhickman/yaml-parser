@@ -160,7 +160,7 @@ impl<'s> Parser<'s> {
             }
             Err(err) => {
                 state.push(State::Error(Diagnostic::decode(
-                    err.kind(),
+                    err.encoding(),
                     Location {
                         index: err.index(),
                         line: 0,
