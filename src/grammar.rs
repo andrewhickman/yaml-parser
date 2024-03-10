@@ -80,10 +80,9 @@ fn try_token_char(
     token: Token,
     ch: char,
 ) -> Result<bool, Diagnostic> {
-    if cursor.is_char(ch)? {
-        let start = cursor.location();
-        cursor.bump();
-        receiver.token(token, cursor.span(start));
+    debug_assert!(cursor.is_token_boundary());
+    if cursor.eat_char(ch)? {
+        receiver.token(token, cursor.token());
         Ok(true)
     } else {
         Ok(false)
@@ -96,9 +95,8 @@ fn token_char(
     token: Token,
     ch: char,
 ) -> Result<(), Diagnostic> {
-    let start = cursor.location();
-    if cursor.eat_char(ch)? {
-        receiver.token(token, cursor.span(start));
+    debug_assert!(cursor.is_token_boundary());
+    if try_token_char(cursor, receiver, token, ch)? {
         Ok(())
     } else {
         Err(Diagnostic::expected_token(token, cursor))
@@ -111,9 +109,9 @@ fn token(
     token: Token,
     pred: impl Fn(char) -> bool + Clone,
 ) -> Result<Span, Diagnostic> {
-    let start = cursor.location();
+    debug_assert!(cursor.is_token_boundary());
     while cursor.eat(pred.clone())? {}
-    let span = cursor.span(start);
+    let span = cursor.token();
     receiver.token(token, span);
     Ok(span)
 }
@@ -125,16 +123,15 @@ fn recover(
     pred: impl Fn(&Cursor) -> Result<bool, Diagnostic>,
 ) -> Result<(), Diagnostic> {
     if diag.is_recoverable() {
-        receiver.diagnostic(diag.clone());
-
         while !pred(cursor)? && !cursor.is_end_of_input()? {
             cursor.bump();
         }
-        let span = cursor.span(diag.span().start);
+        let span = cursor.token();
         if !span.is_empty() {
             receiver.token(Token::Error, span);
         }
 
+        receiver.diagnostic(diag.clone());
         Ok(())
     } else {
         Err(diag)

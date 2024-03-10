@@ -1,29 +1,29 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"\\t# comment\")"
+expression: "parse(prefix, \"\\u{feff}# comment\")"
 ---
-- token: separator
-  stream: "\t"
+- token: byte_order_mark
+  stream: ﻿
   span:
     start:
       index: 0
       line: 0
       column: 0
     end:
-      index: 1
+      index: 3
       line: 0
-      column: 1
+      column: 3
 - token: comment
   stream: "# comment"
   span:
     start:
-      index: 1
+      index: 3
       line: 0
-      column: 1
+      column: 3
     end:
-      index: 10
+      index: 12
       line: 0
-      column: 10
+      column: 12
 - value:
     version: ~
     tags: {}

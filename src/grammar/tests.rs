@@ -1,3 +1,5 @@
+use core::fmt;
+
 use serde::Serialize;
 
 use crate::{
@@ -12,7 +14,7 @@ struct TestReceiver<'s, T> {
     items: Vec<TestItem<'s, T>>,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(untagged)]
 enum TestItem<'s, T> {
     Diagnostic {
@@ -81,7 +83,7 @@ impl<'s, T> TestReceiver<'s, T> {
 
 pub(super) fn parse<'s, T, F>(f: F, stream: &'s str) -> impl Serialize + 's
 where
-    T: Serialize + 's,
+    T: fmt::Debug + Serialize + 's,
     F: Fn(&mut Cursor<'s>, &mut (dyn Receiver + 's)) -> Result<T, Diagnostic>,
 {
     parse_cursor(f, Cursor::new(Stream::from_str(stream)))
@@ -89,9 +91,10 @@ where
 
 pub(super) fn parse_cursor<'s, T, F>(f: F, mut cursor: Cursor<'s>) -> impl Serialize + 's
 where
-    T: Serialize + 's,
+    T: fmt::Debug + Serialize + 's,
     F: Fn(&mut Cursor<'s>, &mut (dyn Receiver + 's)) -> Result<T, Diagnostic>,
 {
+    let init_cursor = cursor.clone();
     let mut receiver = TestReceiver::<T>::new(&cursor);
 
     let res = f(&mut cursor, &mut receiver);
@@ -100,12 +103,22 @@ where
     let mut prev_token = None;
     for item in &receiver.items {
         if let &TestItem::Token { span, token, .. } = item {
-            assert_eq!(location, span.start);
+            assert_eq!(
+                location, span.start,
+                "tokens don't cover string {:?}: {:#?}",
+                init_cursor, receiver.items
+            );
             location = span.end;
             prev_token = Some(token);
         }
     }
-    assert_eq!(location, cursor.location());
+    assert_eq!(
+        location,
+        cursor.location(),
+        "tokens don't cover string {:?}: {:#?}",
+        init_cursor,
+        receiver.items
+    );
     receiver.finish(res);
 
     if !cursor.is_end_of_input().unwrap() {

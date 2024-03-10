@@ -1,6 +1,6 @@
 ---
 source: src/grammar/trivia/tests.rs
-expression: "parse(comment_lines, \"# comment\\0\")"
+expression: "parse(comment_lines, \"# comment\\n\\n# two\")"
 ---
 - token: comment
   stream: "# comment"
@@ -13,20 +13,8 @@ expression: "parse(comment_lines, \"# comment\\0\")"
       index: 9
       line: 0
       column: 9
-- severity: error
-  message: "expected a printable character, but found non-printable character '\\0'"
-  span:
-    start:
-      index: 9
-      line: 0
-      column: 9
-    end:
-      index: 9
-      line: 0
-      column: 9
-  stream: ""
-- token: error
-  stream: "\u0000"
+- token: break
+  stream: "\n"
   span:
     start:
       index: 9
@@ -34,7 +22,29 @@ expression: "parse(comment_lines, \"# comment\\0\")"
       column: 9
     end:
       index: 10
-      line: 0
-      column: 10
+      line: 1
+      column: 0
+- token: break
+  stream: "\n"
+  span:
+    start:
+      index: 10
+      line: 1
+      column: 0
+    end:
+      index: 11
+      line: 2
+      column: 0
+- token: comment
+  stream: "# two"
+  span:
+    start:
+      index: 11
+      line: 2
+      column: 0
+    end:
+      index: 16
+      line: 2
+      column: 5
 - value: ~
 

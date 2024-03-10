@@ -1,6 +1,6 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"%YAML 1.2\")"
+expression: "parse(prefix, \"%YAML\")"
 ---
 - token: directive
   stream: "%"
@@ -24,29 +24,19 @@ expression: "parse(prefix, \"%YAML 1.2\")"
       index: 5
       line: 0
       column: 5
-- token: separator
-  stream: " "
+- severity: error
+  message: "expected a YAML version number, but reached end of input"
   span:
     start:
       index: 5
       line: 0
       column: 5
     end:
-      index: 6
+      index: 5
       line: 0
-      column: 6
-- token: yaml_version
-  stream: "1.2"
-  span:
-    start:
-      index: 6
-      line: 0
-      column: 6
-    end:
-      index: 9
-      line: 0
-      column: 9
+      column: 5
+  stream: ""
 - value:
-    version: "1.2"
+    version: ~
     tags: {}
 

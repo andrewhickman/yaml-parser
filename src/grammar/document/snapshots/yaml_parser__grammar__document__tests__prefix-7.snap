@@ -1,29 +1,84 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \" \\t\\t # comment\")"
+expression: "parse(prefix, \"\\u{feff}  # comment\\n\\n#comment2\\n\")"
 ---
-- token: separator
-  stream: " \t\t "
+- token: byte_order_mark
+  stream: ﻿
   span:
     start:
       index: 0
       line: 0
       column: 0
     end:
-      index: 4
+      index: 3
       line: 0
-      column: 4
+      column: 3
+- token: separator
+  stream: "  "
+  span:
+    start:
+      index: 3
+      line: 0
+      column: 3
+    end:
+      index: 5
+      line: 0
+      column: 5
 - token: comment
   stream: "# comment"
   span:
     start:
-      index: 4
+      index: 5
       line: 0
-      column: 4
+      column: 5
     end:
-      index: 13
+      index: 14
       line: 0
-      column: 13
+      column: 14
+- token: break
+  stream: "\n"
+  span:
+    start:
+      index: 14
+      line: 0
+      column: 14
+    end:
+      index: 15
+      line: 1
+      column: 0
+- token: break
+  stream: "\n"
+  span:
+    start:
+      index: 15
+      line: 1
+      column: 0
+    end:
+      index: 16
+      line: 2
+      column: 0
+- token: comment
+  stream: "#comment2"
+  span:
+    start:
+      index: 16
+      line: 2
+      column: 0
+    end:
+      index: 25
+      line: 2
+      column: 9
+- token: break
+  stream: "\n"
+  span:
+    start:
+      index: 25
+      line: 2
+      column: 9
+    end:
+      index: 26
+      line: 3
+      column: 0
 - value:
     version: ~
     tags: {}

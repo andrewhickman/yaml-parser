@@ -1,6 +1,6 @@
 ---
 source: src/grammar/trivia/tests.rs
-expression: "parse(comment_lines, \"# comment\\0\")"
+expression: "parse(comment_lines, \"# comment\\0\\r\\n\")"
 ---
 - token: comment
   stream: "# comment"
@@ -36,5 +36,16 @@ expression: "parse(comment_lines, \"# comment\\0\")"
       line: 0
       column: 9
   stream: ""
+- token: break
+  stream: "\r\n"
+  span:
+    start:
+      index: 10
+      line: 0
+      column: 10
+    end:
+      index: 12
+      line: 1
+      column: 0
 - value: ~
 

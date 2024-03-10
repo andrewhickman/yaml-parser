@@ -111,17 +111,22 @@ impl fmt::Display for Diagnostic {
                 expected,
                 found.escape_debug()
             ),
+            DiagnosticKind::Expected(expected, Some('\r' | '\n')) => {
+                write!(f, "expected {}, but reached end of line", expected)
+            }
             DiagnosticKind::Expected(expected, Some(found)) => {
                 write!(f, "expected {}, but found '{}'", expected, found)
             }
             DiagnosticKind::DirectiveAfterUnterminatedDocument => todo!(),
             DiagnosticKind::DirectiveNotAtStartOfLine => todo!(),
             DiagnosticKind::UnknownDirective(_) => todo!(),
-            DiagnosticKind::DuplicateYamlDirective => todo!(),
-            DiagnosticKind::UnknownMinorVersion => todo!(),
-            DiagnosticKind::UnknownMajorVersion => todo!(),
-            DiagnosticKind::VersionOverflow => todo!(),
-            DiagnosticKind::UnexpectedDiagnosticParameter => todo!(),
+            DiagnosticKind::DuplicateYamlDirective => write!(f, "duplicate YAML directive"),
+            DiagnosticKind::UnknownMinorVersion => write!(f, "unknown minor version"),
+            DiagnosticKind::UnknownMajorVersion => write!(f, "unknown major version"),
+            DiagnosticKind::VersionOverflow => write!(f, "invalid version number"),
+            DiagnosticKind::UnexpectedDiagnosticParameter => {
+                write!(f, "unexpected directive parameter")
+            }
         }
     }
 }
@@ -131,7 +136,8 @@ impl fmt::Display for Expected {
         match self {
             Expected::Token(Token::Separator) => write!(f, "whitespace"),
             Expected::Token(Token::Break) => write!(f, "a line break"),
-            Expected::Token(_) => unimplemented!(),
+            Expected::Token(Token::YamlVersion) => write!(f, "a YAML version number"),
+            Expected::Token(tok) => unimplemented!("unexpected token {:?}", tok),
             Expected::Char(ch) => write!(f, "'{}'", ch),
             Expected::Printable => write!(f, "a printable character"),
             Expected::DecimalDigit => write!(f, "a decimal digit (0-9)"),

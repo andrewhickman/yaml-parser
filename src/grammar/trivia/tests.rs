@@ -29,6 +29,7 @@ fn test_comment_lines() {
     assert_yaml_snapshot!(parse(comment_lines, "# comment\nfoo"));
     assert_yaml_snapshot!(parse(comment_lines, "foo"));
     assert_yaml_snapshot!(parse(comment_lines, "  # one\r\n# two\n\t#three\r   "));
+    assert_yaml_snapshot!(parse(comment_lines, "# comment\n\n# two"));
     assert_yaml_snapshot!(parse(comment_lines, "# comment\0"));
     assert_yaml_snapshot!(parse(comment_lines, "# comment\0\r\n"));
 }

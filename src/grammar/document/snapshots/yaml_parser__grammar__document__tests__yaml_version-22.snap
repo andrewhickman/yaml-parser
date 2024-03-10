@@ -1,0 +1,130 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix, \"%YAML 1.2 \\n%YAML 1.2\")"
+---
+- token: directive
+  stream: "%"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
+- token: directive_name
+  stream: YAML
+  span:
+    start:
+      index: 1
+      line: 0
+      column: 1
+    end:
+      index: 5
+      line: 0
+      column: 5
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 5
+      line: 0
+      column: 5
+    end:
+      index: 6
+      line: 0
+      column: 6
+- token: yaml_version
+  stream: "1.2"
+  span:
+    start:
+      index: 6
+      line: 0
+      column: 6
+    end:
+      index: 9
+      line: 0
+      column: 9
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 9
+      line: 0
+      column: 9
+    end:
+      index: 10
+      line: 0
+      column: 10
+- token: break
+  stream: "\n"
+  span:
+    start:
+      index: 10
+      line: 0
+      column: 10
+    end:
+      index: 11
+      line: 1
+      column: 0
+- token: directive
+  stream: "%"
+  span:
+    start:
+      index: 11
+      line: 1
+      column: 0
+    end:
+      index: 12
+      line: 1
+      column: 1
+- token: directive_name
+  stream: YAML
+  span:
+    start:
+      index: 12
+      line: 1
+      column: 1
+    end:
+      index: 16
+      line: 1
+      column: 5
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 16
+      line: 1
+      column: 5
+    end:
+      index: 17
+      line: 1
+      column: 6
+- token: yaml_version
+  stream: "1.2"
+  span:
+    start:
+      index: 17
+      line: 1
+      column: 6
+    end:
+      index: 20
+      line: 1
+      column: 9
+- severity: error
+  message: duplicate YAML directive
+  span:
+    start:
+      index: 12
+      line: 1
+      column: 1
+    end:
+      index: 20
+      line: 1
+      column: 9
+  stream: YAML 1.2
+- value:
+    version: "1.2"
+    tags: {}
+

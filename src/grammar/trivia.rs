@@ -9,9 +9,8 @@ pub(super) fn try_non_content_break(
     cursor: &mut Cursor,
     receiver: &mut (impl Receiver + ?Sized),
 ) -> Result<bool, Diagnostic> {
-    let start = cursor.location();
     if try_break(cursor)? {
-        receiver.token(Token::Break, cursor.span(start));
+        receiver.token(Token::Break, cursor.token());
         Ok(true)
     } else {
         Ok(false)
@@ -40,6 +39,21 @@ fn try_break(cursor: &mut Cursor) -> Result<bool, Diagnostic> {
     }
 }
 
+pub(super) fn separator_lines(
+    cursor: &mut Cursor,
+    receiver: &mut (impl Receiver + ?Sized),
+) -> Result<(), Diagnostic> {
+    if try_separate_in_line(cursor, receiver)? && cursor.is_char(char::COMMENT)? {
+        comment_text(cursor, receiver)?;
+    }
+
+    if !cursor.is_end_of_input()? && !try_non_content_break(cursor, receiver)? && !cursor.is_separated() {
+        return Err(Diagnostic::expected_token(Token::Break, cursor));
+    }
+
+    comment_lines(cursor, receiver)
+}
+
 pub(super) fn comment_lines(
     cursor: &mut Cursor,
     receiver: &mut (impl Receiver + ?Sized),
@@ -59,13 +73,12 @@ pub(super) fn comment_text(
     cursor: &mut Cursor,
     receiver: &mut (impl Receiver + ?Sized),
 ) -> Result<(), Diagnostic> {
-    let start = cursor.location();
     if !cursor.eat_char(char::COMMENT)? {
         return Err(Diagnostic::expected_token(Token::Comment, cursor));
     }
     cursor.eat_while(char::non_break)?;
 
-    receiver.token(Token::Comment, cursor.span(start));
+    receiver.token(Token::Comment, cursor.token());
 
     if try_non_content_break(cursor, receiver)? || cursor.is_end_of_input()? {
         Ok(())
@@ -97,11 +110,10 @@ pub(super) fn try_separate_in_line(
     receiver: &mut (impl Receiver + ?Sized),
 ) -> Result<bool, Diagnostic> {
     if cursor.is(char::space)? {
-        let start = cursor.location();
         while cursor.is(char::space)? {
             cursor.bump();
         }
-        receiver.token(Token::Separator, cursor.span(start));
+        receiver.token(Token::Separator, cursor.token());
         Ok(true)
     } else {
         Ok(cursor.is_separated())

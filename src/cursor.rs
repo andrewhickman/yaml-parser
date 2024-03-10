@@ -35,6 +35,7 @@ pub(crate) struct Cursor<'s> {
     indent: Option<u32>,
     separated: bool,
     in_document: bool,
+    token: Location,
     #[cfg(all(feature = "std", debug_assertions))]
     peek_count: std::sync::atomic::AtomicU32,
 }
@@ -78,6 +79,7 @@ impl<'s> Cursor<'s> {
             indent: Some(0),
             separated: true,
             in_document: false,
+            token: Location::default(),
             #[cfg(all(feature = "std", debug_assertions))]
             peek_count: std::sync::atomic::AtomicU32::new(0),
         }
@@ -106,6 +108,12 @@ impl<'s> Cursor<'s> {
 
     pub(crate) fn span(&self, start: Location) -> Span {
         Span::new(start, self.location())
+    }
+
+    pub(crate) fn token(&mut self) -> Span {
+        let start = self.token;
+        self.token = self.location();
+        Span::new(start, self.token)
     }
 
     pub(crate) fn next_span(&self) -> Span {
@@ -198,6 +206,10 @@ impl<'s> Cursor<'s> {
         self.separated
     }
 
+    pub(crate) fn is_token_boundary(&self) -> bool {
+        self.token == self.location()
+    }
+
     pub(crate) fn indent(&self) -> Option<u32> {
         self.indent
     }
@@ -288,6 +300,7 @@ impl<'s> Cursor<'s> {
 
 impl<'s> Clone for Cursor<'s> {
     fn clone(&self) -> Self {
+        debug_assert!(self.is_token_boundary());
         Self {
             stream: self.stream.clone(),
             line_number: self.line_number,
@@ -295,6 +308,7 @@ impl<'s> Clone for Cursor<'s> {
             indent: self.indent,
             separated: self.separated,
             in_document: self.in_document,
+            token: self.token,
             #[cfg(all(feature = "std", debug_assertions))]
             peek_count: std::sync::atomic::AtomicU32::new(
                 self.peek_count.load(std::sync::atomic::Ordering::Relaxed),

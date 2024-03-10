@@ -14,7 +14,7 @@ use crate::{
 
 use super::{trivia, try_token_char};
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 #[cfg_attr(test, derive(serde::Serialize), serde(rename_all = "lowercase"))]
 pub(super) struct Document<'s> {
     version: Option<Cow<'s, str>>,
@@ -71,12 +71,12 @@ fn directive<'s>(
     receiver: &mut (impl Receiver + ?Sized),
     document: &mut Document<'s>,
 ) -> Result<(), Diagnostic> {
+    debug_assert!(cursor.is_token_boundary());
     if cursor.is(char::non_space)? {
-        let start = cursor.location();
         let mut name = CowBuilder::new(cursor);
         name.push_while(cursor, char::non_space)?;
         let name = name.build();
-        let name_span = cursor.span(start);
+        let name_span = cursor.token();
         receiver.token(Token::DirectiveName, name_span);
 
         match name.as_ref() {
@@ -101,11 +101,10 @@ fn yaml_directive<'s>(
         return Err(Diagnostic::expected_token(Token::YamlVersion, cursor));
     }
 
-    let start = cursor.location();
     let mut version = CowBuilder::new(cursor);
     let (major, minor) = yaml_version(cursor, &mut version)?;
     let version = version.build();
-    let version_span = cursor.span(start);
+    let version_span = cursor.token();
     receiver.token(Token::YamlVersion, version_span);
 
     if document.version.is_some() {
@@ -151,6 +150,10 @@ fn yaml_version<'s>(
     value.push(cursor);
 
     let major = yaml_version_part(cursor, value)?;
+
+    if !cursor.is(char::space)? && !cursor.is(char::r#break)? && !cursor.is_end_of_input()? {
+        return Err(Diagnostic::expected(Expected::DecimalDigit, cursor));
+    }
 
     Ok((minor, major))
 }
@@ -205,9 +208,8 @@ fn try_directive_param(
         && cursor.is(char::non_space)?
         && !cursor.is_char(char::COMMENT)?
     {
-        let start = cursor.location();
         cursor.eat_while(char::non_space)?;
-        let span = cursor.span(start);
+        let span = cursor.token();
         receiver.token(Token::DirectiveParameter, span);
         Ok(Some(span))
     } else {
