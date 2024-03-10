@@ -57,7 +57,7 @@ fn test_prefix() {
 }
 
 #[test]
-fn test_yaml_version() {
+fn test_yaml_directive() {
     assert_yaml_snapshot!(parse(prefix, "%YAML"));
     assert_yaml_snapshot!(parse(prefix, "%YAML\n"));
     assert_yaml_snapshot!(parse(prefix, "%YAML foo"));
@@ -81,3 +81,29 @@ fn test_yaml_version() {
     assert_yaml_snapshot!(parse(prefix, "%YAML 1.9999999999999"));
     assert_yaml_snapshot!(parse(prefix, "%YAML 1.2 \n%YAML 1.2"));
 }
+
+// #[test]
+// fn test_tag_directive() {
+//     assert_yaml_snapshot!(parse(prefix, "%YAML"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML\n"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML foo"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 0"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 0\n"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 0foo"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 0."));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 0.\n"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 0.foo"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 0.0foo"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 1.2 foo"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 1.2 \n"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 1.2\t\n"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 1.2\n"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 1.2\r\n"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 1.2"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 0.0"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 1.0"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 1.1"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 9999999999999.1"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 1.9999999999999"));
+//     assert_yaml_snapshot!(parse(prefix, "%YAML 1.2 \n%YAML 1.2"));
+// }

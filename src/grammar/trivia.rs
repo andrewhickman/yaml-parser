@@ -47,7 +47,10 @@ pub(super) fn separator_lines(
         comment_text(cursor, receiver)?;
     }
 
-    if !cursor.is_end_of_input()? && !try_non_content_break(cursor, receiver)? && !cursor.is_separated() {
+    if !cursor.is_end_of_input()?
+        && !try_non_content_break(cursor, receiver)?
+        && !cursor.is_separated()
+    {
         return Err(Diagnostic::expected_token(Token::Break, cursor));
     }
 
