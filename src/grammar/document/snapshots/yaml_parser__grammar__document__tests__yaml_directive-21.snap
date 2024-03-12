@@ -1,6 +1,6 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"%YAML 1.9999999999999\")"
+expression: "parse(prefix, \"%YAML 9999999999999.1\")"
 ---
 - token: directive
   stream: "%"
@@ -36,7 +36,7 @@ expression: "parse(prefix, \"%YAML 1.9999999999999\")"
       line: 0
       column: 6
 - token: error
-  stream: "1.9999999999999"
+  stream: "9999999999999.1"
   span:
     start:
       index: 6
@@ -47,16 +47,16 @@ expression: "parse(prefix, \"%YAML 1.9999999999999\")"
       line: 0
       column: 21
 - severity: error
-  message: invalid version number
+  message: version number 9999999999999 is too large
   span:
     start:
-      index: 8
+      index: 6
       line: 0
-      column: 8
+      column: 6
     end:
-      index: 21
+      index: 19
       line: 0
-      column: 21
+      column: 19
   stream: "9999999999999"
 - value:
     version: ~

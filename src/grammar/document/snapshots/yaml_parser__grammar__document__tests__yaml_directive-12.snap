@@ -1,6 +1,6 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"%YAML 1.2 \\n\")"
+expression: "parse(prefix, \"%YAML 1.2 foo\")"
 ---
 - token: directive
   stream: "%"
@@ -57,17 +57,29 @@ expression: "parse(prefix, \"%YAML 1.2 \\n\")"
       index: 10
       line: 0
       column: 10
-- token: break
-  stream: "\n"
+- token: directive_parameter
+  stream: foo
   span:
     start:
       index: 10
       line: 0
       column: 10
     end:
-      index: 11
-      line: 1
-      column: 0
+      index: 13
+      line: 0
+      column: 13
+- severity: error
+  message: unexpected directive parameter
+  span:
+    start:
+      index: 10
+      line: 0
+      column: 10
+    end:
+      index: 13
+      line: 0
+      column: 13
+  stream: foo
 - value:
     version: "1.2"
     tags: {}

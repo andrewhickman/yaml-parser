@@ -1,6 +1,6 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"%YAML 0foo\")"
+expression: "parse(prefix, \"%YAML 0\\n\")"
 ---
 - token: directive
   stream: "%"
@@ -36,29 +36,39 @@ expression: "parse(prefix, \"%YAML 0foo\")"
       line: 0
       column: 6
 - token: error
-  stream: 0foo
+  stream: "0"
   span:
     start:
       index: 6
       line: 0
       column: 6
     end:
-      index: 10
+      index: 7
       line: 0
-      column: 10
+      column: 7
 - severity: error
-  message: "expected '.', but found 'f'"
+  message: "expected '.', but reached end of line"
   span:
     start:
       index: 7
       line: 0
       column: 7
     end:
-      index: 7
-      line: 0
-      column: 7
-  stream: ""
+      index: 8
+      line: 1
+      column: 0
+  stream: "\n"
 - value:
     version: ~
     tags: {}
+- remainder: "\n"
+  span:
+    start:
+      index: 7
+      line: 0
+      column: 7
+    end:
+      index: 8
+      line: 1
+      column: 0
 

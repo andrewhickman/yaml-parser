@@ -300,7 +300,6 @@ impl<'s> Cursor<'s> {
 
 impl<'s> Clone for Cursor<'s> {
     fn clone(&self) -> Self {
-        debug_assert!(self.is_token_boundary());
         Self {
             stream: self.stream.clone(),
             line_number: self.line_number,
