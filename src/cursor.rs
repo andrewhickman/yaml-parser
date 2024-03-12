@@ -85,6 +85,23 @@ impl<'s> Cursor<'s> {
         }
     }
 
+    #[cfg(test)]
+    pub(crate) fn with_stream(mut self, stream: Stream<'_>) -> Cursor<'_> {
+        Cursor {
+            stream,
+            line_number: 0,
+            line_index: 0,
+            indent: self.indent,
+            separated: self.separated,
+            in_document: self.in_document,
+            token: Location::default(),
+            #[cfg(all(feature = "std", debug_assertions))]
+            peek_count: std::sync::atomic::AtomicU32::new(
+                self.peek_count.load(std::sync::atomic::Ordering::Relaxed),
+            ),
+        }
+    }
+
     pub(crate) fn location(&self) -> Location {
         let index = self.stream.index();
         Location {
@@ -300,7 +317,7 @@ impl<'s> Cursor<'s> {
 
 impl<'s> Clone for Cursor<'s> {
     fn clone(&self) -> Self {
-        Self {
+        Cursor {
             stream: self.stream.clone(),
             line_number: self.line_number,
             line_index: self.line_index,

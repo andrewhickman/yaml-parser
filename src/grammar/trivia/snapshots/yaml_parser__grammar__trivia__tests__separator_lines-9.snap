@@ -1,0 +1,27 @@
+---
+source: src/grammar/trivia/tests.rs
+expression: "parse_unseparated(trailing_lines, \"#one\\n\")"
+---
+- severity: error
+  message: "expected a line break, but found '#'"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
+  stream: "#"
+- remainder: "#one\n"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 5
+      line: 1
+      column: 0
+

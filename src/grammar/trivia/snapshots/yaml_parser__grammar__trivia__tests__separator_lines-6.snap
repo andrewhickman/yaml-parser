@@ -1,0 +1,27 @@
+---
+source: src/grammar/trivia/tests.rs
+expression: "parse(trailing_lines, \"\\nfoo\")"
+---
+- token: break
+  stream: "\n"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 1
+      column: 0
+- value: ~
+- remainder: foo
+  span:
+    start:
+      index: 1
+      line: 1
+      column: 0
+    end:
+      index: 4
+      line: 1
+      column: 3
+

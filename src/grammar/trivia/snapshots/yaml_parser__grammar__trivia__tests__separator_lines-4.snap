@@ -1,0 +1,39 @@
+---
+source: src/grammar/trivia/tests.rs
+expression: "parse(trailing_lines, \"#one\\n#two\")"
+---
+- token: comment
+  stream: "#one"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 4
+      line: 0
+      column: 4
+- token: break
+  stream: "\n"
+  span:
+    start:
+      index: 4
+      line: 0
+      column: 4
+    end:
+      index: 5
+      line: 1
+      column: 0
+- token: comment
+  stream: "#two"
+  span:
+    start:
+      index: 5
+      line: 1
+      column: 0
+    end:
+      index: 9
+      line: 1
+      column: 4
+- value: ~
+

@@ -11,22 +11,22 @@ use crate::{
 struct TestReceiver<'s, T> {
     stream: Option<&'s str>,
     index: usize,
-    items: Vec<TestItem<'s, T>>,
+    items: Vec<TestItem<T>>,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(untagged)]
-enum TestItem<'s, T> {
+enum TestItem<T> {
     Diagnostic {
         #[serde(flatten)]
         diag: Diagnostic,
         #[serde(skip_serializing_if = "Option::is_none")]
-        stream: Option<&'s str>,
+        stream: Option<String>,
     },
     Token {
         token: Token,
         #[serde(skip_serializing_if = "Option::is_none")]
-        stream: Option<&'s str>,
+        stream: Option<String>,
         span: Span,
     },
     Value {
@@ -34,7 +34,7 @@ enum TestItem<'s, T> {
     },
     Remainder {
         #[serde(skip_serializing_if = "Option::is_none")]
-        remainder: Option<&'s str>,
+        remainder: Option<String>,
         span: Span,
     },
 }
@@ -65,9 +65,9 @@ impl<'s, T> TestReceiver<'s, T> {
         }
     }
 
-    fn stream(&self, span: Span) -> Option<&'s str> {
+    fn stream(&self, span: Span) -> Option<String> {
         self.stream
-            .map(|s| &s[(span.start.index - self.index)..(span.end.index - self.index)])
+            .map(|s| s[(span.start.index - self.index)..(span.end.index - self.index)].to_owned())
     }
 
     fn finish(&mut self, result: Result<T, Diagnostic>) {
@@ -81,7 +81,7 @@ impl<'s, T> TestReceiver<'s, T> {
     }
 }
 
-pub(super) fn parse<'s, T, F>(f: F, stream: &'s str) -> impl Serialize + 's
+pub(super) fn parse<'s, T, F>(f: F, stream: &'s str) -> impl Serialize
 where
     T: fmt::Debug + Serialize + 's,
     F: Fn(&mut Cursor<'s>, &mut (dyn Receiver + 's)) -> Result<T, Diagnostic>,
@@ -89,7 +89,33 @@ where
     parse_cursor(f, Cursor::new(Stream::from_str(stream)))
 }
 
-pub(super) fn parse_cursor<'s, T, F>(f: F, mut cursor: Cursor<'s>) -> impl Serialize + 's
+pub(super) fn parse_unseparated<'s, T, F>(f: F, stream: &'s str) -> impl Serialize
+where
+    T: fmt::Debug + Serialize + 's,
+    F: Fn(&mut Cursor<'s>, &mut (dyn Receiver + 's)) -> Result<T, Diagnostic>,
+{
+    let mut cursor = Cursor::new(Stream::from_str("a"));
+    assert_eq!(cursor.bump(), 'a');
+    assert!(!cursor.is_separated());
+    parse_cursor(f, cursor.with_stream(Stream::from_str(stream)))
+}
+
+pub(super) fn parse_indented<'s, T, F>(f: F, indent: u32, stream: &'s str) -> impl Serialize
+where
+    T: fmt::Debug + Serialize + 's,
+    F: Fn(&mut Cursor<'s>, &mut (dyn Receiver + 's)) -> Result<T, Diagnostic>,
+{
+    let ident = " ".repeat(indent as usize);
+    let mut cursor = Cursor::new(Stream::from_str(&ident));
+    for i in 0..indent {
+        assert_eq!(cursor.bump(), ' ');
+    }
+    assert!(cursor.is_separated());
+    assert_eq!(cursor.indent(), Some(indent));
+    parse_cursor(f, cursor.with_stream(Stream::from_str(stream)))
+}
+
+pub(super) fn parse_cursor<'s, T, F>(f: F, mut cursor: Cursor<'s>) -> impl Serialize
 where
     T: fmt::Debug + Serialize + 's,
     F: Fn(&mut Cursor<'s>, &mut (dyn Receiver + 's)) -> Result<T, Diagnostic>,
@@ -123,7 +149,7 @@ where
 
     if !cursor.is_end_of_input().unwrap() {
         let start = cursor.location();
-        let remainder = cursor.as_str();
+        let remainder = cursor.as_str().map(ToOwned::to_owned);
         while !cursor.is_end_of_input().unwrap() {
             cursor.bump();
         }

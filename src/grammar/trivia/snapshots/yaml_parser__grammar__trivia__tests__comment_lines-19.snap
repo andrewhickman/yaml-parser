@@ -1,0 +1,16 @@
+---
+source: src/grammar/trivia/tests.rs
+expression: "parse_unseparated(comment_lines, \"foo\")"
+---
+- value: ~
+- remainder: foo
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 3
+      line: 0
+      column: 3
+

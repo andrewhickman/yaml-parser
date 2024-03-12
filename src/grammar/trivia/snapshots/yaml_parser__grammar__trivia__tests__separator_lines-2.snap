@@ -1,0 +1,17 @@
+---
+source: src/grammar/trivia/tests.rs
+expression: "parse(trailing_lines, \"#one\")"
+---
+- token: comment
+  stream: "#one"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 4
+      line: 0
+      column: 4
+- value: ~
+

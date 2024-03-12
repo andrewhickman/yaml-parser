@@ -39,7 +39,7 @@ fn try_break(cursor: &mut Cursor) -> Result<bool, Diagnostic> {
     }
 }
 
-pub(super) fn separator_lines(
+pub(super) fn trailing_lines(
     cursor: &mut Cursor,
     receiver: &mut (impl Receiver + ?Sized),
 ) -> Result<(), Diagnostic> {

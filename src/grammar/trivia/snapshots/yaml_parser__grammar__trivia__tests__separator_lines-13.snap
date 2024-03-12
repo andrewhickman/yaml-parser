@@ -1,0 +1,17 @@
+---
+source: src/grammar/trivia/tests.rs
+expression: "parse_unseparated(trailing_lines, \" \")"
+---
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
+- value: ~
+

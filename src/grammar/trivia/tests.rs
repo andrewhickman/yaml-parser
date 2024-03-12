@@ -1,8 +1,8 @@
 use insta::assert_yaml_snapshot;
 
 use crate::grammar::{
-    tests::parse,
-    trivia::{comment_lines, non_content_break},
+    tests::{parse, parse_unseparated},
+    trivia::{comment_lines, non_content_break, trailing_lines},
 };
 
 #[test]
@@ -32,4 +32,33 @@ fn test_comment_lines() {
     assert_yaml_snapshot!(parse(comment_lines, "# comment\n\n# two"));
     assert_yaml_snapshot!(parse(comment_lines, "# comment\0"));
     assert_yaml_snapshot!(parse(comment_lines, "# comment\0\r\n"));
+    assert_yaml_snapshot!(parse_unseparated(comment_lines, ""));
+    assert_yaml_snapshot!(parse_unseparated(comment_lines, "# comment"));
+    assert_yaml_snapshot!(parse_unseparated(comment_lines, "foo"));
+    assert_yaml_snapshot!(parse_unseparated(comment_lines, "\n"));
+    assert_yaml_snapshot!(parse_unseparated(comment_lines, " # comment"));
+    assert_yaml_snapshot!(parse_unseparated(comment_lines, " \n"));
+}
+
+#[test]
+fn test_separator_lines() {
+    assert_yaml_snapshot!(parse(trailing_lines, ""));
+    assert_yaml_snapshot!(parse(trailing_lines, "#one"));
+    assert_yaml_snapshot!(parse(trailing_lines, "#one\n"));
+    assert_yaml_snapshot!(parse(trailing_lines, "#one\n#two"));
+    assert_yaml_snapshot!(parse(trailing_lines, "foo"));
+    assert_yaml_snapshot!(parse(trailing_lines, "\nfoo"));
+    assert_yaml_snapshot!(parse_unseparated(trailing_lines, ""));
+    assert_yaml_snapshot!(parse_unseparated(trailing_lines, "#one"));
+    assert_yaml_snapshot!(parse_unseparated(trailing_lines, "#one\n"));
+    assert_yaml_snapshot!(parse_unseparated(trailing_lines, "#one\n#two"));
+    assert_yaml_snapshot!(parse_unseparated(trailing_lines, "foo"));
+    assert_yaml_snapshot!(parse_unseparated(trailing_lines, "\nfoo"));
+    assert_yaml_snapshot!(parse_unseparated(trailing_lines, " "));
+    assert_yaml_snapshot!(parse_unseparated(trailing_lines, " #one"));
+    assert_yaml_snapshot!(parse_unseparated(trailing_lines, " #one\n"));
+    assert_yaml_snapshot!(parse_unseparated(trailing_lines, " #one\n#two"));
+    assert_yaml_snapshot!(parse_unseparated(trailing_lines, " foo"));
+    assert_yaml_snapshot!(parse_unseparated(trailing_lines, " \nfoo"));
+    assert_yaml_snapshot!(parse_unseparated(trailing_lines, " #comment\nfoo"));
 }
