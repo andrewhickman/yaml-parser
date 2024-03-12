@@ -48,7 +48,7 @@ pub(super) fn prefix<'s>(
     }
 
     if cursor.is(char::flow_indicator)? {
-        return Err(Diagnostic::expected(Expected::TagPrefix, cursor));
+        return Err(Diagnostic::expected(Expected::TagInitial, cursor));
     }
 
     let mut name = CowBuilder::new(cursor);
@@ -63,7 +63,7 @@ pub(super) fn prefix<'s>(
                 })?;
             }
         } else if cursor.is(char::non_space)? {
-            return Err(Diagnostic::expected(Expected::TagPrefix, cursor));
+            return Err(Diagnostic::expected(Expected::TagChar, cursor));
         } else {
             break;
         }
@@ -81,7 +81,7 @@ pub(super) fn percent_escaped<'s>(
 
     let mut buf = Vec::new();
     while cursor.eat_char('%')? {
-        let byte = hex_digit(cursor)? << 4 & hex_digit(cursor)?;
+        let byte = hex_digit(cursor)? << 4 | hex_digit(cursor)?;
         buf.push(byte);
     }
 
@@ -100,6 +100,7 @@ pub(super) fn percent_escaped<'s>(
 fn hex_digit(cursor: &mut Cursor) -> Result<u8, Diagnostic> {
     if let Some(ch) = cursor.peek()? {
         if let Some(digit) = ch.to_digit(16) {
+            cursor.bump();
             return Ok(digit as u8);
         }
     };

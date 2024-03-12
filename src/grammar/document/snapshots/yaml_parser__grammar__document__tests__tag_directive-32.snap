@@ -1,0 +1,86 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix, \"%TAG ! ![]{}\")"
+---
+- token: directive
+  stream: "%"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
+- token: directive_name
+  stream: TAG
+  span:
+    start:
+      index: 1
+      line: 0
+      column: 1
+    end:
+      index: 4
+      line: 0
+      column: 4
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 4
+      line: 0
+      column: 4
+    end:
+      index: 5
+      line: 0
+      column: 5
+- token: tag_handle
+  stream: "!"
+  span:
+    start:
+      index: 5
+      line: 0
+      column: 5
+    end:
+      index: 6
+      line: 0
+      column: 6
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 6
+      line: 0
+      column: 6
+    end:
+      index: 7
+      line: 0
+      column: 7
+- token: error
+  stream: "![]{}"
+  span:
+    start:
+      index: 7
+      line: 0
+      column: 7
+    end:
+      index: 12
+      line: 0
+      column: 12
+- severity: error
+  message: "the '{' character must be escaped as '%7b' in a tag"
+  span:
+    start:
+      index: 10
+      line: 0
+      column: 10
+    end:
+      index: 11
+      line: 0
+      column: 11
+  stream: "{"
+- value:
+    version: ~
+    tags: {}
+

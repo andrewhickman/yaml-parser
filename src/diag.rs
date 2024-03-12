@@ -49,7 +49,7 @@ pub(crate) enum Expected {
     Printable,
     DecimalDigit,
     Word,
-    TagPrefix,
+    TagInitial,
     TagChar,
     HexDigit,
 }
@@ -110,7 +110,7 @@ impl fmt::Display for Diagnostic {
                 "invalid {encoding:?} at position {}",
                 self.span.start.index
             ),
-            DiagnosticKind::Expected(Expected::TagPrefix, Some(ch))
+            DiagnosticKind::Expected(Expected::TagInitial, Some(ch))
                 if char::flow_indicator(*ch) =>
             {
                 write!(
@@ -119,7 +119,7 @@ impl fmt::Display for Diagnostic {
                     PercentEncode(*ch)
                 )
             }
-            DiagnosticKind::Expected(Expected::TagPrefix | Expected::TagChar, Some(ch))
+            DiagnosticKind::Expected(Expected::TagInitial | Expected::TagChar, Some(ch))
                 if char::non_space(*ch) =>
             {
                 write!(
@@ -128,7 +128,7 @@ impl fmt::Display for Diagnostic {
                     PercentEncode(*ch)
                 )
             }
-            DiagnosticKind::Expected(Expected::TagPrefix | Expected::TagChar, Some(ch))
+            DiagnosticKind::Expected(Expected::TagInitial | Expected::TagChar, Some(ch))
                 if char::printable(*ch) =>
             {
                 write!(
@@ -156,7 +156,7 @@ impl fmt::Display for Diagnostic {
             DiagnosticKind::DirectiveNotAtStartOfLine => write!(f, "directives must be at the start of the line"),
             DiagnosticKind::UnknownDirective(name) => write!(f, "unknown directive '{name}'"),
             DiagnosticKind::DuplicateYamlDirective => {
-                write!(f, "a yaml version directive has already been specified")
+                write!(f, "a yaml version directive has already been specified in this document")
             }
             DiagnosticKind::UnknownMinorVersion => write!(f, "unknown minor version"),
             DiagnosticKind::UnknownMajorVersion => write!(f, "unknown major version"),
@@ -165,7 +165,7 @@ impl fmt::Display for Diagnostic {
             }
             DiagnosticKind::DuplicateTagDirective(handle) => write!(
                 f,
-                "a tag directive for '{handle}' has already been specified"
+                "a tag directive for '{handle}' has already been specified in this document"
             ),
             DiagnosticKind::UnexpectedDiagnosticParameter => {
                 write!(f, "unexpected directive parameter")
@@ -189,7 +189,7 @@ impl fmt::Display for Expected {
             Expected::DecimalDigit => write!(f, "a decimal digit (0-9)"),
             Expected::HexDigit => write!(f, "a hex digit (0-9, a-z or A-Z)"),
             Expected::Word => write!(f, "an alphanumeric character (a-z, A-Z, 0-9, or '-')"),
-            Expected::TagPrefix | Expected::TagChar => write!(f, "a valid tag character"),
+            Expected::TagInitial | Expected::TagChar => write!(f, "a valid tag character"),
         }
     }
 }

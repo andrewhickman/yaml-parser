@@ -1,6 +1,6 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"%YAML 1.2 \\n%YAML 1.2\")"
+expression: "parse(prefix, \"%TAG ! tag:example.com,2000:app/\\n%TAG !m! !my-\")"
 ---
 - token: directive
   stream: "%"
@@ -14,18 +14,29 @@ expression: "parse(prefix, \"%YAML 1.2 \\n%YAML 1.2\")"
       line: 0
       column: 1
 - token: directive_name
-  stream: YAML
+  stream: TAG
   span:
     start:
       index: 1
       line: 0
       column: 1
     end:
+      index: 4
+      line: 0
+      column: 4
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 4
+      line: 0
+      column: 4
+    end:
       index: 5
       line: 0
       column: 5
-- token: separator
-  stream: " "
+- token: tag_handle
+  stream: "!"
   span:
     start:
       index: 5
@@ -35,96 +46,108 @@ expression: "parse(prefix, \"%YAML 1.2 \\n%YAML 1.2\")"
       index: 6
       line: 0
       column: 6
-- token: yaml_version
-  stream: "1.2"
+- token: separator
+  stream: " "
   span:
     start:
       index: 6
       line: 0
       column: 6
     end:
-      index: 9
+      index: 7
       line: 0
-      column: 9
-- token: separator
-  stream: " "
+      column: 7
+- token: tag_prefix
+  stream: "tag:example.com,2000:app/"
   span:
     start:
-      index: 9
+      index: 7
       line: 0
-      column: 9
+      column: 7
     end:
-      index: 10
+      index: 32
       line: 0
-      column: 10
+      column: 32
 - token: break
   stream: "\n"
   span:
     start:
-      index: 10
+      index: 32
       line: 0
-      column: 10
+      column: 32
     end:
-      index: 11
+      index: 33
       line: 1
       column: 0
 - token: directive
   stream: "%"
   span:
     start:
-      index: 11
+      index: 33
       line: 1
       column: 0
     end:
-      index: 12
+      index: 34
       line: 1
       column: 1
 - token: directive_name
-  stream: YAML
+  stream: TAG
   span:
     start:
-      index: 12
+      index: 34
       line: 1
       column: 1
     end:
-      index: 16
+      index: 37
       line: 1
-      column: 5
+      column: 4
 - token: separator
   stream: " "
   span:
     start:
-      index: 16
+      index: 37
+      line: 1
+      column: 4
+    end:
+      index: 38
+      line: 1
+      column: 5
+- token: tag_handle
+  stream: "!m!"
+  span:
+    start:
+      index: 38
       line: 1
       column: 5
     end:
-      index: 17
+      index: 41
       line: 1
-      column: 6
-- token: yaml_version
-  stream: "1.2"
+      column: 8
+- token: separator
+  stream: " "
   span:
     start:
-      index: 17
+      index: 41
       line: 1
-      column: 6
+      column: 8
     end:
-      index: 20
+      index: 42
       line: 1
       column: 9
-- severity: error
-  message: a yaml version directive has already been specified in this document
+- token: tag_prefix
+  stream: "!my-"
   span:
     start:
-      index: 12
-      line: 1
-      column: 1
-    end:
-      index: 20
+      index: 42
       line: 1
       column: 9
-  stream: YAML 1.2
+    end:
+      index: 46
+      line: 1
+      column: 13
 - value:
-    version: "1.2"
-    tags: {}
+    version: ~
+    tags:
+      "!": "tag:example.com,2000:app/"
+      "!m!": "!my-"
 

@@ -105,4 +105,51 @@ fn test_tag_directive() {
     assert_yaml_snapshot!(parse(prefix, "%TAG !\u{feff}"));
     assert_yaml_snapshot!(parse(prefix, "%TAG !\0"));
     assert_yaml_snapshot!(parse(prefix, "%TAG ! !"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! !foo"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! foo"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! [foo]"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! tag:example.com,2000:app/"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG !m! !my-"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG !! !foo"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! %20"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! !%20"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! !ta%C3%9F"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! !%f0%9d%95%8atring"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! %F0%9F%92%96"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! %00%9F%92%96"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! !a%00%9F%92%96b"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! ![]{}"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! !|"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! |"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! %"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! %\n"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! % "));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! %*x"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! %bar"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! %\0"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! %foo"));
+    assert_yaml_snapshot!(parse(
+        prefix,
+        "%TAG ! tag:example.com,2000:app/\n%TAG !m! !my-"
+    ));
+    assert_yaml_snapshot!(parse(
+        prefix,
+        "%TAG ! tag:example.com,2000:app/\n%TAG ! tag:example.com,2000:app2"
+    ));
+    assert_yaml_snapshot!(parse(
+        prefix,
+        "%TAG ! tag:example.com,2000:app/\n%TAG !! tag:example.com,2000:app2"
+    ));
+    assert_yaml_snapshot!(parse(
+        prefix,
+        "%TAG !! tag:example.com,2000:app/\n%TAG !! tag:example.com,2000:app2"
+    ));
+    assert_yaml_snapshot!(parse(
+        prefix,
+        "%TAG ! tag:example.com,2000:app/\n%TAG !app! tag:example.com,2000:app2"
+    ));
+    assert_yaml_snapshot!(parse(
+        prefix,
+        "%TAG !app! tag:example.com,2000:app/\n%TAG !app! tag:example.com,2000:app2"
+    ));
 }
