@@ -1,6 +1,6 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"%YAML\\n\")"
+expression: "parse(prefix, \"%YAML \")"
 ---
 - token: directive
   stream: "%"
@@ -24,8 +24,8 @@ expression: "parse(prefix, \"%YAML\\n\")"
       index: 5
       line: 0
       column: 5
-- severity: error
-  message: "expected a YAML version number, but reached end of line"
+- token: separator
+  stream: " "
   span:
     start:
       index: 5
@@ -33,20 +33,21 @@ expression: "parse(prefix, \"%YAML\\n\")"
       column: 5
     end:
       index: 6
-      line: 1
-      column: 0
-  stream: "\n"
+      line: 0
+      column: 6
+- severity: error
+  message: "expected a decimal digit (0-9), but reached end of input"
+  span:
+    start:
+      index: 6
+      line: 0
+      column: 6
+    end:
+      index: 6
+      line: 0
+      column: 6
+  stream: ""
 - value:
     version: ~
     tags: {}
-- remainder: "\n"
-  span:
-    start:
-      index: 5
-      line: 0
-      column: 5
-    end:
-      index: 6
-      line: 1
-      column: 0
 

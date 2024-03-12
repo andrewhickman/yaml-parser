@@ -10,10 +10,10 @@ expression: "parse(non_content_break, \"foo\")"
       line: 0
       column: 0
     end:
-      index: 0
+      index: 1
       line: 0
-      column: 0
-  stream: ""
+      column: 1
+  stream: f
 - remainder: foo
   span:
     start:

@@ -32,10 +32,10 @@ expression: "parse(comment_lines, \"# comment\\0\\r\\n\")"
       line: 0
       column: 9
     end:
-      index: 9
+      index: 10
       line: 0
-      column: 9
-  stream: ""
+      column: 10
+  stream: "\u0000"
 - token: break
   stream: "\r\n"
   span:

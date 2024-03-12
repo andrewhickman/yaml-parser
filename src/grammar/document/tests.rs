@@ -59,6 +59,7 @@ fn test_prefix() {
 #[test]
 fn test_yaml_directive() {
     assert_yaml_snapshot!(parse(prefix, "%YAML"));
+    assert_yaml_snapshot!(parse(prefix, "%YAML "));
     assert_yaml_snapshot!(parse(prefix, "%YAML\n"));
     assert_yaml_snapshot!(parse(prefix, "%YAML foo"));
     assert_yaml_snapshot!(parse(prefix, "%YAML 0"));
