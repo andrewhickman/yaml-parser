@@ -36,10 +36,8 @@ expression: "parse(prefix, \"%YAML\\n\")"
       line: 1
       column: 0
   stream: "\n"
-- value:
-    version: ~
-    tags: {}
-- remainder: "\n"
+- token: break
+  stream: "\n"
   span:
     start:
       index: 5
@@ -49,4 +47,7 @@ expression: "parse(prefix, \"%YAML\\n\")"
       index: 6
       line: 1
       column: 0
+- value:
+    version: ~
+    tags: {}
 

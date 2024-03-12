@@ -63,7 +63,7 @@ pub(super) fn prefix<'s>(
             })?;
         }
 
-        trivia::comment_lines(cursor, receiver)?;
+        trivia::separator_lines(cursor, receiver)?;
     }
 
     Ok(document)

@@ -154,7 +154,7 @@ impl fmt::Display for Diagnostic {
             }
             DiagnosticKind::DirectiveAfterUnterminatedDocument => todo!(),
             DiagnosticKind::DirectiveNotAtStartOfLine => todo!(),
-            DiagnosticKind::UnknownDirective(_) => todo!(),
+            DiagnosticKind::UnknownDirective(name) => write!(f, "unknown directive '{name}'"),
             DiagnosticKind::DuplicateYamlDirective => {
                 write!(f, "a yaml version directive has already been specified")
             }
