@@ -1,0 +1,119 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix, \"%TAG !yaml! tag:yaml.org,2002: # tag\\n# directive\")"
+---
+- token: directive
+  stream: "%"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
+- token: directive_name
+  stream: TAG
+  span:
+    start:
+      index: 1
+      line: 0
+      column: 1
+    end:
+      index: 4
+      line: 0
+      column: 4
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 4
+      line: 0
+      column: 4
+    end:
+      index: 5
+      line: 0
+      column: 5
+- token: tag_handle
+  stream: "!yaml!"
+  span:
+    start:
+      index: 5
+      line: 0
+      column: 5
+    end:
+      index: 11
+      line: 0
+      column: 11
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 11
+      line: 0
+      column: 11
+    end:
+      index: 12
+      line: 0
+      column: 12
+- token: tag_prefix
+  stream: "tag:yaml.org,2002:"
+  span:
+    start:
+      index: 12
+      line: 0
+      column: 12
+    end:
+      index: 30
+      line: 0
+      column: 30
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 30
+      line: 0
+      column: 30
+    end:
+      index: 31
+      line: 0
+      column: 31
+- token: comment
+  stream: "# tag"
+  span:
+    start:
+      index: 31
+      line: 0
+      column: 31
+    end:
+      index: 36
+      line: 0
+      column: 36
+- token: break
+  stream: "\n"
+  span:
+    start:
+      index: 36
+      line: 0
+      column: 36
+    end:
+      index: 37
+      line: 1
+      column: 0
+- token: comment
+  stream: "# directive"
+  span:
+    start:
+      index: 37
+      line: 1
+      column: 0
+    end:
+      index: 48
+      line: 1
+      column: 11
+- value:
+    version: ~
+    tags:
+      "!yaml!": "tag:yaml.org,2002:"
+

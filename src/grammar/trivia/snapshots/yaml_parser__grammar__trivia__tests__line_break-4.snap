@@ -10,10 +10,10 @@ expression: "parse(non_content_break, \"\\0\")"
       line: 0
       column: 0
     end:
-      index: 0
+      index: 1
       line: 0
-      column: 0
-  stream: ""
+      column: 1
+  stream: "\u0000"
 - remainder: "\u0000"
   span:
     start:

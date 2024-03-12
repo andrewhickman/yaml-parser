@@ -32,10 +32,10 @@ expression: "parse(prefix, \"%YAML\\n\")"
       line: 0
       column: 5
     end:
-      index: 5
-      line: 0
-      column: 5
-  stream: ""
+      index: 6
+      line: 1
+      column: 0
+  stream: "\n"
 - value:
     version: ~
     tags: {}
