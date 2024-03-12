@@ -1,0 +1,42 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix, \"%TAG\")"
+---
+- token: directive
+  stream: "%"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
+- token: directive_name
+  stream: TAG
+  span:
+    start:
+      index: 1
+      line: 0
+      column: 1
+    end:
+      index: 4
+      line: 0
+      column: 4
+- severity: error
+  message: "expected whitespace, but reached end of input"
+  span:
+    start:
+      index: 4
+      line: 0
+      column: 4
+    end:
+      index: 4
+      line: 0
+      column: 4
+  stream: ""
+- value:
+    version: ~
+    tags: {}
+

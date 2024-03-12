@@ -1,6 +1,7 @@
 mod document;
 mod event;
 mod scalar;
+mod tag;
 #[cfg(test)]
 mod tests;
 mod trivia;

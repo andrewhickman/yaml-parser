@@ -1,14 +1,17 @@
 #[cfg(test)]
 mod tests;
 
-use alloc::{borrow::Cow, collections::BTreeMap};
+use alloc::{
+    borrow::Cow,
+    collections::{btree_map, BTreeMap},
+};
 
 use crate::{
     char,
     cow::CowBuilder,
     cursor::Cursor,
     diag::{DiagnosticKind, Expected},
-    grammar::{recover, token_char},
+    grammar::{recover, tag, token_char},
     Diagnostic, Receiver, Span, Token,
 };
 
@@ -151,7 +154,7 @@ fn yaml_version<'s>(
 
     let major = yaml_version_part(cursor, value)?;
 
-    if !cursor.is(char::space)? && !cursor.is(char::r#break)? && !cursor.is_end_of_input()? {
+    if cursor.is(char::non_space)? {
         return Err(Diagnostic::expected(Expected::DecimalDigit, cursor));
     }
 
@@ -169,9 +172,12 @@ fn yaml_version_part<'s>(
     }
     value.push_while(cursor, char::dec_digit)?;
 
-    value.as_ref()[value_start..]
-        .parse::<u32>()
-        .map_err(|_| Diagnostic::new(DiagnosticKind::VersionOverflow, cursor.span(start)))
+    value.as_ref()[value_start..].parse::<u32>().map_err(|_| {
+        Diagnostic::new(
+            DiagnosticKind::VersionOverflow(value.as_ref().to_owned().into()),
+            cursor.span(start),
+        )
+    })
 }
 
 fn tag_directive<'s>(
@@ -181,7 +187,26 @@ fn tag_directive<'s>(
 ) -> Result<(), Diagnostic> {
     trivia::separate_in_line(cursor, receiver)?;
 
-    todo!()
+    let handle_start = cursor.location();
+    let handle = tag::handle(cursor, receiver)?;
+    let handle_span = cursor.span(handle_start);
+
+    trivia::separate_in_line(cursor, receiver)?;
+    let prefix = tag::prefix(cursor, receiver)?;
+
+    match document.tags.entry(handle) {
+        btree_map::Entry::Vacant(entry) => {
+            entry.insert(prefix);
+        }
+        btree_map::Entry::Occupied(entry) => {
+            receiver.diagnostic(Diagnostic::new(
+                DiagnosticKind::DuplicateTagDirective(entry.key().as_ref().to_owned().into()),
+                handle_span,
+            ));
+        }
+    }
+
+    Ok(())
 }
 
 fn reserved_directive<'s>(

@@ -36,8 +36,10 @@ pub(crate) enum DiagnosticKind {
     DuplicateYamlDirective,
     UnknownMinorVersion,
     UnknownMajorVersion,
-    VersionOverflow,
+    VersionOverflow(Box<String>),
+    DuplicateTagDirective(Box<String>),
     UnexpectedDiagnosticParameter,
+    InvalidPercentEscape,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -46,7 +48,13 @@ pub(crate) enum Expected {
     Char(char),
     Printable,
     DecimalDigit,
+    Word,
+    TagPrefix,
+    TagChar,
+    HexDigit,
 }
+
+struct PercentEncode(char);
 
 impl Diagnostic {
     /// Whether this diagnostic is an error or warning.
@@ -83,7 +91,7 @@ impl Diagnostic {
         match cursor.peek() {
             Ok(found) => Diagnostic {
                 kind: DiagnosticKind::Expected(expected, found),
-                span: Span::empty(cursor.location()),
+                span: cursor.next_span(),
             },
             Err(err) => err,
         }
@@ -99,34 +107,70 @@ impl fmt::Display for Diagnostic {
         match &self.kind {
             DiagnosticKind::Decode(encoding) => write!(
                 f,
-                "invalid {:?} at position {}",
-                encoding, self.span.start.index
+                "invalid {encoding:?} at position {}",
+                self.span.start.index
             ),
+            DiagnosticKind::Expected(Expected::TagPrefix, Some(ch))
+                if char::flow_indicator(*ch) =>
+            {
+                write!(
+                    f,
+                    "the '{ch}' character must be escaped as '{}' at the start of a tag prefix",
+                    PercentEncode(*ch)
+                )
+            }
+            DiagnosticKind::Expected(Expected::TagPrefix | Expected::TagChar, Some(ch))
+                if char::non_space(*ch) =>
+            {
+                write!(
+                    f,
+                    "the '{ch}' character must be escaped as '{}' in a tag",
+                    PercentEncode(*ch)
+                )
+            }
+            DiagnosticKind::Expected(Expected::TagPrefix | Expected::TagChar, Some(ch))
+                if char::printable(*ch) =>
+            {
+                write!(
+                    f,
+                    "the '{}' character must be escaped as '{}' in a tag",
+                    ch.escape_debug(),
+                    PercentEncode(*ch)
+                )
+            }
             DiagnosticKind::Expected(expected, None) => {
-                write!(f, "expected {}, but reached end of input", expected)
+                write!(f, "expected {expected}, but reached end of input")
             }
             DiagnosticKind::Expected(expected, Some(found)) if !char::printable(*found) => write!(
                 f,
-                "expected {}, but found non-printable character '{}'",
-                expected,
+                "expected {expected}, but found non-printable character '{}'",
                 found.escape_debug()
             ),
             DiagnosticKind::Expected(expected, Some('\r' | '\n')) => {
-                write!(f, "expected {}, but reached end of line", expected)
+                write!(f, "expected {expected}, but reached end of line")
             }
             DiagnosticKind::Expected(expected, Some(found)) => {
-                write!(f, "expected {}, but found '{}'", expected, found)
+                write!(f, "expected {expected}, but found '{found}'")
             }
             DiagnosticKind::DirectiveAfterUnterminatedDocument => todo!(),
             DiagnosticKind::DirectiveNotAtStartOfLine => todo!(),
             DiagnosticKind::UnknownDirective(_) => todo!(),
-            DiagnosticKind::DuplicateYamlDirective => write!(f, "duplicate YAML directive"),
+            DiagnosticKind::DuplicateYamlDirective => {
+                write!(f, "a yaml version directive has already been specified")
+            }
             DiagnosticKind::UnknownMinorVersion => write!(f, "unknown minor version"),
             DiagnosticKind::UnknownMajorVersion => write!(f, "unknown major version"),
-            DiagnosticKind::VersionOverflow => write!(f, "invalid version number"),
+            DiagnosticKind::VersionOverflow(version) => {
+                write!(f, "version number {version} is too large")
+            }
+            DiagnosticKind::DuplicateTagDirective(handle) => write!(
+                f,
+                "a tag directive for '{handle}' has already been specified"
+            ),
             DiagnosticKind::UnexpectedDiagnosticParameter => {
                 write!(f, "unexpected directive parameter")
             }
+            DiagnosticKind::InvalidPercentEscape => write!(f, "invalid percent escape"),
         }
     }
 }
@@ -137,10 +181,14 @@ impl fmt::Display for Expected {
             Expected::Token(Token::Separator) => write!(f, "whitespace"),
             Expected::Token(Token::Break) => write!(f, "a line break"),
             Expected::Token(Token::YamlVersion) => write!(f, "a YAML version number"),
+            Expected::Token(Token::TagHandle) => write!(f, "a tag handle"),
             Expected::Token(tok) => unimplemented!("unexpected token {:?}", tok),
             Expected::Char(ch) => write!(f, "'{}'", ch),
             Expected::Printable => write!(f, "a printable character"),
             Expected::DecimalDigit => write!(f, "a decimal digit (0-9)"),
+            Expected::HexDigit => write!(f, "a hex digit (0-9, a-z or A-Z)"),
+            Expected::Word => write!(f, "an alphanumeric character (a-z, A-Z, 0-9, or '-')"),
+            Expected::TagPrefix | Expected::TagChar => write!(f, "a valid tag character"),
         }
     }
 }
@@ -167,5 +215,15 @@ impl serde::Serialize for Diagnostic {
         s.serialize_field("message", &format_args!("{}", self))?;
         s.serialize_field("span", &self.span())?;
         s.end()
+    }
+}
+
+impl fmt::Display for PercentEncode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut buf = [0; 4];
+        for byte in self.0.encode_utf8(&mut buf).as_bytes() {
+            write!(f, "%{:02x}", byte)?;
+        }
+        Ok(())
     }
 }

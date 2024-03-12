@@ -21,7 +21,9 @@ impl<'s> CowBuilder<'s> {
                 stream,
                 range: cursor.index()..cursor.index(),
             },
-            None => todo!(),
+            None => CowBuilder::Owned {
+                buffer: String::new(),
+            },
         }
     }
 
@@ -45,12 +47,29 @@ impl<'s> CowBuilder<'s> {
     pub fn push_char(&mut self, ch: char) {
         match self {
             CowBuilder::Borrowed { stream, range } => {
-                let mut buffer = String::with_capacity((range.len() * 2).min(8));
+                let cap = ((range.len() + ch.len_utf8()) * 2).min(8);
+                let mut buffer = String::with_capacity(cap);
+
                 buffer.push_str(&stream[..range.len()]);
                 buffer.push(ch);
+
                 *self = CowBuilder::Owned { buffer };
             }
             CowBuilder::Owned { buffer } => buffer.push(ch),
+        }
+    }
+
+    pub fn push_str(&mut self, s: &str) {
+        match self {
+            CowBuilder::Borrowed { stream, range } => {
+                let cap = ((range.len() + s.len()) * 2).min(8);
+                let mut buffer = String::with_capacity(cap);
+
+                buffer.push_str(&stream[..range.len()]);
+                buffer.push_str(s);
+                *self = CowBuilder::Owned { buffer };
+            }
+            CowBuilder::Owned { buffer } => buffer.push_str(s),
         }
     }
 

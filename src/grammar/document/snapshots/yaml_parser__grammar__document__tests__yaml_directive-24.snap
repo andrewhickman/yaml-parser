@@ -1,0 +1,62 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix, \"%YAML 1.2\\n---\\nfoo\")"
+---
+- token: directive
+  stream: "%"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
+- token: directive_name
+  stream: YAML
+  span:
+    start:
+      index: 1
+      line: 0
+      column: 1
+    end:
+      index: 5
+      line: 0
+      column: 5
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 5
+      line: 0
+      column: 5
+    end:
+      index: 6
+      line: 0
+      column: 6
+- token: yaml_version
+  stream: "1.2"
+  span:
+    start:
+      index: 6
+      line: 0
+      column: 6
+    end:
+      index: 9
+      line: 0
+      column: 9
+- value:
+    version: "1.2"
+    tags: {}
+- remainder: "\n---\nfoo"
+  span:
+    start:
+      index: 9
+      line: 0
+      column: 9
+    end:
+      index: 17
+      line: 2
+      column: 3
+

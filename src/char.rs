@@ -40,6 +40,57 @@ pub(super) fn word(ch: char) -> bool {
     ch.is_ascii_alphanumeric() || ch == '-'
 }
 
+pub(super) fn uri(ch: char) -> bool {
+    word(ch)
+        || matches!(
+            ch,
+            '#' | ';'
+                | '/'
+                | '?'
+                | ':'
+                | '@'
+                | '&'
+                | '='
+                | '+'
+                | '$'
+                | ','
+                | '_'
+                | '.'
+                | '!'
+                | '~'
+                | '*'
+                | '\''
+                | '('
+                | ')'
+                | '['
+                | ']'
+        )
+}
+
+pub(super) fn tag(ch: char) -> bool {
+    word(ch)
+        || matches!(
+            ch,
+            '#' | ';'
+                | '/'
+                | '?'
+                | ':'
+                | '@'
+                | '&'
+                | '='
+                | '+'
+                | '$'
+                | '_'
+                | '.'
+                | '!'
+                | '~'
+                | '*'
+                | '\''
+                | '('
+                | ')'
+        )
+}
+
 pub(super) fn dec_digit(ch: char) -> bool {
     ch.is_ascii_digit()
 }
