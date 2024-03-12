@@ -1,0 +1,53 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix, \"%FOO \")"
+---
+- token: directive
+  stream: "%"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
+- token: directive_name
+  stream: FOO
+  span:
+    start:
+      index: 1
+      line: 0
+      column: 1
+    end:
+      index: 4
+      line: 0
+      column: 4
+- severity: warning
+  message: "unknown directive 'FOO'"
+  span:
+    start:
+      index: 1
+      line: 0
+      column: 1
+    end:
+      index: 4
+      line: 0
+      column: 4
+  stream: FOO
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 4
+      line: 0
+      column: 4
+    end:
+      index: 5
+      line: 0
+      column: 5
+- value:
+    version: ~
+    tags: {}
+

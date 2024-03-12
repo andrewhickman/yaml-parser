@@ -1,0 +1,108 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix, \"%FOO a b# comment\")"
+---
+- token: directive
+  stream: "%"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
+- token: directive_name
+  stream: FOO
+  span:
+    start:
+      index: 1
+      line: 0
+      column: 1
+    end:
+      index: 4
+      line: 0
+      column: 4
+- severity: warning
+  message: "unknown directive 'FOO'"
+  span:
+    start:
+      index: 1
+      line: 0
+      column: 1
+    end:
+      index: 4
+      line: 0
+      column: 4
+  stream: FOO
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 4
+      line: 0
+      column: 4
+    end:
+      index: 5
+      line: 0
+      column: 5
+- token: directive_parameter
+  stream: a
+  span:
+    start:
+      index: 5
+      line: 0
+      column: 5
+    end:
+      index: 6
+      line: 0
+      column: 6
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 6
+      line: 0
+      column: 6
+    end:
+      index: 7
+      line: 0
+      column: 7
+- token: directive_parameter
+  stream: "b#"
+  span:
+    start:
+      index: 7
+      line: 0
+      column: 7
+    end:
+      index: 9
+      line: 0
+      column: 9
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 9
+      line: 0
+      column: 9
+    end:
+      index: 10
+      line: 0
+      column: 10
+- token: directive_parameter
+  stream: comment
+  span:
+    start:
+      index: 10
+      line: 0
+      column: 10
+    end:
+      index: 17
+      line: 0
+      column: 17
+- value:
+    version: ~
+    tags: {}
+

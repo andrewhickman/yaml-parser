@@ -153,3 +153,13 @@ fn test_tag_directive() {
         "%TAG !app! tag:example.com,2000:app/\n%TAG !app! tag:example.com,2000:app2"
     ));
 }
+
+#[test]
+fn test_reserved_directive() {
+    assert_yaml_snapshot!(parse(prefix, "%FOO"));
+    assert_yaml_snapshot!(parse(prefix, "%FOO "));
+    assert_yaml_snapshot!(parse(prefix, "%FOO\n"));
+    assert_yaml_snapshot!(parse(prefix, "%FOO a b c"));
+    assert_yaml_snapshot!(parse(prefix, "%FOO a # comment"));
+    assert_yaml_snapshot!(parse(prefix, "%FOO a b# comment"));
+}
