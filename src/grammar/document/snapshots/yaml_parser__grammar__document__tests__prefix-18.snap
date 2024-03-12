@@ -1,0 +1,230 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix,\n    \"\\u{feff}%YAML 1.2\\n%TAG !yaml! tag:yaml.org,2002:\\r\\n%FOO bar baz\")"
+---
+- token: byte_order_mark
+  stream: ﻿
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 3
+      line: 0
+      column: 3
+- token: directive
+  stream: "%"
+  span:
+    start:
+      index: 3
+      line: 0
+      column: 3
+    end:
+      index: 4
+      line: 0
+      column: 4
+- token: directive_name
+  stream: YAML
+  span:
+    start:
+      index: 4
+      line: 0
+      column: 4
+    end:
+      index: 8
+      line: 0
+      column: 8
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 8
+      line: 0
+      column: 8
+    end:
+      index: 9
+      line: 0
+      column: 9
+- token: yaml_version
+  stream: "1.2"
+  span:
+    start:
+      index: 9
+      line: 0
+      column: 9
+    end:
+      index: 12
+      line: 0
+      column: 12
+- token: break
+  stream: "\n"
+  span:
+    start:
+      index: 12
+      line: 0
+      column: 12
+    end:
+      index: 13
+      line: 1
+      column: 0
+- token: directive
+  stream: "%"
+  span:
+    start:
+      index: 13
+      line: 1
+      column: 0
+    end:
+      index: 14
+      line: 1
+      column: 1
+- token: directive_name
+  stream: TAG
+  span:
+    start:
+      index: 14
+      line: 1
+      column: 1
+    end:
+      index: 17
+      line: 1
+      column: 4
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 17
+      line: 1
+      column: 4
+    end:
+      index: 18
+      line: 1
+      column: 5
+- token: tag_handle
+  stream: "!yaml!"
+  span:
+    start:
+      index: 18
+      line: 1
+      column: 5
+    end:
+      index: 24
+      line: 1
+      column: 11
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 24
+      line: 1
+      column: 11
+    end:
+      index: 25
+      line: 1
+      column: 12
+- token: tag_prefix
+  stream: "tag:yaml.org,2002:"
+  span:
+    start:
+      index: 25
+      line: 1
+      column: 12
+    end:
+      index: 43
+      line: 1
+      column: 30
+- token: break
+  stream: "\r\n"
+  span:
+    start:
+      index: 43
+      line: 1
+      column: 30
+    end:
+      index: 45
+      line: 2
+      column: 0
+- token: directive
+  stream: "%"
+  span:
+    start:
+      index: 45
+      line: 2
+      column: 0
+    end:
+      index: 46
+      line: 2
+      column: 1
+- token: directive_name
+  stream: FOO
+  span:
+    start:
+      index: 46
+      line: 2
+      column: 1
+    end:
+      index: 49
+      line: 2
+      column: 4
+- severity: warning
+  message: "unknown directive 'FOO'"
+  span:
+    start:
+      index: 46
+      line: 2
+      column: 1
+    end:
+      index: 49
+      line: 2
+      column: 4
+  stream: FOO
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 49
+      line: 2
+      column: 4
+    end:
+      index: 50
+      line: 2
+      column: 5
+- token: directive_parameter
+  stream: bar
+  span:
+    start:
+      index: 50
+      line: 2
+      column: 5
+    end:
+      index: 53
+      line: 2
+      column: 8
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 53
+      line: 2
+      column: 8
+    end:
+      index: 54
+      line: 2
+      column: 9
+- token: directive_parameter
+  stream: baz
+  span:
+    start:
+      index: 54
+      line: 2
+      column: 9
+    end:
+      index: 57
+      line: 2
+      column: 12
+- value:
+    version: "1.2"
+    tags:
+      "!yaml!": "tag:yaml.org,2002:"
+

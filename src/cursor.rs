@@ -275,7 +275,7 @@ impl<'s> Cursor<'s> {
         } else if let Some(indent) = &mut self.indent {
             if ch == ' ' {
                 *indent += 1;
-            } else {
+            } else if !(ch == char::BYTE_ORDER_MARK && self.is_start_of_line()) {
                 self.indent = None;
             }
         }

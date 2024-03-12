@@ -152,8 +152,8 @@ impl fmt::Display for Diagnostic {
             DiagnosticKind::Expected(expected, Some(found)) => {
                 write!(f, "expected {expected}, but found '{found}'")
             }
-            DiagnosticKind::DirectiveAfterUnterminatedDocument => todo!(),
-            DiagnosticKind::DirectiveNotAtStartOfLine => todo!(),
+            DiagnosticKind::DirectiveAfterUnterminatedDocument => write!(f, "directives must be separated from the preceding document by an end of document marker '...'"),
+            DiagnosticKind::DirectiveNotAtStartOfLine => write!(f, "directives must be at the start of the line"),
             DiagnosticKind::UnknownDirective(name) => write!(f, "unknown directive '{name}'"),
             DiagnosticKind::DuplicateYamlDirective => {
                 write!(f, "a yaml version directive has already been specified")
