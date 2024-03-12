@@ -1,0 +1,75 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix, \"%TAG !\\0\")"
+---
+- token: directive
+  stream: "%"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
+- token: directive_name
+  stream: TAG
+  span:
+    start:
+      index: 1
+      line: 0
+      column: 1
+    end:
+      index: 4
+      line: 0
+      column: 4
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 4
+      line: 0
+      column: 4
+    end:
+      index: 5
+      line: 0
+      column: 5
+- token: tag_handle
+  stream: "!"
+  span:
+    start:
+      index: 5
+      line: 0
+      column: 5
+    end:
+      index: 6
+      line: 0
+      column: 6
+- token: error
+  stream: "\u0000"
+  span:
+    start:
+      index: 6
+      line: 0
+      column: 6
+    end:
+      index: 7
+      line: 0
+      column: 7
+- severity: error
+  message: "expected whitespace, but found non-printable character '\\0'"
+  span:
+    start:
+      index: 6
+      line: 0
+      column: 6
+    end:
+      index: 7
+      line: 0
+      column: 7
+  stream: "\u0000"
+- value:
+    version: ~
+    tags: {}
+

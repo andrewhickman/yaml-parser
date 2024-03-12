@@ -88,4 +88,21 @@ fn test_yaml_directive() {
 #[test]
 fn test_tag_directive() {
     assert_yaml_snapshot!(parse(prefix, "%TAG"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG "));
+    assert_yaml_snapshot!(parse(prefix, "%TAG\n"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG foo"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG !"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! "));
+    assert_yaml_snapshot!(parse(prefix, "%TAG !f"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG !f*"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG !f\0"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG !f! !"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG !! !"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG !"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! "));
+    assert_yaml_snapshot!(parse(prefix, "%TAG !\n"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG !*"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG !\u{feff}"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG !\0"));
+    assert_yaml_snapshot!(parse(prefix, "%TAG ! !"));
 }

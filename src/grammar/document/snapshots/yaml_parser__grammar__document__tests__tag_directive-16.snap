@@ -1,0 +1,75 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix, \"%TAG !\\u{feff}\")"
+---
+- token: directive
+  stream: "%"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
+- token: directive_name
+  stream: TAG
+  span:
+    start:
+      index: 1
+      line: 0
+      column: 1
+    end:
+      index: 4
+      line: 0
+      column: 4
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 4
+      line: 0
+      column: 4
+    end:
+      index: 5
+      line: 0
+      column: 5
+- token: tag_handle
+  stream: "!"
+  span:
+    start:
+      index: 5
+      line: 0
+      column: 5
+    end:
+      index: 6
+      line: 0
+      column: 6
+- token: error
+  stream: ﻿
+  span:
+    start:
+      index: 6
+      line: 0
+      column: 6
+    end:
+      index: 9
+      line: 0
+      column: 9
+- severity: error
+  message: "expected whitespace, but found '﻿'"
+  span:
+    start:
+      index: 6
+      line: 0
+      column: 6
+    end:
+      index: 9
+      line: 0
+      column: 9
+  stream: ﻿
+- value:
+    version: ~
+    tags: {}
+

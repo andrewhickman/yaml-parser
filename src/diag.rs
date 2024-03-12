@@ -182,6 +182,7 @@ impl fmt::Display for Expected {
             Expected::Token(Token::Break) => write!(f, "a line break"),
             Expected::Token(Token::YamlVersion) => write!(f, "a YAML version number"),
             Expected::Token(Token::TagHandle) => write!(f, "a tag handle"),
+            Expected::Token(Token::TagPrefix) => write!(f, "a tag prefix"),
             Expected::Token(tok) => unimplemented!("unexpected token {:?}", tok),
             Expected::Char(ch) => write!(f, "'{}'", ch),
             Expected::Printable => write!(f, "a printable character"),
