@@ -3,7 +3,7 @@ source: src/grammar/trivia/tests.rs
 expression: "parse_unseparated(trailing_lines, \"foo\")"
 ---
 - severity: error
-  message: "expected a line break, but found 'f'"
+  message: "expected whitespace or a line break, but found 'f'"
   span:
     start:
       index: 0

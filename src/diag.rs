@@ -56,6 +56,7 @@ pub(crate) enum Expected {
     TagInitial,
     TagChar,
     HexDigit,
+    TrailingLine,
 }
 
 struct PercentEncode(char);
@@ -198,6 +199,7 @@ impl fmt::Display for Expected {
             Expected::HexDigit => write!(f, "a hex digit (0-9, a-z or A-Z)"),
             Expected::Word => write!(f, "an alphanumeric character (a-z, A-Z, 0-9, or '-')"),
             Expected::TagInitial | Expected::TagChar => write!(f, "a valid tag character"),
+            Expected::TrailingLine => write!(f, "whitespace or a line break"),
         }
     }
 }

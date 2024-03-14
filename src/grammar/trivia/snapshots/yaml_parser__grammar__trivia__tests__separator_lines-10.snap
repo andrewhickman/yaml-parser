@@ -3,7 +3,7 @@ source: src/grammar/trivia/tests.rs
 expression: "parse_unseparated(trailing_lines, \"#one\\n#two\")"
 ---
 - severity: error
-  message: "expected a line break, but found '#'"
+  message: "expected whitespace or a line break, but found '#'"
   span:
     start:
       index: 0

@@ -81,7 +81,7 @@ expression: "parse(prefix,\n    \"%FOO bar invalid\\0 \\n%YAML 1.2\\n# yaml\\n%T
       line: 0
       column: 16
 - severity: error
-  message: "expected a line break, but found non-printable character '\\0'"
+  message: "expected whitespace or a line break, but found non-printable character '\\0'"
   span:
     start:
       index: 16

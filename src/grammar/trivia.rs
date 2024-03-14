@@ -51,10 +51,23 @@ pub(super) fn trailing_lines(
         && !try_non_content_break(cursor, receiver)?
         && !cursor.is_separated()
     {
-        return Err(Diagnostic::expected_token(Token::Break, cursor));
+        return Err(Diagnostic::expected(Expected::TrailingLine, cursor));
     }
 
     comment_lines(cursor, receiver)
+}
+
+pub(super) fn separator_lines(
+    cursor: &mut Cursor,
+    receiver: &mut (impl Receiver + ?Sized),
+) -> Result<(), Diagnostic> {
+    if try_separate_in_line(cursor, receiver)? {
+        todo!()
+    } else if try_non_content_break(cursor, receiver)? || cursor.is_end_of_input()? {
+        Ok(())
+    } else {
+        return Err(Diagnostic::expected_token(Token::Separator, cursor));
+    }
 }
 
 pub(super) fn comment_lines(
