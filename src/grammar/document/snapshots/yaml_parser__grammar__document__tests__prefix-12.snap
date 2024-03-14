@@ -1,6 +1,6 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"%FOO bar baz\\n# reserved\")"
+expression: "parse(prefix, \"%FOO bar baz\\n# reserved\\n---\")"
 ---
 - token: directive
   stream: "%"
@@ -102,6 +102,28 @@ expression: "parse(prefix, \"%FOO bar baz\\n# reserved\")"
       index: 23
       line: 1
       column: 10
+- token: break
+  stream: "\n"
+  span:
+    start:
+      index: 23
+      line: 1
+      column: 10
+    end:
+      index: 24
+      line: 2
+      column: 0
+- token: directives_end
+  stream: "---"
+  span:
+    start:
+      index: 24
+      line: 2
+      column: 0
+    end:
+      index: 27
+      line: 2
+      column: 3
 - value:
     version: ~
     tags: {}

@@ -1,0 +1,31 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix_unterminated, \"# comment\")"
+---
+- token: comment
+  stream: "# comment"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 9
+      line: 0
+      column: 9
+- severity: error
+  message: "documents must be separated by a marker line ('...' or '---')"
+  span:
+    start:
+      index: 9
+      line: 0
+      column: 9
+    end:
+      index: 9
+      line: 0
+      column: 9
+  stream: ""
+- value:
+    version: ~
+    tags: {}
+

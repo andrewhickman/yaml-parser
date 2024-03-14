@@ -40,6 +40,47 @@ pub(super) fn prefix<'s>(
 
     let mut document = Document::default();
 
+    let mut have_directives = cursor.is_char(char::DIRECTIVE)?;
+    if have_directives && !prev_terminated {
+        receiver.diagnostic(Diagnostic::new(
+            DiagnosticKind::DirectiveAfterUnterminatedDocument,
+            cursor.next_span(),
+        ));
+    }
+
+    if have_directives {
+        directives(cursor, receiver, &mut document)?;
+    }
+
+    if cursor.is_str("---")? {
+        let is_start_of_line = cursor.is_start_of_line();
+        let followed_by_whitespace = matches!(cursor.peek_nth(3)?, None | Some('\r' | '\n' | '\t' | ' '));
+
+        if (is_start_of_line && followed_by_whitespace) || have_directives || !prev_terminated {
+            cursor.eat_str("---")?;
+            let span = cursor.token();
+            receiver.token(Token::DirectivesEnd, span);
+
+            if !is_start_of_line {
+                receiver.diagnostic(Diagnostic::new(DiagnosticKind::DirectivesEndNotAtStartOfLine, span));
+            } else if !followed_by_whitespace {
+                receiver.diagnostic(Diagnostic::new(DiagnosticKind::DirectivesEndNotFollowedByWhitespace, span));
+            }
+        }
+    } else if have_directives {
+        receiver.diagnostic(Diagnostic::new(DiagnosticKind::MissingDirectivesEndAfterDirective, cursor.empty_span()));
+    } else if !prev_terminated {
+        receiver.diagnostic(Diagnostic::new(DiagnosticKind::MissingDirectivesEndAfterUnterminatedDocument, cursor.empty_span()));
+    }
+
+    Ok(document)
+}
+
+fn directives<'s>(
+    cursor: &mut Cursor<'s>,
+    receiver: &mut (impl Receiver + ?Sized),
+    document: &mut Document<'s>,
+) -> Result<(), Diagnostic> {
     while cursor.is_char(char::DIRECTIVE)? {
         if !cursor.is_start_of_line() {
             receiver.diagnostic(Diagnostic::new(
@@ -47,16 +88,10 @@ pub(super) fn prefix<'s>(
                 cursor.next_span(),
             ));
         }
-        if !prev_terminated {
-            receiver.diagnostic(Diagnostic::new(
-                DiagnosticKind::DirectiveAfterUnterminatedDocument,
-                cursor.next_span(),
-            ));
-        }
 
         token_char(cursor, receiver, Token::Directive, char::DIRECTIVE)?;
 
-        if let Err(diag) = directive(cursor, receiver, &mut document) {
+        if let Err(diag) = directive(cursor, receiver, document) {
             recover(cursor, receiver, diag, |cursor| {
                 Ok(cursor.is(char::r#break)?
                     || (cursor.is_separated() && cursor.is_char(char::COMMENT)?))
@@ -66,7 +101,7 @@ pub(super) fn prefix<'s>(
         trivia::trailing_lines(cursor, receiver)?;
     }
 
-    Ok(document)
+    Ok(())
 }
 
 fn directive<'s>(

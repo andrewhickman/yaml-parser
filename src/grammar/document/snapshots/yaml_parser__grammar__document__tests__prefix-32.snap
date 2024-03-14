@@ -1,6 +1,6 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"%YAML 1.2\\n---\")"
+expression: "parse(prefix, \"%YAML 1.2---foo\")"
 ---
 - token: directive
   stream: "%"
@@ -35,19 +35,19 @@ expression: "parse(prefix, \"%YAML 1.2\\n---\")"
       index: 6
       line: 0
       column: 6
-- token: yaml_version
-  stream: "1.2"
+- token: error
+  stream: 1.2---foo
   span:
     start:
       index: 6
       line: 0
       column: 6
     end:
-      index: 9
+      index: 15
       line: 0
-      column: 9
-- token: break
-  stream: "\n"
+      column: 15
+- severity: error
+  message: "expected a decimal digit (0-9), but found '-'"
   span:
     start:
       index: 9
@@ -55,20 +55,22 @@ expression: "parse(prefix, \"%YAML 1.2\\n---\")"
       column: 9
     end:
       index: 10
-      line: 1
-      column: 0
-- token: directives_end
-  stream: "---"
+      line: 0
+      column: 10
+  stream: "-"
+- severity: error
+  message: "a directives end marker line '---' is required after directives"
   span:
     start:
-      index: 10
-      line: 1
-      column: 0
+      index: 15
+      line: 0
+      column: 15
     end:
-      index: 13
-      line: 1
-      column: 3
+      index: 15
+      line: 0
+      column: 15
+  stream: ""
 - value:
-    version: "1.2"
+    version: ~
     tags: {}
 

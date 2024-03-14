@@ -1,0 +1,40 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix_unterminated, \"\\u{feff}--- foo\")"
+---
+- token: byte_order_mark
+  stream: ﻿
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 3
+      line: 0
+      column: 3
+- token: directives_end
+  stream: "---"
+  span:
+    start:
+      index: 3
+      line: 0
+      column: 3
+    end:
+      index: 6
+      line: 0
+      column: 6
+- value:
+    version: ~
+    tags: {}
+- remainder: " foo"
+  span:
+    start:
+      index: 6
+      line: 0
+      column: 6
+    end:
+      index: 10
+      line: 0
+      column: 10
+

@@ -1,6 +1,6 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"%YAML 1.2\\n---\")"
+expression: "parse(prefix, \"%YAML 1.2\\n---foo\")"
 ---
 - token: directive
   stream: "%"
@@ -68,7 +68,29 @@ expression: "parse(prefix, \"%YAML 1.2\\n---\")"
       index: 13
       line: 1
       column: 3
+- severity: error
+  message: the directives end marker must be followed by a line break or space
+  span:
+    start:
+      index: 10
+      line: 1
+      column: 0
+    end:
+      index: 13
+      line: 1
+      column: 3
+  stream: "---"
 - value:
     version: "1.2"
     tags: {}
+- remainder: foo
+  span:
+    start:
+      index: 13
+      line: 1
+      column: 3
+    end:
+      index: 16
+      line: 1
+      column: 6
 

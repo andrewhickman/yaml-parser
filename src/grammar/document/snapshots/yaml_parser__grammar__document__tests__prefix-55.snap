@@ -1,0 +1,31 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix_unterminated, \" \")"
+---
+- token: separator
+  stream: " "
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
+- severity: error
+  message: "documents must be separated by a marker line ('...' or '---')"
+  span:
+    start:
+      index: 1
+      line: 0
+      column: 1
+    end:
+      index: 1
+      line: 0
+      column: 1
+  stream: ""
+- value:
+    version: ~
+    tags: {}
+

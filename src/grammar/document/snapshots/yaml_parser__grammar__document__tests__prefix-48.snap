@@ -1,7 +1,19 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"%YAML 1.2\\n---\")"
+expression: "parse(prefix_unterminated, \"%YAML 1.2\\nfoo\")"
 ---
+- severity: error
+  message: "directives must be separated from the preceding document by an end of document marker '...'"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
+  stream: "%"
 - token: directive
   stream: "%"
   span:
@@ -57,8 +69,22 @@ expression: "parse(prefix, \"%YAML 1.2\\n---\")"
       index: 10
       line: 1
       column: 0
-- token: directives_end
-  stream: "---"
+- severity: error
+  message: "a directives end marker line '---' is required after directives"
+  span:
+    start:
+      index: 10
+      line: 1
+      column: 0
+    end:
+      index: 10
+      line: 1
+      column: 0
+  stream: ""
+- value:
+    version: "1.2"
+    tags: {}
+- remainder: foo
   span:
     start:
       index: 10
@@ -68,7 +94,4 @@ expression: "parse(prefix, \"%YAML 1.2\\n---\")"
       index: 13
       line: 1
       column: 3
-- value:
-    version: "1.2"
-    tags: {}
 

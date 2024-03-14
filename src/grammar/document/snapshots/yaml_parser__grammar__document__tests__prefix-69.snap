@@ -1,6 +1,6 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"%FOO bar baz\\n---\")"
+expression: "parse(prefix,\n    \"%FOO bar invalid\\0 \\n%YAML 1.2\\n# yaml\\n%TAG !yaml! tag:yaml.org,2002:\\n---\")"
 ---
 - token: directive
   stream: "%"
@@ -70,39 +70,36 @@ expression: "parse(prefix, \"%FOO bar baz\\n---\")"
       line: 0
       column: 9
 - token: directive_parameter
-  stream: baz
+  stream: invalid
   span:
     start:
       index: 9
       line: 0
       column: 9
     end:
-      index: 12
-      line: 0
-      column: 12
-- token: break
-  stream: "\n"
-  span:
-    start:
-      index: 12
-      line: 0
-      column: 12
-    end:
-      index: 13
-      line: 1
-      column: 0
-- token: directives_end
-  stream: "---"
-  span:
-    start:
-      index: 13
-      line: 1
-      column: 0
-    end:
       index: 16
-      line: 1
+      line: 0
+      column: 16
+- severity: error
+  message: "expected a line break, but found non-printable character '\\0'"
+  span:
+    start:
+      index: 16
+      line: 0
+      column: 16
+    end:
+      index: 17
+      line: 0
+      column: 17
+  stream: "\u0000"
+- remainder: "\u0000 \n%YAML 1.2\n# yaml\n%TAG !yaml! tag:yaml.org,2002:\n---"
+  span:
+    start:
+      index: 16
+      line: 0
+      column: 16
+    end:
+      index: 70
+      line: 4
       column: 3
-- value:
-    version: ~
-    tags: {}
 

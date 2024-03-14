@@ -1,85 +1,84 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"\\u{feff}%YAML 1.2\\n---\")"
+expression: "parse(prefix, \"%YAML 1.2\\n--- foo\")"
 ---
-- token: byte_order_mark
-  stream: ﻿
+- token: directive
+  stream: "%"
   span:
     start:
       index: 0
       line: 0
       column: 0
     end:
-      index: 3
+      index: 1
       line: 0
-      column: 3
-- token: directive
-  stream: "%"
-  span:
-    start:
-      index: 3
-      line: 0
-      column: 3
-    end:
-      index: 4
-      line: 0
-      column: 4
+      column: 1
 - token: directive_name
   stream: YAML
   span:
     start:
-      index: 4
+      index: 1
       line: 0
-      column: 4
+      column: 1
     end:
-      index: 8
+      index: 5
       line: 0
-      column: 8
+      column: 5
 - token: separator
   stream: " "
   span:
     start:
-      index: 8
+      index: 5
       line: 0
-      column: 8
+      column: 5
     end:
-      index: 9
+      index: 6
       line: 0
-      column: 9
+      column: 6
 - token: yaml_version
   stream: "1.2"
   span:
     start:
+      index: 6
+      line: 0
+      column: 6
+    end:
       index: 9
       line: 0
       column: 9
-    end:
-      index: 12
-      line: 0
-      column: 12
 - token: break
   stream: "\n"
   span:
     start:
-      index: 12
+      index: 9
       line: 0
-      column: 12
+      column: 9
     end:
-      index: 13
+      index: 10
       line: 1
       column: 0
 - token: directives_end
   stream: "---"
   span:
     start:
-      index: 13
+      index: 10
       line: 1
       column: 0
     end:
-      index: 16
+      index: 13
       line: 1
       column: 3
 - value:
     version: "1.2"
     tags: {}
+- remainder: " foo"
+  span:
+    start:
+      index: 13
+      line: 1
+      column: 3
+    end:
+      index: 17
+      line: 1
+      column: 7
 

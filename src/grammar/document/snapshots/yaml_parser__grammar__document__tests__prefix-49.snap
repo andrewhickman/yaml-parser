@@ -1,7 +1,19 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"%YAML 1.2 # yaml version\\n---\")"
+expression: "parse(prefix_unterminated, \"%YAML 1.2---\")"
 ---
+- severity: error
+  message: "directives must be separated from the preceding document by an end of document marker '...'"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
+  stream: "%"
 - token: directive
   stream: "%"
   span:
@@ -35,19 +47,19 @@ expression: "parse(prefix, \"%YAML 1.2 # yaml version\\n---\")"
       index: 6
       line: 0
       column: 6
-- token: yaml_version
-  stream: "1.2"
+- token: error
+  stream: 1.2---
   span:
     start:
       index: 6
       line: 0
       column: 6
     end:
-      index: 9
+      index: 12
       line: 0
-      column: 9
-- token: separator
-  stream: " "
+      column: 12
+- severity: error
+  message: "expected a decimal digit (0-9), but found '-'"
   span:
     start:
       index: 9
@@ -57,40 +69,20 @@ expression: "parse(prefix, \"%YAML 1.2 # yaml version\\n---\")"
       index: 10
       line: 0
       column: 10
-- token: comment
-  stream: "# yaml version"
+  stream: "-"
+- severity: error
+  message: "a directives end marker line '---' is required after directives"
   span:
     start:
-      index: 10
+      index: 12
       line: 0
-      column: 10
+      column: 12
     end:
-      index: 24
+      index: 12
       line: 0
-      column: 24
-- token: break
-  stream: "\n"
-  span:
-    start:
-      index: 24
-      line: 0
-      column: 24
-    end:
-      index: 25
-      line: 1
-      column: 0
-- token: directives_end
-  stream: "---"
-  span:
-    start:
-      index: 25
-      line: 1
-      column: 0
-    end:
-      index: 28
-      line: 1
-      column: 3
+      column: 12
+  stream: ""
 - value:
-    version: "1.2"
+    version: ~
     tags: {}
 

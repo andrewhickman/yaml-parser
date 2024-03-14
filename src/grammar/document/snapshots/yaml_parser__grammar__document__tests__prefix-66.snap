@@ -1,0 +1,62 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix_unterminated, \"\\u{feff}#comment\\n---\\nfoo\")"
+---
+- token: byte_order_mark
+  stream: ﻿
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 3
+      line: 0
+      column: 3
+- token: comment
+  stream: "#comment"
+  span:
+    start:
+      index: 3
+      line: 0
+      column: 3
+    end:
+      index: 11
+      line: 0
+      column: 11
+- token: break
+  stream: "\n"
+  span:
+    start:
+      index: 11
+      line: 0
+      column: 11
+    end:
+      index: 12
+      line: 1
+      column: 0
+- token: directives_end
+  stream: "---"
+  span:
+    start:
+      index: 12
+      line: 1
+      column: 0
+    end:
+      index: 15
+      line: 1
+      column: 3
+- value:
+    version: ~
+    tags: {}
+- remainder: "\nfoo"
+  span:
+    start:
+      index: 15
+      line: 1
+      column: 3
+    end:
+      index: 19
+      line: 2
+      column: 3
+

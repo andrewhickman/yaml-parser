@@ -1,6 +1,6 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"\\u{feff}%TAG !yaml! tag:yaml.org,2002:\")"
+expression: "parse(prefix, \"\\u{feff}%TAG !yaml! tag:yaml.org,2002:\\n---\")"
 ---
 - token: byte_order_mark
   stream: ﻿
@@ -79,6 +79,28 @@ expression: "parse(prefix, \"\\u{feff}%TAG !yaml! tag:yaml.org,2002:\")"
       index: 33
       line: 0
       column: 33
+- token: break
+  stream: "\n"
+  span:
+    start:
+      index: 33
+      line: 0
+      column: 33
+    end:
+      index: 34
+      line: 1
+      column: 0
+- token: directives_end
+  stream: "---"
+  span:
+    start:
+      index: 34
+      line: 1
+      column: 0
+    end:
+      index: 37
+      line: 1
+      column: 3
 - value:
     version: ~
     tags:

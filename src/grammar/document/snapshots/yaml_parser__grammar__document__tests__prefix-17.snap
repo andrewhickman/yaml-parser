@@ -1,6 +1,6 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"\\u{feff}%FOO bar baz\")"
+expression: "parse(prefix, \"\\u{feff}%FOO bar baz\\n---\")"
 ---
 - token: byte_order_mark
   stream: ﻿
@@ -91,6 +91,28 @@ expression: "parse(prefix, \"\\u{feff}%FOO bar baz\")"
       index: 15
       line: 0
       column: 15
+- token: break
+  stream: "\n"
+  span:
+    start:
+      index: 15
+      line: 0
+      column: 15
+    end:
+      index: 16
+      line: 1
+      column: 0
+- token: directives_end
+  stream: "---"
+  span:
+    start:
+      index: 16
+      line: 1
+      column: 0
+    end:
+      index: 19
+      line: 1
+      column: 3
 - value:
     version: ~
     tags: {}

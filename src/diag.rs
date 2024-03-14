@@ -40,6 +40,10 @@ pub(crate) enum DiagnosticKind {
     DuplicateTagDirective(Box<String>),
     UnexpectedDiagnosticParameter,
     InvalidPercentEscape,
+    MissingDirectivesEndAfterDirective,
+    MissingDirectivesEndAfterUnterminatedDocument,
+    DirectivesEndNotAtStartOfLine,
+    DirectivesEndNotFollowedByWhitespace,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -171,6 +175,10 @@ impl fmt::Display for Diagnostic {
                 write!(f, "unexpected directive parameter")
             }
             DiagnosticKind::InvalidPercentEscape => write!(f, "invalid percent escape"),
+            DiagnosticKind::DirectivesEndNotAtStartOfLine => write!(f, "the directives end marker must be at the start of the line"),
+            DiagnosticKind::DirectivesEndNotFollowedByWhitespace => write!(f, "the directives end marker must be followed by a line break or space"),
+            DiagnosticKind::MissingDirectivesEndAfterDirective => write!(f, "a directives end marker line '---' is required after directives"),
+            DiagnosticKind::MissingDirectivesEndAfterUnterminatedDocument => write!(f, "documents must be separated by a marker line ('...' or '---')"),
         }
     }
 }

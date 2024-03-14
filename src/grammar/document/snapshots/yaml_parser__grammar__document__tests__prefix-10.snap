@@ -1,6 +1,6 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"%TAG !yaml! tag:yaml.org,2002: # tag\\n# directive\")"
+expression: "parse(prefix, \"%TAG !yaml! tag:yaml.org,2002: # tag\\n# directive\\n---\")"
 ---
 - token: directive
   stream: "%"
@@ -112,6 +112,28 @@ expression: "parse(prefix, \"%TAG !yaml! tag:yaml.org,2002: # tag\\n# directive\
       index: 48
       line: 1
       column: 11
+- token: break
+  stream: "\n"
+  span:
+    start:
+      index: 48
+      line: 1
+      column: 11
+    end:
+      index: 49
+      line: 2
+      column: 0
+- token: directives_end
+  stream: "---"
+  span:
+    start:
+      index: 49
+      line: 2
+      column: 0
+    end:
+      index: 52
+      line: 2
+      column: 3
 - value:
     version: ~
     tags:
