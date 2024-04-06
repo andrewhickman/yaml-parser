@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use crate::{
     cursor::Cursor,
-    stream::{self, Stream},
+    stream::Stream,
     Diagnostic, Location, Receiver, Span, Token,
 };
 
@@ -126,16 +126,14 @@ where
     let res = f(&mut cursor, &mut receiver);
 
     let mut location = Location::default();
-    let mut prev_token = None;
     for item in &receiver.items {
-        if let &TestItem::Token { span, token, .. } = item {
+        if let &TestItem::Token { span , .. } = item {
             assert_eq!(
                 location, span.start,
                 "tokens don't cover string {:?}: {:#?}",
                 init_cursor, receiver.items
             );
             location = span.end;
-            prev_token = Some(token);
         }
     }
     assert_eq!(

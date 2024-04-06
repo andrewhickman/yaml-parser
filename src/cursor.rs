@@ -84,7 +84,7 @@ impl<'s> Cursor<'s> {
     }
 
     #[cfg(test)]
-    pub(crate) fn with_stream(mut self, stream: Stream<'_>) -> Cursor<'_> {
+    pub(crate) fn with_stream(self, stream: Stream<'_>) -> Cursor<'_> {
         Cursor {
             stream,
             line_number: 0,

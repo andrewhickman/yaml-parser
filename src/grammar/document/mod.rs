@@ -42,7 +42,7 @@ pub(super) fn prefix<'s>(
     let mut document = Document::default();
     let start = cursor.location();
 
-    let mut have_directives = cursor.is_char(char::DIRECTIVE)?;
+    let have_directives = cursor.is_char(char::DIRECTIVE)?;
     if have_directives {
         if !prev_terminated {
             receiver.diagnostic(Diagnostic::new(
@@ -92,7 +92,7 @@ pub(super) fn prefix<'s>(
 
     let span = cursor.span(start);
 
-    trivia::trailing_lines(cursor, receiver);
+    trivia::trailing_lines(cursor, receiver)?;
 
     Ok((document, span))
 }

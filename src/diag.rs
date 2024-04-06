@@ -5,7 +5,6 @@ use alloc::{boxed::Box, fmt, string::String};
 use crate::{
     char,
     cursor::{Cursor, Span},
-    stream::DecodeError,
     Encoding, Location, Token,
 };
 
