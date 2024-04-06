@@ -1,6 +1,5 @@
+use alloc::{borrow::Cow, string::String};
 use core::{fmt, ops::Range};
-
-use alloc::borrow::Cow;
 
 use crate::{cursor::Cursor, Diagnostic};
 

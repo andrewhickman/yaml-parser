@@ -256,7 +256,7 @@ impl<'s> Cursor<'s> {
     }
 
     pub(crate) fn peek_nth(&self, n: usize) -> Result<Option<char>, Diagnostic> {
-        #[cfg(debug_assertions)]
+        #[cfg(all(feature = "std", debug_assertions))]
         if self.peek_count.fetch_add(1, Ordering::Relaxed) > 1000 {
             panic!("infinite loop in parser");
         }
@@ -272,7 +272,7 @@ impl<'s> Cursor<'s> {
     }
 
     pub(crate) fn bump(&mut self) -> char {
-        #[cfg(debug_assertions)]
+        #[cfg(all(feature = "std", debug_assertions))]
         {
             *self.peek_count.get_mut() = 0;
         }

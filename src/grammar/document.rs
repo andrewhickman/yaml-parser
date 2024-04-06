@@ -2,7 +2,7 @@
 mod tests;
 
 use alloc::{
-    borrow::Cow,
+    borrow::{Cow, ToOwned},
     collections::{btree_map, BTreeMap},
 };
 

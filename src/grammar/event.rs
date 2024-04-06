@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 use crate::{
     char,
     cursor::Cursor,
@@ -19,9 +21,7 @@ pub(crate) fn event<'s>(
         State::Document { prev_terminated } => {
             document(cursor, receiver, buffer, states, prev_terminated)
         }
-        State::DocumentValue {
-            document
-        } => todo!(),
+        State::DocumentValue { document } => todo!(),
         State::DocumentEnd => todo!(),
         State::BlockSequence {
             indent,

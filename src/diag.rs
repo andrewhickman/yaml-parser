@@ -1,6 +1,6 @@
 #![allow(clippy::box_collection)]
 
-use core::fmt;
+use alloc::{boxed::Box, fmt, string::String};
 
 use crate::{
     char,

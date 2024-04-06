@@ -1,6 +1,6 @@
 use core::{fmt, iter::FusedIterator};
 
-use alloc::collections::VecDeque;
+use alloc::{collections::VecDeque, vec::Vec};
 
 use crate::{
     cursor::Cursor,
