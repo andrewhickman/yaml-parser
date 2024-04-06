@@ -92,7 +92,7 @@ pub(super) fn prefix<'s>(
 
     let span = cursor.span(start);
 
-    trivia::comment_lines(cursor, receiver);
+    trivia::trailing_lines(cursor, receiver);
 
     Ok((document, span))
 }

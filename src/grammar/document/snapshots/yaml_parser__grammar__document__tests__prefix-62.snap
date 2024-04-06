@@ -24,16 +24,27 @@ expression: "parse(prefix_unterminated, \"\\u{feff}---\\nfoo\")"
       index: 6
       line: 0
       column: 6
-- value:
-    explicit: true
-    version: ~
-    tags: {}
-- remainder: "\nfoo"
+- token: break
+  stream: "\n"
   span:
     start:
       index: 6
       line: 0
       column: 6
+    end:
+      index: 7
+      line: 1
+      column: 0
+- value:
+    explicit: true
+    version: ~
+    tags: {}
+- remainder: foo
+  span:
+    start:
+      index: 7
+      line: 1
+      column: 0
     end:
       index: 10
       line: 1

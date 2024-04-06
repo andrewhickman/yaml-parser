@@ -36,16 +36,27 @@ expression: "parse(prefix_unterminated, \" ---\\nfoo\")"
       line: 0
       column: 4
   stream: "---"
-- value:
-    explicit: true
-    version: ~
-    tags: {}
-- remainder: "\nfoo"
+- token: break
+  stream: "\n"
   span:
     start:
       index: 4
       line: 0
       column: 4
+    end:
+      index: 5
+      line: 1
+      column: 0
+- value:
+    explicit: true
+    version: ~
+    tags: {}
+- remainder: foo
+  span:
+    start:
+      index: 5
+      line: 1
+      column: 0
     end:
       index: 8
       line: 1
