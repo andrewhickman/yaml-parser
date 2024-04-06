@@ -39,21 +39,27 @@ fn try_break(cursor: &mut Cursor) -> Result<bool, Diagnostic> {
     }
 }
 
-pub(super) fn trailing_lines(
+pub(super) fn trailing_line(
     cursor: &mut Cursor,
     receiver: &mut (impl Receiver + ?Sized),
 ) -> Result<(), Diagnostic> {
     if try_separate_in_line(cursor, receiver)? && cursor.is_char(char::COMMENT)? {
         comment_text(cursor, receiver)?;
-    }
-
-    if !cursor.is_end_of_input()?
+    } else if !cursor.is_end_of_input()?
         && !try_non_content_break(cursor, receiver)?
         && !cursor.is_separated()
     {
         return Err(Diagnostic::expected(Expected::TrailingLine, cursor));
     }
 
+    Ok(())
+}
+
+pub(super) fn trailing_lines(
+    cursor: &mut Cursor,
+    receiver: &mut (impl Receiver + ?Sized),
+) -> Result<(), Diagnostic> {
+    trailing_line(cursor, receiver)?;
     comment_lines(cursor, receiver)
 }
 

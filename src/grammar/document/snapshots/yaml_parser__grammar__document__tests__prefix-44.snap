@@ -36,6 +36,18 @@ expression: "parse(prefix_unterminated, \" ---foo\")"
       line: 0
       column: 4
   stream: "---"
+- severity: error
+  message: a directives end marker must be followed by a line break or space
+  span:
+    start:
+      index: 1
+      line: 0
+      column: 1
+    end:
+      index: 4
+      line: 0
+      column: 4
+  stream: "---"
 - value:
     explicit: true
     version: ~

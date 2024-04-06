@@ -16,29 +16,15 @@ pub(crate) fn event<'s>(
     let res = match states.pop()? {
         State::Error(err) => Err(err),
         State::Stream => stream(cursor, states),
-        State::Document { prev_terminated } => {
-            document(cursor, receiver, states, prev_terminated)
-        }
+        State::Document { prev_terminated } => document(cursor, receiver, states, prev_terminated),
         State::DocumentValue { .. } => todo!(),
         State::DocumentEnd => todo!(),
-        State::BlockSequence {
-            ..
-        } => todo!(),
-        State::FlowSequence {
-            ..
-        } => todo!(),
-        State::BlockMapping {
-            ..
-        } => todo!(),
-        State::FlowMapping {
-            ..
-        } => todo!(),
-        State::BlockMappingValue {
-            ..
-        } => todo!(),
-        State::FlowMappingValue {
-            ..
-        } => todo!(),
+        State::BlockSequence { .. } => todo!(),
+        State::FlowSequence { .. } => todo!(),
+        State::BlockMapping { .. } => todo!(),
+        State::FlowMapping { .. } => todo!(),
+        State::BlockMappingValue { .. } => todo!(),
+        State::FlowMappingValue { .. } => todo!(),
         State::FlowPair { .. } => todo!(),
         State::FlowPairEnd { .. } => todo!(),
     };

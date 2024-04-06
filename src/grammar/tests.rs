@@ -2,11 +2,7 @@ use core::fmt;
 
 use serde::Serialize;
 
-use crate::{
-    cursor::Cursor,
-    stream::Stream,
-    Diagnostic, Location, Receiver, Span, Token,
-};
+use crate::{cursor::Cursor, stream::Stream, Diagnostic, Location, Receiver, Span, Token};
 
 struct TestReceiver<'s, T> {
     stream: Option<&'s str>,
@@ -127,7 +123,7 @@ where
 
     let mut location = Location::default();
     for item in &receiver.items {
-        if let &TestItem::Token { span , .. } = item {
+        if let &TestItem::Token { span, .. } = item {
             assert_eq!(
                 location, span.start,
                 "tokens don't cover string {:?}: {:#?}",

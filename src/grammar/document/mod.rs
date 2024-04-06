@@ -15,7 +15,10 @@ use crate::{
     Diagnostic, Receiver, Span, Token,
 };
 
-use super::{trivia, try_token_char};
+use super::{
+    trivia::{self, trailing_line},
+    try_token_char,
+};
 
 #[derive(Clone, Debug, Default)]
 #[cfg_attr(test, derive(serde::Serialize), serde(rename_all = "lowercase"))]
@@ -69,7 +72,11 @@ pub(super) fn prefix<'s>(
                     DiagnosticKind::DirectivesEndNotAtStartOfLine,
                     span,
                 ));
-            } else if !followed_by_whitespace {
+            }
+
+            if followed_by_whitespace {
+                trailing_line(cursor, receiver)?;
+            } else {
                 receiver.diagnostic(Diagnostic::new(
                     DiagnosticKind::DirectivesEndNotFollowedByWhitespace,
                     span,
@@ -92,7 +99,7 @@ pub(super) fn prefix<'s>(
 
     let span = cursor.span(start);
 
-    trivia::trailing_lines(cursor, receiver)?;
+    trivia::comment_lines(cursor, receiver)?;
 
     Ok((document, span))
 }
