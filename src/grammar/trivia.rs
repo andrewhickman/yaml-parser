@@ -3,7 +3,7 @@ mod tests;
 
 use crate::{char, cursor::Cursor, diag::Expected, Diagnostic, Receiver, Span, Token};
 
-use super::recover;
+use super::{lookahead, recover};
 
 pub(super) fn try_non_content_break(
     cursor: &mut Cursor,
@@ -43,6 +43,62 @@ pub(super) fn trailing_lines(
     cursor: &mut Cursor,
     receiver: &mut (impl Receiver + ?Sized),
 ) -> Result<(), Diagnostic> {
+    trailing_line(cursor, receiver)?;
+    comment_lines(cursor, receiver)
+}
+
+pub(super) fn separator_lines(
+    cursor: &mut Cursor,
+    receiver: &mut (impl Receiver + ?Sized),
+) -> Result<(), Diagnostic> {
+    if !cursor.is_start_of_line() {
+        trailing_line(cursor, receiver)?;
+    }
+
+    comment_lines(cursor, receiver)
+}
+
+fn try_comment_line(
+    cursor: &mut Cursor,
+    receiver: &mut (impl Receiver + ?Sized),
+) -> Result<bool, Diagnostic> {
+    if !cursor.is(char::space)? && !cursor.is(char::r#break)? && !cursor.is_char(char::COMMENT)? {
+        return Ok(false);
+    }
+
+    cursor.eat_indent();
+
+    if cursor.is_char(char::COMMENT)?
+        || cursor.is(char::r#break)?
+        || cursor.is_end_of_input()?
+        || (cursor.is_char('\t')? && lookahead(cursor, peek_is_comment_line)?)
+    {
+        let separator_span = cursor.token();
+        if !separator_span.is_empty() {
+            receiver.token(Token::Separator, separator_span);
+        }
+
+        if cursor.is_char(char::COMMENT)? {
+            comment_text(cursor, receiver)?;
+        } else if !cursor.is_end_of_input()? {
+            non_content_break(cursor, receiver)?;
+        }
+
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
+fn peek_is_comment_line(cursor: &mut Cursor) -> Result<bool, Diagnostic> {
+    cursor.eat_while(char::space)?;
+    Ok(cursor.is_char(char::COMMENT)? || cursor.is(char::r#break)? || cursor.is_end_of_input()?)
+}
+
+pub(super) fn trailing_line(
+    cursor: &mut Cursor,
+    receiver: &mut (impl Receiver + ?Sized),
+) -> Result<(), Diagnostic> {
     if try_separate_in_line(cursor, receiver)? && cursor.is_char(char::COMMENT)? {
         comment_text(cursor, receiver)?;
     }
@@ -54,34 +110,14 @@ pub(super) fn trailing_lines(
         return Err(Diagnostic::expected(Expected::TrailingLine, cursor));
     }
 
-    comment_lines(cursor, receiver)
-}
-
-pub(super) fn separator_lines(
-    cursor: &mut Cursor,
-    receiver: &mut (impl Receiver + ?Sized),
-) -> Result<(), Diagnostic> {
-    if try_separate_in_line(cursor, receiver)? {
-        todo!()
-    } else if try_non_content_break(cursor, receiver)? || cursor.is_end_of_input()? {
-        Ok(())
-    } else {
-        return Err(Diagnostic::expected_token(Token::Separator, cursor));
-    }
+    Ok(())
 }
 
 pub(super) fn comment_lines(
     cursor: &mut Cursor,
     receiver: &mut (impl Receiver + ?Sized),
 ) -> Result<(), Diagnostic> {
-    while try_separate_in_line(cursor, receiver)? {
-        if cursor.is_char(char::COMMENT)? {
-            comment_text(cursor, receiver)?;
-        } else if !try_non_content_break(cursor, receiver)? || cursor.is_end_of_input()? {
-            break;
-        }
-    }
-
+    while try_comment_line(cursor, receiver)? {}
     Ok(())
 }
 

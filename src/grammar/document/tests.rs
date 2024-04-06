@@ -122,6 +122,18 @@ fn test_prefix() {
         prefix,
         "%FOO bar invalid\0 \n%YAML 1.2\n# yaml\n%TAG !yaml! tag:yaml.org,2002:\n---"
     ));
+    assert_yaml_snapshot!(parse(prefix, "foo"));
+    assert_yaml_snapshot!(parse(prefix, " foo"));
+    assert_yaml_snapshot!(parse(prefix, "\tfoo"));
+    assert_yaml_snapshot!(parse(prefix, "\nfoo"));
+    assert_yaml_snapshot!(parse(prefix, "\n foo"));
+    assert_yaml_snapshot!(parse(prefix, "\n\tfoo"));
+    assert_yaml_snapshot!(parse(prefix_unterminated, "foo"));
+    assert_yaml_snapshot!(parse(prefix_unterminated, " foo"));
+    assert_yaml_snapshot!(parse(prefix_unterminated, "\tfoo"));
+    assert_yaml_snapshot!(parse(prefix_unterminated, "\nfoo"));
+    assert_yaml_snapshot!(parse(prefix_unterminated, "\n foo"));
+    assert_yaml_snapshot!(parse(prefix_unterminated, "\n\tfoo"));
 }
 
 #[test]

@@ -117,6 +117,19 @@ fn token(
     Ok(span)
 }
 
+fn lookahead(
+    cursor: &mut Cursor,
+    pred: impl Fn(&mut Cursor) -> Result<bool, Diagnostic>,
+) -> Result<bool, Diagnostic> {
+    let mut start = cursor.clone();
+    if pred(cursor)? {
+        Ok(true)
+    } else {
+        *cursor = start;
+        Ok(false)
+    }
+}
+
 fn recover(
     cursor: &mut Cursor,
     receiver: &mut (impl Receiver + ?Sized),

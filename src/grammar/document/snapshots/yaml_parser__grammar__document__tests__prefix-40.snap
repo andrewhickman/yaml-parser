@@ -13,15 +13,26 @@ expression: "parse(prefix_unterminated, \"---\\nfoo\")"
       index: 3
       line: 0
       column: 3
-- value:
-    version: ~
-    tags: {}
-- remainder: "\nfoo"
+- token: break
+  stream: "\n"
   span:
     start:
       index: 3
       line: 0
       column: 3
+    end:
+      index: 4
+      line: 1
+      column: 0
+- value:
+    version: ~
+    tags: {}
+- remainder: foo
+  span:
+    start:
+      index: 4
+      line: 1
+      column: 0
     end:
       index: 7
       line: 1

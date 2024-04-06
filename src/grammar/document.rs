@@ -41,37 +41,58 @@ pub(super) fn prefix<'s>(
     let mut document = Document::default();
 
     let mut have_directives = cursor.is_char(char::DIRECTIVE)?;
-    if have_directives && !prev_terminated {
-        receiver.diagnostic(Diagnostic::new(
-            DiagnosticKind::DirectiveAfterUnterminatedDocument,
-            cursor.next_span(),
-        ));
-    }
-
     if have_directives {
+        if !prev_terminated {
+            receiver.diagnostic(Diagnostic::new(
+                DiagnosticKind::DirectiveAfterUnterminatedDocument,
+                cursor.next_span(),
+            ));
+        }
+
         directives(cursor, receiver, &mut document)?;
     }
 
     if cursor.is_str("---")? {
         let is_start_of_line = cursor.is_start_of_line();
-        let followed_by_whitespace = matches!(cursor.peek_nth(3)?, None | Some('\r' | '\n' | '\t' | ' '));
+        let followed_by_whitespace =
+            matches!(cursor.peek_nth(3)?, None | Some('\r' | '\n' | '\t' | ' '));
 
         if (is_start_of_line && followed_by_whitespace) || have_directives || !prev_terminated {
+            if !cursor.is_token_boundary() {
+                receiver.token(Token::Separator, cursor.token());
+            }
+
             cursor.eat_str("---")?;
             let span = cursor.token();
             receiver.token(Token::DirectivesEnd, span);
 
             if !is_start_of_line {
-                receiver.diagnostic(Diagnostic::new(DiagnosticKind::DirectivesEndNotAtStartOfLine, span));
+                receiver.diagnostic(Diagnostic::new(
+                    DiagnosticKind::DirectivesEndNotAtStartOfLine,
+                    span,
+                ));
             } else if !followed_by_whitespace {
-                receiver.diagnostic(Diagnostic::new(DiagnosticKind::DirectivesEndNotFollowedByWhitespace, span));
+                receiver.diagnostic(Diagnostic::new(
+                    DiagnosticKind::DirectivesEndNotFollowedByWhitespace,
+                    span,
+                ));
             }
+        } else {
+            receiver.token(Token::Indent, cursor.token());
         }
     } else if have_directives {
-        receiver.diagnostic(Diagnostic::new(DiagnosticKind::MissingDirectivesEndAfterDirective, cursor.empty_span()));
+        receiver.diagnostic(Diagnostic::new(
+            DiagnosticKind::MissingDirectivesEndAfterDirective,
+            cursor.empty_span(),
+        ));
     } else if !prev_terminated {
-        receiver.diagnostic(Diagnostic::new(DiagnosticKind::MissingDirectivesEndAfterUnterminatedDocument, cursor.empty_span()));
+        receiver.diagnostic(Diagnostic::new(
+            DiagnosticKind::MissingDirectivesEndAfterUnterminatedDocument,
+            cursor.empty_span(),
+        ));
     }
+
+    trivia::separator_lines(cursor, receiver);
 
     Ok(document)
 }
@@ -82,6 +103,10 @@ fn directives<'s>(
     document: &mut Document<'s>,
 ) -> Result<(), Diagnostic> {
     while cursor.is_char(char::DIRECTIVE)? {
+        if !cursor.is_token_boundary() {
+            receiver.token(Token::Separator, cursor.token());
+        }
+
         if !cursor.is_start_of_line() {
             receiver.diagnostic(Diagnostic::new(
                 DiagnosticKind::DirectiveNotAtStartOfLine,

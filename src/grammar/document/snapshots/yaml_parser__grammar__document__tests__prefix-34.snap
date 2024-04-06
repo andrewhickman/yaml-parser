@@ -57,41 +57,29 @@ expression: "parse(prefix, \"%YAML 1.2\\n\\t---\")"
       index: 10
       line: 1
       column: 0
-- token: separator
-  stream: "\t"
+- severity: error
+  message: "a directives end marker line '---' is required after directives"
   span:
     start:
       index: 10
       line: 1
       column: 0
     end:
-      index: 11
+      index: 10
       line: 1
-      column: 1
-- token: directives_end
-  stream: "---"
-  span:
-    start:
-      index: 11
-      line: 1
-      column: 1
-    end:
-      index: 14
-      line: 1
-      column: 4
-- severity: error
-  message: the directives end marker must be at the start of the line
-  span:
-    start:
-      index: 11
-      line: 1
-      column: 1
-    end:
-      index: 14
-      line: 1
-      column: 4
-  stream: "---"
+      column: 0
+  stream: ""
 - value:
     version: "1.2"
     tags: {}
+- remainder: "\t---"
+  span:
+    start:
+      index: 10
+      line: 1
+      column: 0
+    end:
+      index: 14
+      line: 1
+      column: 4
 

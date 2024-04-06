@@ -46,15 +46,26 @@ expression: "parse(prefix_unterminated, \"\\u{feff}#comment\\n---\\nfoo\")"
       index: 15
       line: 1
       column: 3
-- value:
-    version: ~
-    tags: {}
-- remainder: "\nfoo"
+- token: break
+  stream: "\n"
   span:
     start:
       index: 15
       line: 1
       column: 3
+    end:
+      index: 16
+      line: 2
+      column: 0
+- value:
+    version: ~
+    tags: {}
+- remainder: foo
+  span:
+    start:
+      index: 16
+      line: 2
+      column: 0
     end:
       index: 19
       line: 2

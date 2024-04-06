@@ -68,15 +68,26 @@ expression: "parse(prefix, \"%YAML 1.2\\n--- foo\")"
       index: 13
       line: 1
       column: 3
-- value:
-    version: "1.2"
-    tags: {}
-- remainder: " foo"
+- token: separator
+  stream: " "
   span:
     start:
       index: 13
       line: 1
       column: 3
+    end:
+      index: 14
+      line: 1
+      column: 4
+- value:
+    version: "1.2"
+    tags: {}
+- remainder: foo
+  span:
+    start:
+      index: 14
+      line: 1
+      column: 4
     end:
       index: 17
       line: 1

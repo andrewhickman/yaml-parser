@@ -1,9 +1,9 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"---foo\")"
+expression: "parse(prefix_unterminated, \"foo\")"
 ---
-- token: indent
-  stream: ""
+- severity: error
+  message: "documents must be separated by a marker line ('...' or '---')"
   span:
     start:
       index: 0
@@ -13,17 +13,18 @@ expression: "parse(prefix, \"---foo\")"
       index: 0
       line: 0
       column: 0
+  stream: ""
 - value:
     version: ~
     tags: {}
-- remainder: "---foo"
+- remainder: foo
   span:
     start:
       index: 0
       line: 0
       column: 0
     end:
-      index: 6
+      index: 3
       line: 0
-      column: 6
+      column: 3
 
