@@ -36,6 +36,7 @@ expression: "parse(prefix_unterminated, \"\\u{feff}--- foo\")"
       line: 0
       column: 7
 - value:
+    explicit: true
     version: ~
     tags: {}
 - remainder: foo

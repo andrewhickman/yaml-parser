@@ -1,0 +1,41 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix, \"\\n\\tfoo\")"
+---
+- token: break
+  stream: "\n"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 1
+      column: 0
+- token: separator
+  stream: "\t"
+  span:
+    start:
+      index: 1
+      line: 1
+      column: 0
+    end:
+      index: 2
+      line: 1
+      column: 1
+- value:
+    explicit: false
+    version: ~
+    tags: {}
+- remainder: foo
+  span:
+    start:
+      index: 2
+      line: 1
+      column: 1
+    end:
+      index: 5
+      line: 1
+      column: 4
+

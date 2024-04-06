@@ -1,0 +1,31 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(prefix_unterminated, \"foo\")"
+---
+- severity: error
+  message: "documents must be separated by a marker line ('...' or '---')"
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 0
+      line: 0
+      column: 0
+  stream: ""
+- value:
+    explicit: false
+    version: ~
+    tags: {}
+- remainder: foo
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 3
+      line: 0
+      column: 3
+

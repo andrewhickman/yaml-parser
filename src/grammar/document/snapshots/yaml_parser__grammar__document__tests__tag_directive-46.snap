@@ -146,6 +146,7 @@ expression: "parse(directives,\n    \"%TAG ! tag:example.com,2000:app/\\n%TAG !a
       line: 1
       column: 36
 - value:
+    explicit: false
     version: ~
     tags:
       "!": "tag:example.com,2000:app/"

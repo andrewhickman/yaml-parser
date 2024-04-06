@@ -47,6 +47,7 @@ expression: "parse(directives, \"%YAML 1.2\")"
       line: 0
       column: 9
 - value:
+    explicit: false
     version: "1.2"
     tags: {}
 

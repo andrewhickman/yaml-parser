@@ -48,6 +48,7 @@ expression: "parse(prefix_unterminated, \" --- foo\")"
       line: 0
       column: 5
 - value:
+    explicit: true
     version: ~
     tags: {}
 - remainder: foo

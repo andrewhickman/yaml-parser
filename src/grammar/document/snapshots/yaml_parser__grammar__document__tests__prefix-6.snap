@@ -25,6 +25,7 @@ expression: "parse(prefix, \"\\u{feff}# comment\")"
       line: 0
       column: 12
 - value:
+    explicit: false
     version: ~
     tags: {}
 

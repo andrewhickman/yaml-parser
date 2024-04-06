@@ -83,6 +83,7 @@ expression: "parse(prefix_unterminated, \"%YAML 1.2---\")"
       column: 12
   stream: ""
 - value:
+    explicit: false
     version: ~
     tags: {}
 

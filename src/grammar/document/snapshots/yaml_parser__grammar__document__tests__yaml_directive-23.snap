@@ -125,6 +125,7 @@ expression: "parse(directives, \"%YAML 1.2 \\n%YAML 1.2\")"
       column: 9
   stream: YAML 1.2
 - value:
+    explicit: false
     version: "1.2"
     tags: {}
 

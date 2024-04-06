@@ -59,10 +59,6 @@ pub(super) fn prefix<'s>(
             matches!(cursor.peek_nth(3)?, None | Some('\r' | '\n' | '\t' | ' '));
 
         if (is_start_of_line && followed_by_whitespace) || have_directives || !prev_terminated {
-            if !cursor.is_token_boundary() {
-                receiver.token(Token::Separator, cursor.token());
-            }
-
             cursor.eat_str("---")?;
             let span = cursor.token();
             receiver.token(Token::DirectivesEnd, span);
@@ -93,11 +89,7 @@ pub(super) fn prefix<'s>(
         ));
     }
 
-    trivia::separator_lines(cursor, receiver);
-
-    if document.explicit || (!cursor.is_end_of_input()? && !cursor.is_end_of_document()?) {
-        receiver.token(Token::Indent, cursor.token());
-    }
+    trivia::comment_lines(cursor, receiver);
 
     Ok(document)
 }
@@ -108,10 +100,6 @@ fn directives<'s>(
     document: &mut Document<'s>,
 ) -> Result<(), Diagnostic> {
     while cursor.is_char(char::DIRECTIVE)? {
-        if !cursor.is_token_boundary() {
-            receiver.token(Token::Separator, cursor.token());
-        }
-
         if !cursor.is_start_of_line() {
             receiver.diagnostic(Diagnostic::new(
                 DiagnosticKind::DirectiveNotAtStartOfLine,

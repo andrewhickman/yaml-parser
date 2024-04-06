@@ -48,6 +48,7 @@ expression: "parse(directives, \"%FOO\\n\")"
       line: 1
       column: 0
 - value:
+    explicit: false
     version: ~
     tags: {}
 

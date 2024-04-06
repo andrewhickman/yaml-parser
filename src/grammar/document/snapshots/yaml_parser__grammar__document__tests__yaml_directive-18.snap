@@ -59,6 +59,7 @@ expression: "parse(directives, \"%YAML 0.0\")"
       column: 9
   stream: "0.0"
 - value:
+    explicit: false
     version: "0.0"
     tags: {}
 

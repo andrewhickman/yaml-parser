@@ -158,6 +158,7 @@ expression: "parse(directives,\n    \"%TAG !app! tag:example.com,2000:app/\\n%TA
       column: 10
   stream: "!app!"
 - value:
+    explicit: false
     version: ~
     tags:
       "!app!": "tag:example.com,2000:app/"

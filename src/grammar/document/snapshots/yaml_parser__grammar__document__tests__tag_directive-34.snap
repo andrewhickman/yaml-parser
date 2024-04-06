@@ -81,6 +81,7 @@ expression: "parse(directives, \"%TAG ! |\")"
       column: 8
   stream: "|"
 - value:
+    explicit: false
     version: ~
     tags: {}
 

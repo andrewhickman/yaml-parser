@@ -290,6 +290,7 @@ expression: "parse(prefix,\n    \"%YAML 1.2\\n# yaml\\n%TAG !yaml! tag:yaml.org,
       line: 5
       column: 3
 - value:
+    explicit: true
     version: "1.2"
     tags:
       "!yaml!": "tag:yaml.org,2002:"

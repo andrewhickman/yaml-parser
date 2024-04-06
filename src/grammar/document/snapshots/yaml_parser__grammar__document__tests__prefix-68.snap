@@ -247,6 +247,7 @@ expression: "parse(prefix, \"%TAG invalid\\n%YAML 1.2\\n# yaml\\n%FOO bar baz\\n
       line: 4
       column: 3
 - value:
+    explicit: true
     version: "1.2"
     tags: {}
 

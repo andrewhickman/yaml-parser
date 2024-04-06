@@ -104,6 +104,7 @@ expression: "parse(prefix_unterminated, \"%YAML 1.2\\n ---\")"
       column: 4
   stream: "---"
 - value:
+    explicit: true
     version: "1.2"
     tags: {}
 

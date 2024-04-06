@@ -25,6 +25,7 @@ expression: "parse(prefix_unterminated, \"--- foo\")"
       line: 0
       column: 4
 - value:
+    explicit: true
     version: ~
     tags: {}
 - remainder: foo

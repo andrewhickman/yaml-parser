@@ -37,6 +37,7 @@ expression: "parse(prefix_unterminated, \"#comment\\nfoo\")"
       column: 0
   stream: ""
 - value:
+    explicit: false
     version: ~
     tags: {}
 - remainder: foo

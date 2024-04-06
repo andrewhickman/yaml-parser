@@ -37,6 +37,7 @@ expression: "parse(directives, \"%FOO\")"
       column: 4
   stream: FOO
 - value:
+    explicit: false
     version: ~
     tags: {}
 

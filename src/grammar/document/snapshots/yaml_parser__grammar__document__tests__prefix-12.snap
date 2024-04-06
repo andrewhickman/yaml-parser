@@ -125,6 +125,7 @@ expression: "parse(prefix, \"%FOO bar baz\\n# reserved\\n---\")"
       line: 2
       column: 3
 - value:
+    explicit: true
     version: ~
     tags: {}
 

@@ -80,6 +80,7 @@ expression: "parse(prefix, \"%YAML 1.2\\n--- foo\")"
       line: 1
       column: 4
 - value:
+    explicit: true
     version: "1.2"
     tags: {}
 - remainder: foo

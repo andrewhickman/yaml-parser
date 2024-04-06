@@ -26,6 +26,7 @@ expression: "parse(prefix_unterminated, \"# comment\")"
       column: 9
   stream: ""
 - value:
+    explicit: false
     version: ~
     tags: {}
 

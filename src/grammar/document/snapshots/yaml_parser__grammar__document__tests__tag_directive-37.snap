@@ -92,6 +92,7 @@ expression: "parse(directives, \"%TAG ! % \")"
       line: 0
       column: 9
 - value:
+    explicit: false
     version: ~
     tags:
       "!": ""

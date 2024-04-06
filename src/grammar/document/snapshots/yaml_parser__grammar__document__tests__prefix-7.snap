@@ -80,6 +80,7 @@ expression: "parse(prefix, \"\\u{feff}  # comment\\n\\n#comment2\\n\")"
       line: 3
       column: 0
 - value:
+    explicit: false
     version: ~
     tags: {}
 

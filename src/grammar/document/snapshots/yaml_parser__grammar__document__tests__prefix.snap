@@ -3,6 +3,7 @@ source: src/grammar/document/tests.rs
 expression: "parse(prefix, \"\")"
 ---
 - value:
+    explicit: false
     version: ~
     tags: {}
 

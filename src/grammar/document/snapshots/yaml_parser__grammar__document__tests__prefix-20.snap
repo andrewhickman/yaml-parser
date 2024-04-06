@@ -14,6 +14,7 @@ expression: "parse(prefix, \"---\")"
       line: 0
       column: 3
 - value:
+    explicit: true
     version: ~
     tags: {}
 

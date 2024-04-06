@@ -81,6 +81,7 @@ expression: "parse(directives, \"%FOO a # comment\")"
       line: 0
       column: 16
 - value:
+    explicit: false
     version: ~
     tags: {}
 

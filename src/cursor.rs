@@ -191,18 +191,6 @@ impl<'s> Cursor<'s> {
         Ok(())
     }
 
-    pub(crate) fn eat_indent(&mut self) -> Result<(), Diagnostic> {
-        debug_assert!(
-            self.is_start_of_line(),
-            "eat_indent called in middle of line: {:?}",
-            self
-        );
-        while self.is_char(' ')? {
-            self.bump();
-        }
-        Ok(())
-    }
-
     pub(crate) fn next_is(&self, pred: impl Fn(char) -> bool) -> Result<bool, Diagnostic> {
         Ok(matches!(self.peek_next()?, Some(ch) if pred(ch)))
     }

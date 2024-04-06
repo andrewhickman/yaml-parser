@@ -2,7 +2,7 @@
 source: src/grammar/document/tests.rs
 expression: "parse(prefix, \" ---\\tfoo\")"
 ---
-- token: indent
+- token: separator
   stream: " "
   span:
     start:
@@ -14,6 +14,7 @@ expression: "parse(prefix, \" ---\\tfoo\")"
       line: 0
       column: 1
 - value:
+    explicit: false
     version: ~
     tags: {}
 - remainder: "---\tfoo"

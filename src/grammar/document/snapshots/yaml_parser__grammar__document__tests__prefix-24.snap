@@ -25,6 +25,7 @@ expression: "parse(prefix, \"---\\tfoo\")"
       line: 0
       column: 4
 - value:
+    explicit: true
     version: ~
     tags: {}
 - remainder: foo

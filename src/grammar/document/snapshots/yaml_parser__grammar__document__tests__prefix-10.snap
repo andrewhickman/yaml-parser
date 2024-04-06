@@ -135,6 +135,7 @@ expression: "parse(prefix, \"%TAG !yaml! tag:yaml.org,2002: # tag\\n# directive\
       line: 2
       column: 3
 - value:
+    explicit: true
     version: ~
     tags:
       "!yaml!": "tag:yaml.org,2002:"

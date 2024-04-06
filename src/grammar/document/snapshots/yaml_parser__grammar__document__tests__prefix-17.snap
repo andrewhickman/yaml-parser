@@ -114,6 +114,7 @@ expression: "parse(prefix, \"\\u{feff}%FOO bar baz\\n---\")"
       line: 1
       column: 3
 - value:
+    explicit: true
     version: ~
     tags: {}
 

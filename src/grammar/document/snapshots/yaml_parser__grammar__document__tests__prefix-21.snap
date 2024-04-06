@@ -2,18 +2,8 @@
 source: src/grammar/document/tests.rs
 expression: "parse(prefix, \"---foo\")"
 ---
-- token: indent
-  stream: ""
-  span:
-    start:
-      index: 0
-      line: 0
-      column: 0
-    end:
-      index: 0
-      line: 0
-      column: 0
 - value:
+    explicit: false
     version: ~
     tags: {}
 - remainder: "---foo"

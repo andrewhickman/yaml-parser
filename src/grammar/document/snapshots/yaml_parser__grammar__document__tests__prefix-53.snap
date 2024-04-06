@@ -15,6 +15,7 @@ expression: "parse(prefix_unterminated, \"\")"
       column: 0
   stream: ""
 - value:
+    explicit: false
     version: ~
     tags: {}
 

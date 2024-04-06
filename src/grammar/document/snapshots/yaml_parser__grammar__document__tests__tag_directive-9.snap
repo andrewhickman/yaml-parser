@@ -59,6 +59,7 @@ expression: "parse(directives, \"%TAG !f\\0\")"
       column: 8
   stream: "\u0000"
 - value:
+    explicit: false
     version: ~
     tags: {}
 
