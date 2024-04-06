@@ -184,6 +184,7 @@ fn ns_hex_digit<R: Receiver>(parser: &mut Parser<R>) -> Result<(), ()> {
 }
 
 fn s_indent<R: Receiver>(parser: &mut Parser<R>, n: i32) -> Result<(), ()> {
+    assert!(n >= 0);
     parser.token(Token::Indent, |parser| {
         for _ in 0..n {
             s_space(parser)?;
@@ -943,6 +944,8 @@ fn peek_flow_in_block<'s, R: Receiver>(
     n: i32,
     c: Context,
 ) -> Result<NodeKind<'s>, ()> {
+    assert!(n >= 0);
+
     s_separate(parser, n, c)?;
     let kind = peek_flow_node(parser, false, n, c)?;
     if matches!(kind, NodeKind::Scalar { .. } | NodeKind::Alias { .. }) {
@@ -957,6 +960,8 @@ fn peek_flow_node<'s, R: Receiver>(
     n: i32,
     c: Context,
 ) -> Result<NodeKind<'s>, ()> {
+    assert!(n >= 0);
+
     if parser.is_char(char::ALIAS) {
         let (value, span) = properties::c_ns_alias_node(parser)?;
         return Ok(NodeKind::Alias { value, span });
@@ -1381,6 +1386,8 @@ pub(super) fn event<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<(Even
             context,
             first,
         } => {
+            assert!(indent >= 0);
+
             assert!(
                 matches!(context, Context::BlockIn | Context::BlockOut),
                 "unexpected context {:?}",
@@ -1420,6 +1427,8 @@ pub(super) fn event<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<(Even
             context,
             first,
         } => {
+            assert!(indent >= 0);
+
             assert!(
                 matches!(
                     context,
@@ -1478,6 +1487,8 @@ pub(super) fn event<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<(Even
             context,
             first,
         } => {
+            assert!(indent >= 0);
+
             assert!(
                 matches!(context, Context::BlockIn | Context::BlockOut),
                 "unexpected context {:?}",
@@ -1534,6 +1545,8 @@ pub(super) fn event<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<(Even
             context,
             first,
         } => {
+            assert!(indent >= 0);
+
             assert!(
                 matches!(
                     context,
@@ -1616,6 +1629,8 @@ pub(super) fn event<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<(Even
             context,
             ..
         } => {
+            assert!(indent >= 0);
+
             assert!(
                 matches!(context, Context::BlockIn | Context::BlockOut),
                 "unexpected context {:?}",
@@ -1650,6 +1665,8 @@ pub(super) fn event<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<(Even
             context,
             ..
         } => {
+            assert!(indent >= 0);
+
             assert!(
                 matches!(context, Context::FlowIn | Context::FlowKey),
                 "unexpected context {:?}",
@@ -1693,6 +1710,7 @@ pub(super) fn event<'s, R: Receiver>(parser: &mut Parser<'s, R>) -> Result<(Even
             event_flow_node(parser, true, indent, context)
         }
         State::FlowPair { indent, context } => {
+            assert!(indent >= 0);
             assert!(
                 matches!(context, Context::FlowIn | Context::FlowOut),
                 "unexpected context {:?}",
