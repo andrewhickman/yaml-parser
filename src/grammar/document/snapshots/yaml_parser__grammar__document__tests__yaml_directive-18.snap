@@ -1,6 +1,6 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"%YAML 0.0\")"
+expression: "parse(directives, \"%YAML 0.0\")"
 ---
 - token: directive
   stream: "%"

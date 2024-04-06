@@ -192,7 +192,11 @@ impl<'s> Cursor<'s> {
     }
 
     pub(crate) fn eat_indent(&mut self) -> Result<(), Diagnostic> {
-        debug_assert!(self.is_start_of_line(), "eat_indent called in middle of line: {:?}", self);
+        debug_assert!(
+            self.is_start_of_line(),
+            "eat_indent called in middle of line: {:?}",
+            self
+        );
         while self.is_char(' ')? {
             self.bump();
         }

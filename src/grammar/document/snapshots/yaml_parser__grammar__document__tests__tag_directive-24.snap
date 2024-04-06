@@ -1,6 +1,6 @@
 ---
 source: src/grammar/document/tests.rs
-expression: "parse(prefix, \"%TAG !! !foo\")"
+expression: "parse(directives, \"%TAG !! !foo\")"
 ---
 - token: directive
   stream: "%"
