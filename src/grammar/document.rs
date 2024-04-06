@@ -20,6 +20,7 @@ use super::{trivia, try_token_char};
 #[derive(Debug, Default)]
 #[cfg_attr(test, derive(serde::Serialize), serde(rename_all = "lowercase"))]
 pub(super) struct Document<'s> {
+    explicit: bool,
     version: Option<Cow<'s, str>>,
     tags: BTreeMap<Cow<'s, str>, Cow<'s, str>>,
 }
@@ -77,8 +78,8 @@ pub(super) fn prefix<'s>(
                     span,
                 ));
             }
-        } else {
-            receiver.token(Token::Indent, cursor.token());
+
+            document.explicit = true;
         }
     } else if have_directives {
         receiver.diagnostic(Diagnostic::new(
@@ -93,6 +94,10 @@ pub(super) fn prefix<'s>(
     }
 
     trivia::separator_lines(cursor, receiver);
+
+    if document.explicit || (!cursor.is_end_of_input()? && !cursor.is_end_of_document()?) {
+        receiver.token(Token::Indent, cursor.token());
+    }
 
     Ok(document)
 }
