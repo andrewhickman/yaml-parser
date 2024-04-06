@@ -2,7 +2,10 @@ use alloc::vec::Vec;
 
 use crate::{
     cursor::Cursor,
-    grammar::{document, State},
+    grammar::{
+        document::{self, Document},
+        Context, State,
+    },
     parser::Buffer,
     Diagnostic, Event, Receiver, Span,
 };
@@ -17,7 +20,9 @@ pub(crate) fn event<'s>(
         State::Error(err) => Err(err),
         State::Stream => stream(cursor, states),
         State::Document { prev_terminated } => document(cursor, receiver, states, prev_terminated),
-        State::DocumentValue { .. } => todo!(),
+        State::DocumentValue { document } => {
+            document_value(cursor, receiver, buffer, states, &document)
+        }
         State::DocumentEnd => todo!(),
         State::BlockSequence { .. } => todo!(),
         State::FlowSequence { .. } => todo!(),
@@ -75,16 +80,29 @@ fn document_value<'s>(
     receiver: &mut (impl Receiver + ?Sized),
     buffer: &mut Buffer<'s>,
     states: &mut Vec<State<'s>>,
-    mut prev_terminated: bool,
+    document: &Document<'s>,
 ) -> Result<(Event<'s>, Span), Diagnostic> {
-    while !cursor.is_end_of_input()? {
-        let (document, span) = document::prefix(cursor, receiver, prev_terminated)?;
-        if document.explicit() || document::suffix(cursor, receiver)?.is_empty() {
-            let version = document.version().cloned();
-            states.push(State::DocumentValue { document });
-            return Ok((Event::DocumentStart { version }, span));
-        }
-    }
+    block_value(
+        cursor,
+        receiver,
+        buffer,
+        states,
+        -1,
+        Context::BlockIn,
+        document.explicit(),
+        false,
+    )
+}
 
-    Ok((Event::StreamEnd, cursor.empty_span()))
+fn block_value<'s>(
+    cursor: &mut Cursor<'s>,
+    receiver: &mut (impl Receiver + ?Sized),
+    buffer: &mut Buffer<'s>,
+    states: &mut Vec<State<'s>>,
+    indent: i32,
+    context: Context,
+    allow_empty: bool,
+    allow_compact: bool,
+) -> Result<(Event<'s>, Span), Diagnostic> {
+    todo!()
 }

@@ -103,7 +103,7 @@ where
 {
     let ident = " ".repeat(indent as usize);
     let mut cursor = Cursor::new(Stream::from_str(&ident));
-    for i in 0..indent {
+    for _ in 0..indent {
         assert_eq!(cursor.bump(), ' ');
     }
     assert!(cursor.is_separated());
