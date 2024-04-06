@@ -17,9 +17,9 @@ use crate::{
 
 use super::{trivia, try_token_char};
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 #[cfg_attr(test, derive(serde::Serialize), serde(rename_all = "lowercase"))]
-pub(super) struct Document<'s> {
+pub(crate) struct Document<'s> {
     explicit: bool,
     version: Option<Cow<'s, str>>,
     tags: BTreeMap<Cow<'s, str>, Cow<'s, str>>,
@@ -29,7 +29,7 @@ pub(super) fn prefix<'s>(
     cursor: &mut Cursor<'s>,
     receiver: &mut (impl Receiver + ?Sized),
     prev_terminated: bool,
-) -> Result<Document<'s>, Diagnostic> {
+) -> Result<(Document<'s>, Span), Diagnostic> {
     try_token_char(
         cursor,
         receiver,
@@ -40,6 +40,7 @@ pub(super) fn prefix<'s>(
     trivia::comment_lines(cursor, receiver)?;
 
     let mut document = Document::default();
+    let start = cursor.location();
 
     let mut have_directives = cursor.is_char(char::DIRECTIVE)?;
     if have_directives {
@@ -89,9 +90,31 @@ pub(super) fn prefix<'s>(
         ));
     }
 
+    let span = cursor.span(start);
+
     trivia::comment_lines(cursor, receiver);
 
-    Ok(document)
+    Ok((document, span))
+}
+
+pub(super) fn suffix(
+    cursor: &mut Cursor,
+    receiver: &mut (impl Receiver + ?Sized),
+) -> Result<(), Diagnostic> {
+    debug_assert!(cursor.is_token_boundary());
+
+    cursor.eat_str("...")?;
+    let span = cursor.token();
+    receiver.token(Token::DocumentEnd, span);
+
+    if !matches!(cursor.peek()?, None | Some('\r' | '\n' | '\t' | ' ')) {
+        receiver.diagnostic(Diagnostic::new(
+            DiagnosticKind::DocumentEndNotFollowedByWhitespace,
+            span,
+        ));
+    }
+
+    trivia::comment_lines(cursor, receiver)
 }
 
 fn directives<'s>(
@@ -292,5 +315,15 @@ fn try_directive_param(
         Ok(Some(span))
     } else {
         Ok(None)
+    }
+}
+
+impl<'s> Document<'s> {
+    pub fn explicit(&self) -> bool {
+        self.explicit
+    }
+
+    pub fn version(&self) -> Option<&Cow<'s, str>> {
+        self.version.as_ref()
     }
 }

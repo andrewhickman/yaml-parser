@@ -11,23 +11,16 @@ pub(crate) fn event<'s>(
     cursor: &mut Cursor<'s>,
     receiver: &mut (impl Receiver + ?Sized),
     buffer: &mut Buffer<'s>,
-    states: &mut Vec<State>,
+    states: &mut Vec<State<'s>>,
 ) -> Option<Result<(Event<'s>, Span), Diagnostic>> {
-    let Some(state) = states.pop() else {
-        return None;
-    };
-
-    let res = match state {
+    let res = match states.pop()? {
         State::Error(err) => Err(err),
         State::Stream => stream(cursor, states),
         State::Document { prev_terminated } => {
             document(cursor, receiver, buffer, states, prev_terminated)
         }
-        State::DocumentNode {
-            allow_empty,
-            allow_compact,
-            indent,
-            context,
+        State::DocumentValue {
+            document
         } => todo!(),
         State::DocumentEnd => todo!(),
         State::BlockSequence {
@@ -74,7 +67,7 @@ pub(crate) fn event<'s>(
 
 fn stream<'s>(
     cursor: &mut Cursor<'s>,
-    states: &mut Vec<State>,
+    states: &mut Vec<State<'s>>,
 ) -> Result<(Event<'s>, Span), Diagnostic> {
     states.push(State::Document {
         prev_terminated: true,
@@ -92,14 +85,22 @@ fn document<'s>(
     cursor: &mut Cursor<'s>,
     receiver: &mut (impl Receiver + ?Sized),
     buffer: &mut Buffer<'s>,
-    states: &mut Vec<State>,
-    prev_terminated: bool,
+    states: &mut Vec<State<'s>>,
+    mut prev_terminated: bool,
 ) -> Result<(Event<'s>, Span), Diagnostic> {
-    cursor.enter_document();
+    while !cursor.is_end_of_input()? {
+        let (document, span) = document::prefix(cursor, receiver, prev_terminated)?;
+        cursor.enter_document();
+        if document.explicit() || !cursor.is_end_of_document()? {
+            let version = document.version().cloned();
+            states.push(State::DocumentValue { document });
+            return Ok((Event::DocumentStart { version }, span));
+        }
 
-    loop {
-        document::prefix(cursor, receiver, prev_terminated)?;
+        cursor.exit_document();
+        document::suffix(cursor, receiver);
+        cursor.enter_document();
     }
 
-    todo!()
+    Ok((Event::StreamEnd, cursor.empty_span()))
 }

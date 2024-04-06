@@ -8,20 +8,18 @@ mod trivia;
 
 use crate::{cursor::Cursor, Diagnostic, Receiver, Span, Token};
 
+use self::document::Document;
 pub(crate) use self::event::event;
 
 #[derive(Debug, Clone)]
-pub(crate) enum State {
+pub(crate) enum State<'s> {
     Error(Diagnostic),
     Stream,
     Document {
         prev_terminated: bool,
     },
-    DocumentNode {
-        allow_empty: bool,
-        allow_compact: bool,
-        indent: i32,
-        context: Context,
+    DocumentValue {
+        document: Document<'s>,
     },
     DocumentEnd,
     BlockSequence {

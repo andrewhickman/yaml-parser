@@ -25,7 +25,7 @@ expression: "parse(prefix_unterminated, \"\\u{feff}---foo\")"
       line: 0
       column: 6
 - severity: error
-  message: the directives end marker must be followed by a line break or space
+  message: a directives end marker must be followed by a line break or space
   span:
     start:
       index: 3

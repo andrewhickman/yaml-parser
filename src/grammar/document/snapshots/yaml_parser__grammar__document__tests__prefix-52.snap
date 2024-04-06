@@ -81,7 +81,7 @@ expression: "parse(prefix_unterminated, \"%YAML 1.2\\n---foo\")"
       line: 1
       column: 3
 - severity: error
-  message: the directives end marker must be followed by a line break or space
+  message: a directives end marker must be followed by a line break or space
   span:
     start:
       index: 10

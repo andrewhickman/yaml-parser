@@ -15,7 +15,7 @@ use crate::{
 pub struct Parser<'s, R = DefaultReceiver> {
     cursor: Cursor<'s>,
     receiver: R,
-    state: Vec<State>,
+    state: Vec<State<'s>>,
     buffer: Buffer<'s>,
 }
 

@@ -25,7 +25,7 @@ expression: "parse(prefix_unterminated, \" ---foo\")"
       line: 0
       column: 4
 - severity: error
-  message: the directives end marker must be at the start of the line
+  message: a directives end marker must be at the start of the line
   span:
     start:
       index: 1

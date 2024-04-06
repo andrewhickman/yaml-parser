@@ -8,14 +8,14 @@ fn prefix<'s>(
     cursor: &mut Cursor<'s>,
     receiver: &mut (impl Receiver + ?Sized),
 ) -> Result<Document<'s>, Diagnostic> {
-    super::prefix(cursor, receiver, true)
+    Ok(super::prefix(cursor, receiver, true)?.0)
 }
 
 fn prefix_unterminated<'s>(
     cursor: &mut Cursor<'s>,
     receiver: &mut (impl Receiver + ?Sized),
 ) -> Result<Document<'s>, Diagnostic> {
-    super::prefix(cursor, receiver, false)
+    Ok(super::prefix(cursor, receiver, false)?.0)
 }
 
 fn directives<'s>(

@@ -80,7 +80,7 @@ expression: "parse(prefix, \"%YAML 1.2\\n ---\")"
       line: 1
       column: 4
 - severity: error
-  message: the directives end marker must be at the start of the line
+  message: a directives end marker must be at the start of the line
   span:
     start:
       index: 11

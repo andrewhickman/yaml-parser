@@ -1,0 +1,6 @@
+---
+source: tests/suite/cases.gen.rs
+expression: tokens
+---
+[]
+
