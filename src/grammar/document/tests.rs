@@ -2,7 +2,7 @@ use insta::assert_yaml_snapshot;
 
 use crate::{cursor::Cursor, grammar::tests::parse, Diagnostic, Receiver};
 
-use super::Document;
+use super::{suffix, Document};
 
 fn prefix<'s>(
     cursor: &mut Cursor<'s>,
@@ -134,6 +134,20 @@ fn test_prefix() {
     assert_yaml_snapshot!(parse(prefix_unterminated, "\nfoo"));
     assert_yaml_snapshot!(parse(prefix_unterminated, "\n foo"));
     assert_yaml_snapshot!(parse(prefix_unterminated, "\n\tfoo"));
+}
+
+#[test]
+fn test_suffix() {
+    assert_yaml_snapshot!(parse(suffix, ""));
+    assert_yaml_snapshot!(parse(suffix, " "));
+    assert_yaml_snapshot!(parse(suffix, "\t"));
+    assert_yaml_snapshot!(parse(suffix, "foo"));
+    assert_yaml_snapshot!(parse(suffix, "...foo"));
+    assert_yaml_snapshot!(parse(suffix, "...."));
+    assert_yaml_snapshot!(parse(suffix, "..."));
+    assert_yaml_snapshot!(parse(suffix, "...\t"));
+    assert_yaml_snapshot!(parse(suffix, "...\n"));
+    assert_yaml_snapshot!(parse(suffix, "...\r\n"));
 }
 
 #[test]

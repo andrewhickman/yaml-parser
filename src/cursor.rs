@@ -34,7 +34,6 @@ pub(crate) struct Cursor<'s> {
     line_index: usize,
     indent: Option<u32>,
     separated: bool,
-    in_document: bool,
     token: Location,
     #[cfg(all(feature = "std", debug_assertions))]
     peek_count: std::sync::atomic::AtomicU32,
@@ -78,7 +77,6 @@ impl<'s> Cursor<'s> {
             line_index: 0,
             indent: Some(0),
             separated: true,
-            in_document: false,
             token: Location::default(),
             #[cfg(all(feature = "std", debug_assertions))]
             peek_count: std::sync::atomic::AtomicU32::new(0),
@@ -93,7 +91,6 @@ impl<'s> Cursor<'s> {
             line_index: 0,
             indent: self.indent,
             separated: self.separated,
-            in_document: self.in_document,
             token: Location::default(),
             #[cfg(all(feature = "std", debug_assertions))]
             peek_count: std::sync::atomic::AtomicU32::new(
@@ -142,14 +139,6 @@ impl<'s> Cursor<'s> {
 
     pub(crate) fn empty_span(&self) -> Span {
         Span::empty(self.location())
-    }
-
-    pub(crate) fn enter_document(&mut self) {
-        self.in_document = true;
-    }
-
-    pub(crate) fn exit_document(&mut self) {
-        self.in_document = true;
     }
 
     pub(crate) fn eat(&mut self, pred: impl Fn(char) -> bool) -> Result<bool, Diagnostic> {
@@ -232,15 +221,10 @@ impl<'s> Cursor<'s> {
     }
 
     pub(crate) fn is_end_of_document(&self) -> Result<bool, Diagnostic> {
-        Ok(self.is_start_of_line()
-            && (self.is_str("---")? || self.is_str("...")?)
-            && matches!(
-                self.stream
-                    .clone()
-                    .nth(3)
-                    .map_err(|err| self.decode_error(err))?,
-                None | Some('\r' | '\n' | '\t' | ' ')
-            ))
+        Ok(self.is_end_of_input()?
+            || (self.is_start_of_line()
+                && (self.is_str("---")? || self.is_str("...")?)
+                && matches!(self.peek_nth(3)?, None | Some('\r' | '\n' | '\t' | ' '))))
     }
 
     pub(crate) fn is_end_of_input(&self) -> Result<bool, Diagnostic> {
@@ -259,10 +243,6 @@ impl<'s> Cursor<'s> {
         #[cfg(all(feature = "std", debug_assertions))]
         if self.peek_count.fetch_add(1, Ordering::Relaxed) > 1000 {
             panic!("infinite loop in parser");
-        }
-
-        if self.in_document && self.is_end_of_document()? {
-            return Ok(None);
         }
 
         self.stream
@@ -323,7 +303,6 @@ impl<'s> Clone for Cursor<'s> {
             line_index: self.line_index,
             indent: self.indent,
             separated: self.separated,
-            in_document: self.in_document,
             token: self.token,
             #[cfg(all(feature = "std", debug_assertions))]
             peek_count: std::sync::atomic::AtomicU32::new(

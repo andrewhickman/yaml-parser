@@ -1,0 +1,36 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(suffix, \"...\\r\\n\")"
+---
+- token: document_end
+  stream: "..."
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 3
+      line: 0
+      column: 3
+- token: break
+  stream: "\r\n"
+  span:
+    start:
+      index: 3
+      line: 0
+      column: 3
+    end:
+      index: 5
+      line: 1
+      column: 0
+- value:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 3
+      line: 0
+      column: 3
+

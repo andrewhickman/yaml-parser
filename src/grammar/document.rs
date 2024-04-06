@@ -100,21 +100,22 @@ pub(super) fn prefix<'s>(
 pub(super) fn suffix(
     cursor: &mut Cursor,
     receiver: &mut (impl Receiver + ?Sized),
-) -> Result<(), Diagnostic> {
+) -> Result<Span, Diagnostic> {
     debug_assert!(cursor.is_token_boundary());
+
+    if !cursor.is_start_of_line()
+        || !cursor.is_str("...")?
+        || !matches!(cursor.peek_nth(3)?, None | Some('\r' | '\n' | '\t' | ' '))
+    {
+        return Ok(cursor.empty_span());
+    }
 
     cursor.eat_str("...")?;
     let span = cursor.token();
     receiver.token(Token::DocumentEnd, span);
 
-    if !matches!(cursor.peek()?, None | Some('\r' | '\n' | '\t' | ' ')) {
-        receiver.diagnostic(Diagnostic::new(
-            DiagnosticKind::DocumentEndNotFollowedByWhitespace,
-            span,
-        ));
-    }
-
-    trivia::comment_lines(cursor, receiver)
+    trivia::trailing_lines(cursor, receiver)?;
+    Ok(span)
 }
 
 fn directives<'s>(

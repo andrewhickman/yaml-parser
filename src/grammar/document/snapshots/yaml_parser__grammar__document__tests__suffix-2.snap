@@ -1,0 +1,24 @@
+---
+source: src/grammar/document/tests.rs
+expression: "parse(suffix, \" \")"
+---
+- value:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 0
+      line: 0
+      column: 0
+- remainder: " "
+  span:
+    start:
+      index: 0
+      line: 0
+      column: 0
+    end:
+      index: 1
+      line: 0
+      column: 1
+

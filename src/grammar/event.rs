@@ -90,16 +90,11 @@ fn document<'s>(
 ) -> Result<(Event<'s>, Span), Diagnostic> {
     while !cursor.is_end_of_input()? {
         let (document, span) = document::prefix(cursor, receiver, prev_terminated)?;
-        cursor.enter_document();
-        if document.explicit() || !cursor.is_end_of_document()? {
+        if document.explicit() || document::suffix(cursor, receiver)?.is_empty() {
             let version = document.version().cloned();
             states.push(State::DocumentValue { document });
             return Ok((Event::DocumentStart { version }, span));
         }
-
-        cursor.exit_document();
-        document::suffix(cursor, receiver);
-        cursor.enter_document();
     }
 
     Ok((Event::StreamEnd, cursor.empty_span()))

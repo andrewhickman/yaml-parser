@@ -44,7 +44,6 @@ pub(crate) enum DiagnosticKind {
     MissingDirectivesEndAfterUnterminatedDocument,
     DirectivesEndNotAtStartOfLine,
     DirectivesEndNotFollowedByWhitespace,
-    DocumentEndNotFollowedByWhitespace,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -179,7 +178,6 @@ impl fmt::Display for Diagnostic {
             DiagnosticKind::InvalidPercentEscape => write!(f, "invalid percent escape"),
             DiagnosticKind::DirectivesEndNotAtStartOfLine => write!(f, "a directives end marker must be at the start of the line"),
             DiagnosticKind::DirectivesEndNotFollowedByWhitespace => write!(f, "a directives end marker must be followed by a line break or space"),
-            DiagnosticKind::DocumentEndNotFollowedByWhitespace => write!(f, "a document end marker must be followed by a line break or space"),
             DiagnosticKind::MissingDirectivesEndAfterDirective => write!(f, "a directives end marker line '---' is required after directives"),
             DiagnosticKind::MissingDirectivesEndAfterUnterminatedDocument => write!(f, "documents must be separated by a marker line ('...' or '---')"),
         }
