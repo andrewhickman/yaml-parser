@@ -66,7 +66,7 @@ impl<'s> Stream<'s> {
         }
     }
 
-    pub(crate) fn from_slice(stream: &'s [u8]) -> Result<Stream<'_>, DecodeError> {
+    pub(crate) fn from_slice(stream: &'s [u8]) -> Result<Stream<'s>, DecodeError> {
         let kind = match stream {
             [0x00, 0x00, 0xfe, 0xff, ..] | [0x00, 0x00, 0x00, _, ..] => StreamKind::Utf32Be {
                 index: 0,

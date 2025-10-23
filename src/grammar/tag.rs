@@ -6,9 +6,24 @@ use crate::{
     cursor::Cursor,
     diag::{DiagnosticKind, Expected},
     Diagnostic, Receiver, Token,
+    grammar::{recover, document::Document, Indent, Context},
 };
 
-use super::recover;
+#[derive(Clone, Debug, Default)]
+pub(crate) struct Properties<'s> {
+    pub anchor: Option<Cow<'s, str>>,
+    pub tag: Option<Cow<'s, str>>,
+}
+
+pub(super) fn properties<'s>(
+    cursor: &mut Cursor<'s>,
+    receiver: &mut (impl Receiver + ?Sized),
+    document: &Document<'s>,
+    indent: Indent,
+    context: Context,
+) -> Result<Properties<'s>, Diagnostic> {
+    todo!()
+}
 
 pub(super) fn handle<'s>(
     cursor: &mut Cursor<'s>,
@@ -73,7 +88,7 @@ pub(super) fn prefix<'s>(
     Ok(name.build())
 }
 
-pub(super) fn percent_escaped<'s>(
+fn percent_escaped<'s>(
     cursor: &mut Cursor<'s>,
     value: &mut CowBuilder<'s>,
 ) -> Result<(), Diagnostic> {

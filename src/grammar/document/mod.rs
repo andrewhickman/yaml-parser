@@ -23,9 +23,9 @@ use super::{
 #[derive(Clone, Debug, Default)]
 #[cfg_attr(test, derive(serde::Serialize), serde(rename_all = "lowercase"))]
 pub(crate) struct Document<'s> {
-    explicit: bool,
-    version: Option<Cow<'s, str>>,
-    tags: BTreeMap<Cow<'s, str>, Cow<'s, str>>,
+    pub explicit: bool,
+    pub version: Option<Cow<'s, str>>,
+    pub tags: BTreeMap<Cow<'s, str>, Cow<'s, str>>,
 }
 
 pub(super) fn prefix<'s>(
@@ -323,15 +323,5 @@ fn try_directive_param(
         Ok(Some(span))
     } else {
         Ok(None)
-    }
-}
-
-impl<'s> Document<'s> {
-    pub fn explicit(&self) -> bool {
-        self.explicit
-    }
-
-    pub fn version(&self) -> Option<&Cow<'s, str>> {
-        self.version.as_ref()
     }
 }

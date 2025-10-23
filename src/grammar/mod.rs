@@ -1,5 +1,6 @@
 mod document;
 mod event;
+mod flow;
 mod scalar;
 mod tag;
 #[cfg(test)]
@@ -62,6 +63,9 @@ pub(crate) enum State<'s> {
         context: Context,
     },
 }
+
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+pub struct Indent(u32);
 
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub(crate) enum Context {
@@ -147,5 +151,44 @@ fn recover(
         Ok(())
     } else {
         Err(diag)
+    }
+}
+
+impl<'s> State<'s> {
+    fn unwrap_document(&self) -> &Document<'s> {
+        match self {
+            State::DocumentValue { document } => document,
+            _ => panic!("unexpected state {:?}", self),
+        }
+    }
+}
+
+impl Indent {
+    pub const NONE: Indent = Indent(u32::MAX);
+
+    pub fn next(&self) -> Self {
+        if *self == Indent::NONE {
+            Indent(0)
+        } else {
+            Indent(self.0 + 1)
+        }
+    }
+
+    pub fn add(&self, n: u32) -> Self {
+        if *self == Indent::NONE {
+            Indent(n)
+        } else {
+            Indent(self.0 + n)
+        }
+    }
+}
+
+impl Context {
+    fn in_flow(&self) -> Context {
+        match self {
+            Context::BlockKey | Context::FlowKey => Context::FlowKey,
+            Context::FlowIn | Context::FlowOut => Context::FlowIn,
+            Context::BlockIn | Context::BlockOut => unimplemented!(),
+        }
     }
 }

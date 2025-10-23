@@ -1,13 +1,19 @@
 use alloc::vec::Vec;
 
 use crate::{
+    char,
     cursor::Cursor,
     grammar::{
         document::{self, Document},
-        Context, State,
+        flow, scalar, Context, State,
     },
     parser::Buffer,
-    Diagnostic, Event, Receiver, Span,
+    CollectionStyle, Diagnostic, Event, Receiver, ScalarStyle, Span,
+};
+
+use super::{
+    tag::{self, Properties},
+    Indent,
 };
 
 pub(crate) fn event<'s>(
@@ -65,8 +71,8 @@ fn document<'s>(
 ) -> Result<(Event<'s>, Span), Diagnostic> {
     while !cursor.is_end_of_input()? {
         let (document, span) = document::prefix(cursor, receiver, prev_terminated)?;
-        if document.explicit() || document::suffix(cursor, receiver)?.is_empty() {
-            let version = document.version().cloned();
+        if document.explicit || document::suffix(cursor, receiver)?.is_empty() {
+            let version = document.version.clone();
             states.push(State::DocumentValue { document });
             return Ok((Event::DocumentStart { version }, span));
         }
@@ -87,9 +93,10 @@ fn document_value<'s>(
         receiver,
         buffer,
         states,
-        -1,
+        document,
+        Indent::NONE,
         Context::BlockIn,
-        document.explicit(),
+        document.explicit,
         false,
     )
 }
@@ -99,10 +106,73 @@ fn block_value<'s>(
     receiver: &mut (impl Receiver + ?Sized),
     buffer: &mut Buffer<'s>,
     states: &mut Vec<State<'s>>,
-    indent: i32,
+    document: &Document<'s>,
+    indent: Indent,
     context: Context,
     allow_empty: bool,
     allow_compact: bool,
 ) -> Result<(Event<'s>, Span), Diagnostic> {
+    let start = cursor.location();
+
+    let Properties { anchor, tag } =
+        tag::properties(cursor, receiver, document, indent.next(), context)?;
+
+    if cursor.is_char(char::LITERAL)? {
+        let value = scalar::literal(cursor, receiver, indent)?;
+        return Ok((
+            Event::Scalar {
+                style: ScalarStyle::Literal,
+                value,
+                anchor,
+                tag,
+            },
+            cursor.span(start),
+        ));
+    } else if cursor.is_char(char::SINGLE_QUOTE)? {
+        let value = scalar::single_quoted(cursor, receiver, indent)?;
+        return Ok((
+            Event::Scalar {
+                style: ScalarStyle::SingleQuoted,
+                value,
+                anchor,
+                tag,
+            },
+            cursor.span(start),
+        ));
+    } else if cursor.is_char(char::DOUBLE_QUOTE)? {
+        let value = scalar::double_quoted(cursor, receiver, indent)?;
+        return Ok((
+            Event::Scalar {
+                style: ScalarStyle::DoubleQuoted,
+                value,
+                anchor,
+                tag,
+            },
+            cursor.span(start),
+        ));
+    } else if cursor.is_char(char::SEQUENCE_START)? {
+        let span = flow::sequence_start(cursor, receiver)?;
+
+        return Ok((
+            Event::SequenceStart {
+                style: CollectionStyle::Flow,
+                anchor,
+                tag,
+            },
+            span,
+        ));
+    } else if cursor.is_char(char::MAPPING_START)? {
+        let span = flow::mapping_start(cursor, receiver)?;
+
+        return Ok((
+            Event::MappingStart {
+                style: CollectionStyle::Flow,
+                anchor,
+                tag,
+            },
+            span,
+        ));
+    }
+
     todo!()
 }

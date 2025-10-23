@@ -20,6 +20,6 @@ pub use self::{
     cursor::{Location, Span},
     diag::Diagnostic,
     event::{CollectionStyle, Event, ScalarStyle},
-    parser::{Parser, Receiver, Token},
+    parser::{DefaultReceiver, Parser, Receiver, Token},
     stream::Encoding,
 };
